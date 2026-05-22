@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { designTokens } from "@/constants/design-tokens";
 import { RadialGradient } from "@/components/ui/RadialGradient";
 import { router } from "expo-router";
-import { ArrowLeft } from "lucide-react-native";
+import { ArrowLeft, Bell, Mail, Smartphone } from "lucide-react-native";
 import {
   useNotificationPreferences,
   useUpdateNotificationPreferences,
@@ -56,7 +56,12 @@ const NotificationSettings = () => {
        <View style={{width: 40}} />
       </View>
         <View style={styles.settingRow}>
-          <Text style={styles.label}>Push Notifications</Text>
+          <View style={styles.settingLabelContainer}>
+            <View style={styles.settingIcon}>
+              <Smartphone size={20} color={designTokens.colors.semantic.warning} />
+            </View>
+            <Text style={styles.label}>Push Notifications</Text>
+          </View>
           <Switch
             value={push}
             onValueChange={(val) => updatePreference('push', val)}
@@ -70,7 +75,12 @@ const NotificationSettings = () => {
           />
         </View>
         <View style={styles.settingRow}>
-          <Text style={styles.label}>Email Notifications</Text>
+          <View style={styles.settingLabelContainer}>
+            <View style={styles.settingIcon}>
+              <Mail size={20} color={designTokens.colors.semantic.warning} />
+            </View>
+            <Text style={styles.label}>Email Notifications</Text>
+          </View>
           <Switch
             value={email}
             onValueChange={(val) => updatePreference('email', val)}
@@ -84,7 +94,12 @@ const NotificationSettings = () => {
           />
         </View>
         <View style={styles.settingRow}>
-          <Text style={styles.label}>SMS Notifications</Text>
+          <View style={styles.settingLabelContainer}>
+            <View style={styles.settingIcon}>
+              <Bell size={20} color={designTokens.colors.semantic.primary} />
+            </View>
+            <Text style={styles.label}>SMS Notifications</Text>
+          </View>
           <Switch
             value={sms}
             onValueChange={(val) => updatePreference('sms', val)}
@@ -149,6 +164,14 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: designTokens.colors.semantic.border,
+  },
+  settingLabelContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  settingIcon: {
+    marginRight: 12,
   },
   label: {
     fontSize: 16,

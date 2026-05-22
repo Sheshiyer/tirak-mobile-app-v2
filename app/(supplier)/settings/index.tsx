@@ -37,6 +37,9 @@ import {
   useNotificationPreferences,
   useUpdateNotificationPreferences,
 } from '@/app/api/notifications/notifications';
+import { Smartphone, Mail } from 'lucide-react-native';
+
+
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -194,7 +197,7 @@ export default function SettingsScreen() {
           <View style={styles.card}>
             <View style={styles.settingItem}>
               <View style={styles.settingIcon}>
-                <Bell size={20} color={colors.primary} />
+                <Smartphone size={20} color={designTokens.colors.semantic.surface} />
               </View>
               <View style={styles.settingContent}>
                 <Text style={styles.settingTitle}>Push Notifications</Text>
@@ -214,7 +217,7 @@ export default function SettingsScreen() {
             
             <View style={styles.settingItem}>
               <View style={styles.settingIcon}>
-                <Bell size={20} color={colors.primary} />
+                <Mail size={20} color={designTokens.colors.semantic.surface} />
               </View>
               <View style={styles.settingContent}>
                 <Text style={styles.settingTitle}>Email Notifications</Text>

@@ -46,6 +46,8 @@ export const SearchHeader: React.FC<SearchHeaderProps> = ({ userName, isCompanio
   const { t } = useTranslation();
   const greeting = useMemo(() => getTimeOfDayGreeting(), []);
 
+  console.log('searchHistory', userName);
+
   const handleSearchPress = () => {
     if (searchQuery.trim()) {
       // Add to search history

@@ -883,7 +883,7 @@ export default function ProfileEditScreen() {
             <View style={styles.statItem}>
               <Award size={16} color={designTokens.colors.semantic.primary} />
               <View style={styles.statContent}>
-                <Body style={styles.statValue}>{profile?.experienceStats.yearsOfExperience}</Body>
+                <Body style={styles.statValue}>{profile?.experienceStats?.yearsOfExperience ?? 0}</Body>
                 <Caption style={styles.statLabel}>{t('profile.companion.yearsExperience')}</Caption>
               </View>
             </View>
@@ -891,7 +891,7 @@ export default function ProfileEditScreen() {
             <View style={styles.statItem}>
               <Users size={16} color={designTokens.colors.semantic.success} />
               <View style={styles.statContent}>
-                <Body style={styles.statValue}>{profile?.experienceStats.totalGuests.toLocaleString()}</Body>
+                <Body style={styles.statValue}>{(profile?.experienceStats?.totalGuests ?? 0).toLocaleString()}</Body>
                 <Caption style={styles.statLabel}>{t('profile.companion.totalGuests')}</Caption>
               </View>
             </View>
@@ -899,7 +899,7 @@ export default function ProfileEditScreen() {
             <View style={styles.statItem}>
               <Star size={16} color="#FFD700" />
               <View style={styles.statContent}>
-                <Body style={styles.statValue}>{profile?.experienceStats.averageRating}</Body>
+                <Body style={styles.statValue}>{profile?.experienceStats?.averageRating ?? 0}</Body>
                 <Caption style={styles.statLabel}>{t('profile.companion.averageRating')}</Caption>
               </View>
             </View>
@@ -907,7 +907,7 @@ export default function ProfileEditScreen() {
             <View style={styles.statItem}>
               <Clock size={16} color={designTokens.colors.semantic.accent} />
               <View style={styles.statContent}>
-                <Body style={styles.statValue}>{profile?.experienceStats.responseTime}</Body>
+                <Body style={styles.statValue}>{profile?.experienceStats?.responseTime ?? 'New'}</Body>
                 <Caption style={styles.statLabel}>{t('profile.companion.responseTime')}</Caption>
               </View>
             </View>

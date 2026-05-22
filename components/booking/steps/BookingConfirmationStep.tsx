@@ -456,8 +456,8 @@ const styles = StyleSheet.create({
     marginBottom: designTokens.spacing.scale.md,
   },
   calendarButton: {
-    borderColor: designTokens.colors.semantic.primary,
-    borderWidth: 1,
+    // borderColor: designTokens.colors.semantic.primary,
+    // borderWidth: 1,
     backgroundColor: designTokens.colors.semantic.surface,
   },
   sectionTitle: {
@@ -612,8 +612,8 @@ const styles = StyleSheet.create({
   },
   bookingsButton: {
     flex: 1,
-    borderColor: designTokens.colors.semantic.primary,
-    borderWidth: 2,
+    // borderColor: designTokens.colors.semantic.primary,
+    // borderWidth: 2,
     backgroundColor: 'transparent'
   },
   homeButton: {

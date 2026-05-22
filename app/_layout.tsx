@@ -66,8 +66,8 @@ export default Sentry.wrap(function RootLayout() {
   const [fontsLoaded] = useFonts({
     // Custom fonts for headings and subheadings only (visual impact)
     'ProximaNova-Regular': require('../assets/images/fonts/ProximaNova-Regular.otf'),
-    'ProximaNova-Semibold': require('../assets/images/fonts/Proxima Nova Semibold.otf'),
-    'ProximaNova-Thin': require('../assets/images/fonts/Proxima Nova Thin.otf'),
+    'ProximaNova-Semibold': require('../assets/images/fonts/ProximaNova-Semibold.otf'),
+    'ProximaNova-Thin': require('../assets/images/fonts/ProximaNova-Thin.otf'),
     'Garet-Heavy': require('../assets/images/fonts/garet.heavy.ttf'),
   });
 

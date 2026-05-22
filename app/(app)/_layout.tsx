@@ -144,7 +144,9 @@ export default function AppLayout() {
 
   useEffect(() => {
     if (isHydrated && user) {
-      registerForBookingPushNotifications(user);
+      registerForBookingPushNotifications(user).catch((error) => {
+        logger.warn('[AppLayout] Failed to register for push notifications:', error);
+      });
     }
   }, [isHydrated, user?.id]);
 

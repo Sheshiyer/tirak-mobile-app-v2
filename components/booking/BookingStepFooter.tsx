@@ -143,8 +143,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   previousButton: {
-    borderColor: designTokens.colors.semantic.primary,
-    borderWidth: 2,
+    // borderColor: designTokens.colors.semantic.primary,
+    // borderWidth: 2,
     backgroundColor: 'transparent',
 
     // Remove flex properties - using fixed width instead
