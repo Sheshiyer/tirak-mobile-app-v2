@@ -1,0 +1,47 @@
+export interface BookingRequest {
+  id: string;
+  customerId: string;
+  customerName: string;
+  customerImage: string;
+  customerRating: number;
+  customerReviewCount: number;
+  customerVerified: boolean;
+  customerJoinDate: string;
+  serviceId: string;
+  serviceName: string;
+  serviceCategory: string;
+  requestedDate: string;
+  requestedTime: string;
+  duration: number;
+  groupSize: number;
+  meetingLocation: string;
+  meetingPoint: string;
+  area: string;
+  distance: number;
+  travelTime: number;
+  basePrice: number;
+  serviceFee: number;
+  totalAmount: number;
+  currency: 'THB';
+  specialRequests: string;
+  languagePreference: string;
+  dietaryRestrictions: string[];
+  accessibilityNeeds: string[];
+  groupComposition: string;
+  status: 'pending' | 'accepted' | 'declined' | 'expired' | 'cancelled';
+  urgency: 'low' | 'medium' | 'high' | 'urgent';
+  createdAt: string;
+  expiresAt: string;
+  respondBy: string;
+  hasMessages: boolean;
+  lastMessageAt?: string;
+  customerPhone?: string;
+  isRepeatCustomer: boolean;
+  previousBookings: number;
+  lastBookingDate?: string;
+  declineReason?: {
+    category: string;
+    message: string;
+    declinedAt: string;
+  };
+}

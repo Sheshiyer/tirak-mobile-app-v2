@@ -1,0 +1,84 @@
+{
+  "expo": {
+    "name": "Tirak",
+    "slug": "tirak-companion-marketplace",
+    "description": "Tirak connects travellers with trusted local guides across Thailand for authentic cultural experiences, booking, chat, and guide-led discovery.",
+    "version": "1.5.1",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "tirak",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": false,
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1a0533"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.tirak.pineapple",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "icon": {
+        "light": "./assets/images/icon.png",
+        "dark": "./assets/images/icon.png",
+        "tinted": "./assets/images/icon.png"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#1a0533"
+      },
+      "package": "com.tirak.pineapple",
+      "enableProguardInReleaseBuilds": true,
+      "enableHermes": true
+    },
+    "web": {
+      "favicon": "./assets/images/favicon.png",
+      "bundler": "metro",
+      "output": "static",
+      "name": "Tirak - Local Experiences",
+      "shortName": "Tirak",
+      "lang": "en",
+      "scope": "/",
+      "themeColor": "#6B46C1",
+      "backgroundColor": "#ffffff",
+      "display": "standalone",
+      "orientation": "portrait",
+      "startUrl": "/",
+      "description": "Discover authentic local experiences in Thailand with trusted local guides.",
+      "dir": "ltr"
+    },
+    "plugins": [
+      [
+        "expo-router",
+        {
+          "asyncRoutes": false
+        }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "react-native",
+          "organization": "tirak"
+        }
+      ],
+      "expo-web-browser",
+      "expo-notifications",
+      "./plugins/ios/withFmtFix"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "tsconfigPaths": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "ba0d6f3e-ed4c-4aaf-8cff-aa2fdb253cc5"
+      }
+    }
+  }
+}
