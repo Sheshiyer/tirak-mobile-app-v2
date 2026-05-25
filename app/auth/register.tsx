@@ -245,14 +245,12 @@ type FormErrors = {
 
   const handleRegister = async () => {
     const result = registerSchema.safeParse(formData);
+    console.log('result', result);
     if (result.success) {
-      // Determine the actual role to register
       let actualUserType: "customer" | "companion" | "supplier";
       if (roleParam === "companion") {
-        // If roleParam is companion, use the selected role from form (supplier or companion)
         actualUserType = "companion";
       } else {
-        // If roleParam is not companion, always register as customer
         actualUserType = "customer";
       }
       try {
@@ -274,11 +272,10 @@ type FormErrors = {
           has_contact_number: !!formData.contactNumber,
           gender: formData.gender,
         });
-        // Only navigate if registration was successful (no exception thrown)
         if (actualUserType === 'companion') {
-          router.replace('/supplier/profile/edit');
+          router.replace('/supplier/profile/edit?from=registration');
         } else {
-          router.replace('/(app)/profile/edit');
+          router.replace('/(app)/profile/edit?from=registration');
         }
       } catch (err) {
         console.error('Registration error:', err);
@@ -286,8 +283,15 @@ type FormErrors = {
           $exception_list: [{ type: (err as Error).name, value: (err as Error).message }],
           $exception_source: 'register',
         });
-        // Don't navigate on error - stay on registration screen to show error
       }
+    } else {
+      const fieldErrors: FormErrors = {};
+      result.error.errors.forEach((err) => {
+        if (err.path[0]) {
+          fieldErrors[err.path[0] as keyof RegisterFormData] = err.message;
+        }
+      });
+      setErrors(fieldErrors);
     }
   };
 

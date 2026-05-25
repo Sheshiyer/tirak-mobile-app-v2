@@ -12,7 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useGlobalSearchParams } from 'expo-router';
 import {
   ArrowLeft,
   Save,
@@ -125,6 +125,8 @@ export default function ProfileEditScreen() {
   const router = useRouter();
   const { user, updateUser } = useAuthStore();
   const queryClient = useQueryClient();
+  const searchParams = useGlobalSearchParams();
+  const fromRegistration = searchParams?.from === 'registration';
   // API integration
   const { data: profileData, isLoading: profileLoading } = useCompanionProfile();
   const createOrUpdateProfile = useCreateOrUpdateCompanionProfile();
@@ -549,7 +551,13 @@ export default function ProfileEditScreen() {
         });
       }
       Alert.alert(t('profile.companion.profileUpdated'), t('profile.companion.profileUpdatedDescription'), [
-        { text: 'OK', onPress: () => router.back() },
+        { text: 'OK', onPress: () => {
+          if (fromRegistration) {
+            router.replace('/(app)');
+          } else {
+            router.back();
+          }
+        }},
       ]);
     } catch (e) {
       Alert.alert(t('profile.companion.error'), e instanceof Error ? e.message : t('profile.companion.errorUpdatingProfile'));
