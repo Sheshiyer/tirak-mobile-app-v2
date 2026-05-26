@@ -14,9 +14,9 @@ import { useToast } from '@/stores/toast-store';
 import { useTranslation } from 'react-i18next';
 
 // Conditionally import DateTimePicker only for native platforms
-const DateTimePicker = Platform.OS !== 'web' 
-  ? require('@react-native-community/datetimepicker').default 
-  : null;
+const dateTimePickerModule = Platform.OS !== 'web' ? require('@react-native-community/datetimepicker') : null;
+const DateTimePicker = dateTimePickerModule ? dateTimePickerModule.default : null;
+const DateTimePickerAndroid = dateTimePickerModule ? dateTimePickerModule.DateTimePickerAndroid : null;
 
 const isWeb = Platform.OS === 'web';
 
@@ -60,6 +60,19 @@ const AddSlot = () => {
   const formatDisplayTime = (date: Date | null) => {
     if (!date) return 'Select time';
     return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const openAndroidTimePicker = (options: { value: Date; onConfirm: (date: Date) => void }) => {
+    if (!DateTimePickerAndroid) return;
+    DateTimePickerAndroid.open({
+      value: options.value,
+      mode: 'time',
+      display: 'default',
+      is24Hour: false,
+      onChange: (_: any, date?: Date) => {
+        if (date) options.onConfirm(date);
+      },
+    });
   };
 
   const handleStartTimeConfirm = (date: Date) => {
@@ -107,6 +120,8 @@ const AddSlot = () => {
     // Native platforms (iOS/Android)
     if (!DateTimePicker) return null;
 
+    if (Platform.OS === 'android') return null;
+
     return (
       <Modal
         visible={visible}
@@ -122,16 +137,11 @@ const AddSlot = () => {
               display="spinner"
               is24Hour={false}
               onChange={(_event: any, date?: Date) => {
-                if (Platform.OS === 'android') {
-                  onClose();
-                  if (date) onConfirm(date);
-                } else {
-                  if (date) {
-                    if (isStartTime) {
-                      setPendingStartTime(date);
-                    } else {
-                      setPendingEndTime(date);
-                    }
+                if (date) {
+                  if (isStartTime) {
+                    setPendingStartTime(date);
+                  } else {
+                    setPendingEndTime(date);
                   }
                 }
               }}
@@ -262,7 +272,12 @@ const AddSlot = () => {
                 style={styles.timeInputRow}
                 onPress={() => {
                   logger.log('Opening start time picker');
-                  setPendingStartTime(startTime || getDefaultStartTime());
+                  const base = startTime || getDefaultStartTime();
+                  if (Platform.OS === 'android') {
+                    openAndroidTimePicker({ value: base, onConfirm: (date) => setStartTime(date) });
+                    return;
+                  }
+                  setPendingStartTime(base);
                   setShowStartTimePicker(true);
                 }}
                 activeOpacity={0.7}
@@ -278,7 +293,12 @@ const AddSlot = () => {
                 style={styles.timeInputRow}
                 onPress={() => {
                   logger.log('Opening end time picker');
-                  setPendingEndTime(endTime || getDefaultEndTime());
+                  const base = endTime || getDefaultEndTime();
+                  if (Platform.OS === 'android') {
+                    openAndroidTimePicker({ value: base, onConfirm: (date) => setEndTime(date) });
+                    return;
+                  }
+                  setPendingEndTime(base);
                   setShowEndTimePicker(true);
                 }}
                 activeOpacity={0.7}

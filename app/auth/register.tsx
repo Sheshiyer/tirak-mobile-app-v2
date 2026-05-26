@@ -273,9 +273,9 @@ type FormErrors = {
           gender: formData.gender,
         });
         if (actualUserType === 'companion') {
-          router.replace('/supplier/profile/edit?from=registration');
+          router.replace('/supplier/profile/edit');
         } else {
-          router.replace('/(app)/profile/edit?from=registration');
+          router.replace('/(app)/profile/edit');
         }
       } catch (err) {
         console.error('Registration error:', err);

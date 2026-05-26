@@ -11,7 +11,7 @@ import {
   SafeAreaView,
   Platform,
 } from 'react-native';
-import { router, useGlobalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 import { useCustomerProfile, useUpdateCustomerProfile } from '../../api/customer/customerProfile';
 
 import { RadialGradient } from '@/components/ui/RadialGradient';
@@ -43,8 +43,6 @@ export default function ProfileEditScreen() {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const { user, updateUser } = useAuthStore();
-  const searchParams = useGlobalSearchParams();
-  const fromRegistration = searchParams?.from === 'registration';
   
   // Initialize form with auth store data to prevent empty flash
   const [formData, setFormData] = useState({
@@ -111,11 +109,7 @@ export default function ProfileEditScreen() {
               {
                 text: 'OK',
                 onPress: () => {
-                  if (fromRegistration) {
-                    router.replace('/(app)');
-                  } else {
-                    router.back();
-                  }
+                  router.replace('/(app)');
                 },
               },
             ]

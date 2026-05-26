@@ -32,7 +32,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Heading, Subheading, Body, Caption } from '@/components/ui/Typography';
 import { designTokens, componentTokens } from '@/constants/design-tokens';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { WebDatePicker } from '@/components/WebDatePicker';
 
 const isWeb = Platform.OS === 'web';
@@ -81,6 +81,24 @@ export default function AvailabilityCalendarScreen() {
     });
   };
 
+  const openAndroidDatePicker = (options: {
+    value: Date;
+    minimumDate?: Date;
+    maximumDate?: Date;
+    onConfirm: (date: Date) => void;
+  }) => {
+    DateTimePickerAndroid.open({
+      value: options.value,
+      mode: 'date',
+      display: 'default',
+      minimumDate: options.minimumDate,
+      maximumDate: options.maximumDate,
+      onChange: (_, date) => {
+        if (date) options.onConfirm(date);
+      },
+    });
+  };
+
   const renderDatePicker = (
     visible: boolean,
     value: Date | null,
@@ -103,6 +121,8 @@ export default function AvailabilityCalendarScreen() {
         />
       );
     }
+
+    if (Platform.OS === 'android') return null;
 
     return (
       <Modal
@@ -195,7 +215,17 @@ export default function AvailabilityCalendarScreen() {
         <TouchableOpacity
           style={styles.dateInputRow}
           onPress={() => {
-            setPendingStartDate(startDate || new Date());
+            const base = startDate || new Date();
+            if (Platform.OS === 'android') {
+              openAndroidDatePicker({
+                value: base,
+                minimumDate: new Date(),
+                maximumDate: endDate || undefined,
+                onConfirm: (date) => setStartDate(date),
+              });
+              return;
+            }
+            setPendingStartDate(base);
             setShowStartPicker(true);
           }}
           activeOpacity={0.7}
@@ -219,7 +249,16 @@ export default function AvailabilityCalendarScreen() {
         <TouchableOpacity
           style={styles.dateInputRow}
           onPress={() => {
-            setPendingEndDate(endDate || (startDate || new Date()));
+            const base = endDate || startDate || new Date();
+            if (Platform.OS === 'android') {
+              openAndroidDatePicker({
+                value: base,
+                minimumDate: startDate && startDate > new Date() ? startDate : new Date(),
+                onConfirm: (date) => setEndDate(date),
+              });
+              return;
+            }
+            setPendingEndDate(base);
             setShowEndPicker(true);
           }}
           activeOpacity={0.7}

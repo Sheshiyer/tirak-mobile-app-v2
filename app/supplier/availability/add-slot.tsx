@@ -5,7 +5,7 @@ import { logger } from '@/utils/logger';
   import { ArrowLeft, Settings, Clock } from 'lucide-react-native';
   import { designTokens } from '@/constants/design-tokens';
   import { Heading, Caption } from '@/components/ui/Typography';
-  import DateTimePicker from '@react-native-community/datetimepicker';
+  import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
   import { RadialGradient } from '@/components/ui/RadialGradient';
   import { saveCompanionAvailability } from '@/app/api/companion/companion';
   import type { AvailabilityParams } from '@/app/api/companion/companion';
@@ -55,6 +55,18 @@ import { logger } from '@/utils/logger';
     const formatDisplayTime = (date: Date | null) => {
       if (!date) return 'Select time';
       return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    };
+
+    const openAndroidTimePicker = (options: { value: Date; onConfirm: (date: Date) => void }) => {
+      DateTimePickerAndroid.open({
+        value: options.value,
+        mode: 'time',
+        display: 'default',
+        is24Hour: false,
+        onChange: (_, date) => {
+          if (date) options.onConfirm(date);
+        },
+      });
     };
 
   
@@ -119,7 +131,12 @@ import { logger } from '@/utils/logger';
                 <TouchableOpacity
                   style={styles.timeInputRow}
                   onPress={() => {
-                    setPendingStartTime(startTime || new Date());
+                    const base = startTime || getDefaultStartTime();
+                    if (Platform.OS === 'android') {
+                      openAndroidTimePicker({ value: base, onConfirm: (date) => setStartTime(date) });
+                      return;
+                    }
+                    setPendingStartTime(base);
                     setShowStartTimePicker(true);
                   }}
                   activeOpacity={0.7}
@@ -133,7 +150,12 @@ import { logger } from '@/utils/logger';
                 <TouchableOpacity
                   style={styles.timeInputRow}
                   onPress={() => {
-                    setPendingEndTime(endTime || new Date());
+                    const base = endTime || getDefaultEndTime();
+                    if (Platform.OS === 'android') {
+                      openAndroidTimePicker({ value: base, onConfirm: (date) => setEndTime(date) });
+                      return;
+                    }
+                    setPendingEndTime(base);
                     setShowEndTimePicker(true);
                   }}
                   activeOpacity={0.7}
@@ -143,30 +165,24 @@ import { logger } from '@/utils/logger';
                 </TouchableOpacity>
               </View>
             </View>
-            {/* Start Time Picker Modal */}
-            <Modal
-              visible={showStartTimePicker}
-              transparent
-              animationType="fade"
-              onRequestClose={() => setShowStartTimePicker(false)}
-            >
-              <View style={styles.modalOverlay}>
-                <View style={styles.modalContent}>
-                  <DateTimePicker
-                    value={pendingStartTime || getDefaultStartTime()}
-                    mode="time"
-                    display="spinner"
-                    is24Hour={false}
-                    onChange={(_, date) => {
-                      if (Platform.OS === 'android') {
-                        setShowStartTimePicker(false);
-                        if (date) setStartTime(date);
-                      } else {
+            {Platform.OS === 'ios' && (
+              <Modal
+                visible={showStartTimePicker}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setShowStartTimePicker(false)}
+              >
+                <View style={styles.modalOverlay}>
+                  <View style={styles.modalContent}>
+                    <DateTimePicker
+                      value={pendingStartTime || getDefaultStartTime()}
+                      mode="time"
+                      display="spinner"
+                      is24Hour={false}
+                      onChange={(_, date) => {
                         if (date) setPendingStartTime(date);
-                      }
-                    }}
-                  />
-                  {Platform.OS === 'ios' && (
+                      }}
+                    />
                     <View style={styles.modalButtonRow}>
                       <TouchableOpacity
                         style={styles.modalButton}
@@ -184,34 +200,28 @@ import { logger } from '@/utils/logger';
                         <Text style={[styles.modalButtonText, styles.modalButtonPrimaryText]}>Confirm</Text>
                       </TouchableOpacity>
                     </View>
-                  )}
+                  </View>
                 </View>
-              </View>
-            </Modal>
-            {/* End Time Picker Modal */}
-            <Modal
-              visible={showEndTimePicker}
-              transparent
-              animationType="fade"
-              onRequestClose={() => setShowEndTimePicker(false)}
-            >
-              <View style={styles.modalOverlay}>
-                <View style={styles.modalContent}>
-                  <DateTimePicker
-                    value={pendingEndTime || getDefaultEndTime()}
-                    mode="time"
-                    display="spinner"
-                    is24Hour={false}
-                    onChange={(_, date) => {
-                      if (Platform.OS === 'android') {
-                        setShowEndTimePicker(false);
-                        if (date) setEndTime(date);
-                      } else {
+              </Modal>
+            )}
+            {Platform.OS === 'ios' && (
+              <Modal
+                visible={showEndTimePicker}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setShowEndTimePicker(false)}
+              >
+                <View style={styles.modalOverlay}>
+                  <View style={styles.modalContent}>
+                    <DateTimePicker
+                      value={pendingEndTime || getDefaultEndTime()}
+                      mode="time"
+                      display="spinner"
+                      is24Hour={false}
+                      onChange={(_, date) => {
                         if (date) setPendingEndTime(date);
-                      }
-                    }}
-                  />
-                  {Platform.OS === 'ios' && (
+                      }}
+                    />
                     <View style={styles.modalButtonRow}>
                       <TouchableOpacity
                         style={styles.modalButton}
@@ -229,10 +239,10 @@ import { logger } from '@/utils/logger';
                         <Text style={[styles.modalButtonText, styles.modalButtonPrimaryText]}>Confirm</Text>
                       </TouchableOpacity>
                     </View>
-                  )}
+                  </View>
                 </View>
-              </View>
-            </Modal>
+              </Modal>
+            )}
           </ScrollView>
           <View style={styles.bottomButtonContainer}>
             <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
