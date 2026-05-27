@@ -150,11 +150,11 @@ export default function AuthScreen() {
             <View style={styles.heroScrim} />
             <View style={styles.heroBadge}>
               <MapPin size={14} color="#FFFFFF" />
-              <Text style={styles.heroBadgeText}>Thailand locals</Text>
+              <Text style={styles.heroBadgeText}>Verified Thailand guides</Text>
             </View>
             <View style={styles.heroCaption}>
               <Sparkles size={16} color="#FFFFFF" />
-              <Text style={styles.heroCaptionText}>Find the right companion for the moment</Text>
+              <Text style={styles.heroCaptionText}>Plan the day with someone who knows the place</Text>
             </View>
           </View>
           <Text style={styles.tagline}>{t('getStarted.tagline')}</Text>

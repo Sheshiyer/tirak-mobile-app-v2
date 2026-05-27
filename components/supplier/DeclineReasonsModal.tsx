@@ -144,22 +144,20 @@ export const DeclineReasonsModal: React.FC<DeclineReasonsModalProps> = ({
     if (!selectedReason) return;
 
     setIsSubmitting(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    onDecline({
-      category: selectedReason.category,
-      message: customMessage || selectedReason.template,
-    });
-    
-    setIsSubmitting(false);
-    onClose();
-    
-    // Reset state
-    setSelectedReason(null);
-    setCustomMessage('');
-    setStep('select');
+    try {
+      await Promise.resolve(onDecline({
+        category: selectedReason.category,
+        message: customMessage || selectedReason.template,
+      }));
+      onClose();
+
+      // Reset state
+      setSelectedReason(null);
+      setCustomMessage('');
+      setStep('select');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -184,7 +182,7 @@ export const DeclineReasonsModal: React.FC<DeclineReasonsModalProps> = ({
       <View style={styles.header}>
         <Heading style={styles.title}>Decline Request</Heading>
         <Caption style={styles.subtitle}>
-          Please select a reason for declining this booking request
+          Choose the clearest reason so the traveler understands what happened.
         </Caption>
       </View>
 
@@ -241,14 +239,14 @@ export const DeclineReasonsModal: React.FC<DeclineReasonsModalProps> = ({
       </View>
 
       <View style={styles.messageSection}>
-        <Body style={styles.messageLabel}>Message to Customer:</Body>
+        <Body style={styles.messageLabel}>Message to traveler:</Body>
         <TextInput
           style={styles.messageInput}
           value={customMessage}
           onChangeText={setCustomMessage}
           multiline
           numberOfLines={6}
-          placeholder="Enter your message to the customer..."
+          placeholder="Write a clear, kind note for the traveler..."
           placeholderTextColor={designTokens.colors.semantic.textSecondary}
           textAlignVertical="top"
         />
@@ -283,7 +281,7 @@ export const DeclineReasonsModal: React.FC<DeclineReasonsModalProps> = ({
           <View style={styles.confirmContent}>
             <Subheading style={styles.confirmTitle}>{selectedReason?.title}</Subheading>
             <Caption style={styles.confirmSubtitle}>
-              This message will be sent to {customerName}
+          This message will be sent to {customerName}
             </Caption>
           </View>
         </View>
@@ -296,7 +294,7 @@ export const DeclineReasonsModal: React.FC<DeclineReasonsModalProps> = ({
       <View style={styles.warningBox}>
         <AlertTriangle size={16} color={designTokens.colors.semantic.warning} />
         <Caption style={styles.warningText}>
-          This action cannot be undone. The customer will be notified immediately.
+          This action cannot be undone. The traveler will be notified immediately.
         </Caption>
       </View>
     </View>

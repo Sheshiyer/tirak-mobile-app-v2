@@ -49,8 +49,8 @@ const MESSAGE_TEMPLATES: MessageTemplate[] = [
     id: 'booking_confirmation',
     category: 'confirmation',
     title: 'Booking Confirmation',
-    description: 'Confirm booking details with customer',
-    template: 'Hi {customerName}! I\'m excited to confirm your {serviceName} booking for {date} at {time}. I\'ll meet you at {meetingPoint}. Looking forward to showing you around!',
+    description: 'Confirm booking details with the traveler',
+    template: 'Hi {customerName}, I\'m happy to confirm your {serviceName} booking for {date} at {time}. I\'ll meet you at {meetingPoint}. Looking forward to showing you around.',
     icon: <CheckCircle size={20} color="#4CAF50" />,
     variables: ['customerName', 'serviceName', 'date', 'time', 'meetingPoint'],
   },
@@ -59,7 +59,7 @@ const MESSAGE_TEMPLATES: MessageTemplate[] = [
     category: 'information',
     title: 'Pre-Booking Information',
     description: 'Share important details before the booking',
-    template: 'Hello {customerName}! Just a few quick details for our {serviceName} tomorrow: Please bring comfortable walking shoes and a water bottle. The weather looks great! Any questions before we meet?',
+    template: 'Hello {customerName}, a few quick details for our {serviceName}: please bring comfortable walking shoes and water. Message me here with any questions before we meet.',
     icon: <Info size={20} color="#2196F3" />,
     variables: ['customerName', 'serviceName'],
   },
@@ -67,8 +67,8 @@ const MESSAGE_TEMPLATES: MessageTemplate[] = [
     id: 'meeting_reminder',
     category: 'reminder',
     title: 'Meeting Reminder',
-    description: 'Remind customer about upcoming booking',
-    template: 'Hi {customerName}! This is a friendly reminder about our {serviceName} tomorrow at {time}. I\'ll be at {meetingPoint} wearing a blue shirt. See you soon!',
+    description: 'Remind the traveler about an upcoming booking',
+    template: 'Hi {customerName}, this is a friendly reminder about our {serviceName} tomorrow at {time}. I\'ll be at {meetingPoint}. See you soon.',
     icon: <Clock size={20} color="#FF9800" />,
     variables: ['customerName', 'serviceName', 'time', 'meetingPoint'],
   },
@@ -77,7 +77,7 @@ const MESSAGE_TEMPLATES: MessageTemplate[] = [
     category: 'logistics',
     title: 'Location Details',
     description: 'Provide detailed meeting location info',
-    template: 'Hi {customerName}! For our meeting at {meetingPoint}, look for the main entrance near the {landmark}. I\'ll be there 10 minutes early. My phone number is {phone} if you need to reach me.',
+    template: 'Hi {customerName}, for our meeting at {meetingPoint}, look for the main entrance near the {landmark}. I\'ll be there 10 minutes early. Message me here if you need help finding it.',
     icon: <MapPin size={20} color="#9C27B0" />,
     variables: ['customerName', 'meetingPoint', 'landmark', 'phone'],
   },
@@ -86,7 +86,7 @@ const MESSAGE_TEMPLATES: MessageTemplate[] = [
     category: 'update',
     title: 'Weather Update',
     description: 'Share weather-related recommendations',
-    template: 'Hello {customerName}! The weather forecast shows {weather} for our {serviceName}. I recommend bringing {recommendation}. We can adjust our itinerary if needed!',
+    template: 'Hello {customerName}, the weather forecast shows {weather} for our {serviceName}. I recommend bringing {recommendation}. We can adjust our route if needed.',
     icon: <AlertTriangle size={20} color="#FF5722" />,
     variables: ['customerName', 'weather', 'serviceName', 'recommendation'],
   },
@@ -94,8 +94,8 @@ const MESSAGE_TEMPLATES: MessageTemplate[] = [
     id: 'special_requests',
     category: 'customization',
     title: 'Special Requests Follow-up',
-    description: 'Address customer\'s special requests',
-    template: 'Hi {customerName}! I\'ve noted your special requests for {specialRequests}. I\'ve made arrangements to accommodate this during our {serviceName}. You\'re going to love it!',
+    description: 'Address the traveler\'s special requests',
+    template: 'Hi {customerName}, I\'ve noted your requests: {specialRequests}. I\'ll plan around this during our {serviceName}.',
     icon: <Star size={20} color="#FFC107" />,
     variables: ['customerName', 'specialRequests', 'serviceName'],
   },
@@ -104,7 +104,7 @@ const MESSAGE_TEMPLATES: MessageTemplate[] = [
     category: 'follow_up',
     title: 'Thank You Message',
     description: 'Post-booking thank you and feedback request',
-    template: 'Thank you for choosing me for your {serviceName}, {customerName}! I hope you had an amazing experience. I\'d be grateful if you could leave a review. Hope to see you again soon!',
+    template: 'Thank you for choosing me for your {serviceName}, {customerName}. I hope the day felt local and easy. I\'d be grateful if you could leave a review.',
     icon: <MessageSquare size={20} color="#E91E63" />,
     variables: ['customerName', 'serviceName'],
   },
@@ -186,9 +186,9 @@ export const BookingMessageTemplates: React.FC<BookingMessageTemplatesProps> = (
   const renderTemplateSelection = () => (
     <View style={styles.content}>
       <View style={styles.header}>
-        <Heading style={styles.title}>Quick Message Templates</Heading>
+        <Heading style={styles.title}>Message Templates</Heading>
         <Caption style={styles.subtitle}>
-          Choose a template to send to {request.customerName}
+          Choose a clear note to send to {request.customerName}
         </Caption>
       </View>
 
@@ -233,7 +233,7 @@ export const BookingMessageTemplates: React.FC<BookingMessageTemplatesProps> = (
       <View style={styles.header}>
         <Heading style={styles.title}>Customize Message</Heading>
         <Caption style={styles.subtitle}>
-          Edit your message before sending to {request.customerName}
+          Edit your message before sending it to {request.customerName}
         </Caption>
       </View>
 
@@ -248,14 +248,14 @@ export const BookingMessageTemplates: React.FC<BookingMessageTemplatesProps> = (
       </View>
 
       <View style={styles.messageSection}>
-        <Body style={styles.messageLabel}>Your Message:</Body>
+        <Body style={styles.messageLabel}>Your message:</Body>
         <TextInput
           style={styles.messageInput}
           value={customMessage}
           onChangeText={setCustomMessage}
           multiline
           numberOfLines={6}
-          placeholder="Type your message..."
+          placeholder="Write a clear note for the traveler..."
           placeholderTextColor={designTokens.colors.semantic.textSecondary}
           textAlignVertical="top"
         />

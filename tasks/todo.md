@@ -1,5 +1,93 @@
 # Preview App Review - 2026-05-19
 
+## Product-Ready App Review Plan - 2026-05-24
+
+Goal: review Tirak as a real user product, not only as an MVP scaffold. Every visible flow should either be wired to the real product model, backed by a backend-compatible demo path, or intentionally removed/downgraded until the feature exists.
+
+### Product Readiness Standard
+- [ ] Confirm every visible button, icon, chip, menu item, card action, and CTA in logged-out, traveler, and companion flows is wired to a real action or an honest disabled/empty state.
+- [ ] Confirm no screen presents hardcoded mock data as live product data unless it is scoped to the explicit Apple review/demo accounts and follows the same backend contract.
+- [ ] Confirm every fallback path emulates production concepts: same ids, same status transitions, same profile/image source, same booking/chat/notification ownership model.
+- [ ] Confirm real-user data is never overwritten by demo/test defaults, placeholder profile photos, stale auth cache, or local review fixtures.
+- [ ] Confirm user-facing errors are product-safe and never expose Axios, raw JSON, Worker, D1, migration, or token details.
+
+### Traveler Journey Review
+- [ ] Splash/onboarding and role selection: clear value proposition, no phone-verification blockers for the current release path, no stale logged-in state on clean install.
+- [ ] Registration/login/profile setup: all fields map to backend payloads, persist after refetch/login, and handle validation errors cleanly.
+- [ ] Discovery/search: filters, sort, category chips, favorites, search states, and guide cards are functional and visually consistent.
+- [ ] Guide detail: profile image, bio, languages, services, pricing copy, availability, chat entry, reporting, and empty states use one authoritative guide model.
+- [ ] Booking flow: service selection, date/time, meeting point, special requests, summary, confirmation, cash guide-rate copy, countdown, Add to Calendar, and booking detail all share one booking object.
+- [ ] Traveler chat: text chat only until media/voice/call features are real, last message previews are live/demo-compatible, and send failures degrade cleanly.
+- [ ] Traveler account/settings: profile edit, photo persistence, notifications, referrals, privacy/help/support links, logout, and delete account are wired or intentionally constrained.
+
+### Companion Journey Review
+- [ ] Companion registration/profile setup: first name, last name, display name, bio, languages, profile photos, cover photos, and verification state persist through backend-compatible payloads.
+- [ ] Dashboard: bookings, rating, weekly earnings, profile prompts, and alerts derive from API/domain data, not fixed placeholders.
+- [ ] Availability/services: create/edit/delete flows use backend-compatible data and return to the correct screen after success.
+- [ ] Booking requests/list/detail: pending bookings can be approved/rejected from every inspection surface, status updates propagate to traveler views, and payment/cash labels are not confused with approval status.
+- [ ] Companion chat: traveler conversations route through the same chat model as traveler chat and show friendly names plus last-message previews.
+- [ ] Analytics/portfolio/settings: metrics, profile improvement prompts, notification settings, referrals, support, logout, and account deletion are either backed by product data or clearly scoped.
+
+### Backend And Demo Contract Review
+- [ ] Inventory every endpoint used by registration, login, profiles, companion/customer listing, favorites, availability, services, bookings, chat, notifications, referrals, password reset, and account deletion.
+- [ ] Smoke-test live endpoints with real demo accounts and one throwaway traveler/companion account; delete throwaway accounts immediately after persistence checks.
+- [ ] Verify demo traveler, demo companion, and Apple review accounts remain present and untouched.
+- [ ] Compare mobile request payloads against backend validation for required fields, route order, ids, status enums, and query params.
+- [ ] Record any remaining backend blockers as explicit issues instead of masking them with fake UI.
+
+### Release QA Evidence
+- [ ] Run JSON validation, TypeScript, diff whitespace checks, and available unit/smoke tests.
+- [ ] Run clean Expo/Metro server and local iOS simulator build from a cleared app state.
+- [ ] Capture traveler and companion screenshots/videos only after raw Axios banners and broken states are cleared.
+- [ ] Document pass/fail evidence, exact commands, remaining blockers, and whether the app is ready for TestFlight review.
+
+### Product-Ready App Review Pass 1
+- Redirected legacy `/supplier/...` mock-heavy analytics, chat, request, portfolio, payment, subscription, service setup, and availability routes into the canonical release routes.
+- Kept active companion profile edit and signup setup routes intact because they are still part of the current guide setup journey.
+- Removed simulated supplier request action delays so these shared components now delegate immediately to their real parent handlers.
+- Removed noisy login/home debug logs and changed dev logger errors to warnings so expected API problems do not create raw red preview banners.
+- Verified backend registration and booking contracts against the local Worker source: registration accepts `display_name`, `name`, first/last name aliases, and `userType`; bookings accept date plus `HH:MM` start/end time.
+- Verification passed: `rg` no longer finds the old mock-only analytics/chat/template/simulated-action markers in active `app`, `components`, `stores`, or `utils` files.
+- Verification passed: `npx tsc --noEmit --pretty false`.
+- Verification passed: `git diff --check`.
+- Still open: full simulator traveler and companion flow needs to be exercised against the running backend before marking the product-ready checklist complete.
+
+## Logged-In Flow Copy Refresh - 2026-05-24
+- [x] Audit logged-in traveler and companion screens for generic, mismatched, or overly technical copy.
+- [x] Rewrite English logged-in copy across home, search, profile/detail, bookings, chat, settings, notifications, availability, services, analytics, portfolio, and referrals.
+- [x] Keep Thai localization untouched for the separate Thai pass.
+- [x] Run JSON validation and TypeScript verification.
+- [x] Start the local server for review.
+
+### Logged-In Flow Copy Refresh Review
+- Rewrote traveler logged-in copy across discovery, search, guide detail, booking, confirmation, bookings, chat, notifications, profile, settings, and referrals.
+- Rewrote guide logged-in copy across dashboard, request handling, availability, services, analytics, portfolio, settings, profile edit, and guide onboarding surfaces.
+- Kept this pass English-only; Thai localization is intentionally untouched for the separate Thai review.
+- Verification passed: `node -e "JSON.parse(require('fs').readFileSync('locales/en.json','utf8'))"`.
+- Verification passed: `npx tsc --noEmit --pretty false`.
+- Verification passed: `git diff --check`.
+- Local server started with `npx expo start --clear --port 8082`; review URL is `http://localhost:8082`.
+
+## Discovery Safety Login Copy Refresh - 2026-05-24
+- [x] Audit current discovery, safety, and login copy against the Tirak brand voice.
+- [x] Rewrite English strings and hardcoded safety/login/discovery copy without changing app flows.
+- [x] Run JSON validation and TypeScript verification.
+- [x] Document review notes.
+
+### Discovery Safety Login Copy Refresh Review
+- Rewrote onboarding/role-selection copy around verified local guides, specific Thailand experiences, and confidence-building trust cues.
+- Updated login and password-reset copy so the screen feels like returning to Tirak trip planning instead of a generic auth form.
+- Tightened discovery/search placeholders, suggestions, and empty states around concrete interests like food walks, temples, markets, and local days.
+- Reframed safety and verification copy as Trust & Safety, with clearer in-app chat, public-meeting, and Tirak review language.
+- Verification passed: `node -e "JSON.parse(require('fs').readFileSync('locales/en.json','utf8'))"`.
+- Verification passed: `npx tsc --noEmit --pretty false`.
+- Verification passed: `git diff --check`.
+
+## TestFlight Auth Startup Regression - 2026-05-22
+- [x] Trace persisted auth, secure storage, demo prefill, and review-account boot paths that can make TestFlight open logged in.
+- [x] Confirm the observed startup can be normal persisted auth state from an existing install, not a production hard-coded login path.
+- [x] Leave auth persistence unchanged because the user confirmed old stored auth is acceptable.
+
 ## Public Repo Handoff - 2026-05-22
 - [x] Keep the Pineapple Innovation Labs remote as legacy fetch-only backup and do not touch the old repo.
 - [x] Refresh the marketing README with a visual-forward hero using tracked Tirak assets/screenshots.

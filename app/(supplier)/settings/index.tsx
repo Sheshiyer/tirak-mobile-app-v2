@@ -71,7 +71,7 @@ export default function SettingsScreen() {
         onError: () => {
           if (key === 'push') setNotificationsEnabled(!value);
           if (key === 'email') setEmailNotificationsEnabled(!value);
-          Alert.alert('Unable to update settings', 'Please try again.');
+          Alert.alert('Could not save preference', 'Please try again.');
         },
       }
     );
@@ -192,7 +192,7 @@ export default function SettingsScreen() {
         </View>
         
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notifications</Text>
+          <Text style={styles.sectionTitle}>Booking Alerts</Text>
           
           <View style={styles.card}>
             <View style={styles.settingItem}>
@@ -200,9 +200,9 @@ export default function SettingsScreen() {
                 <Smartphone size={20} color={designTokens.colors.semantic.surface} />
               </View>
               <View style={styles.settingContent}>
-                <Text style={styles.settingTitle}>Push Notifications</Text>
+                <Text style={styles.settingTitle}>Push Alerts</Text>
                 <Text style={styles.settingDescription}>
-                  Receive notifications for bookings and messages
+                  Booking requests, guide reminders, and traveler messages
                 </Text>
               </View>
               <Switch
@@ -220,9 +220,9 @@ export default function SettingsScreen() {
                 <Mail size={20} color={designTokens.colors.semantic.surface} />
               </View>
               <View style={styles.settingContent}>
-                <Text style={styles.settingTitle}>Email Notifications</Text>
+                <Text style={styles.settingTitle}>Email Alerts</Text>
                 <Text style={styles.settingDescription}>
-                  Receive email notifications for bookings and messages
+                  Booking and message updates sent to your email
                 </Text>
               </View>
               <Switch
@@ -236,7 +236,7 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Rewards</Text>
+          <Text style={styles.sectionTitle}>Tirak Coins</Text>
           <View style={styles.card}>
             <TouchableOpacity
               style={styles.settingItem}
@@ -246,9 +246,9 @@ export default function SettingsScreen() {
                 <Gift size={20} color={designTokens.colors.semantic.surface} />
               </View>
               <View style={styles.settingContent}>
-                <Text style={styles.settingTitle}>Referral Program</Text>
+                <Text style={styles.settingTitle}>Invite & Earn</Text>
                 <Text style={styles.settingDescription}>
-                  Invite travelers or guides and earn Tirak Coins
+                  Share Tirak with travelers or guides and earn future benefits
                 </Text>
               </View>
               <ChevronRight size={20} color={designTokens.colors.semantic.text} />

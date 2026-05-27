@@ -20,23 +20,23 @@ interface SearchHeaderProps {
 }
 
 const defaultSuggestions = [
-  'Tour guide Bangkok',
-  'Local dining guide',
-  'Shopping tour',
-  'Cultural experience',
+  'Food walk in Bangkok',
+  'Hidden market guide',
+  'Temple morning with a local',
+  'Sundown city walk',
   'Language practice',
-  'Local food tour',
-  'Temple visit guide',
-  'Beach activities',
-  'Evening bar tour',
-  'Business meeting assistant'
+  'Local food trail',
+  'Old town photo walk',
+  'Island day guide',
+  'Wellness afternoon',
+  'Business day support'
 ];
 
 const defaultSearchHistory = [
-  'Bangkok tour guide',
-  'Phuket island hopping',
-  'Chiang Mai cultural tour',
-  'Shopping tour Bangkok'
+  'Bangkok food walk',
+  'Phuket island day',
+  'Chiang Mai temples',
+  'Hidden markets Bangkok'
 ];
 
 export const SearchHeader: React.FC<SearchHeaderProps> = ({ userName, isCompanion }) => {

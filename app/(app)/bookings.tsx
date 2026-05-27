@@ -559,7 +559,7 @@ export default function BookingsScreen() {
         <Subheading style={styles.emptyStateTitle}>{t('bookings.noBookingsFound')}</Subheading>
         <Body style={styles.emptyStateText}>
           {search.trim() || statusFilter !== 'all'
-            ? 'No bookings match the current filters.'
+            ? 'No Tirak bookings match these filters.'
             : !isAuthenticated 
             ? t('bookings.pleaseLoginToViewBookings')
             : selectedTab === 'upcoming'
@@ -599,7 +599,7 @@ export default function BookingsScreen() {
               }}
               accessibilityRole="button"
               accessibilityLabel="Filter bookings"
-              accessibilityHint="Show booking status filters"
+              accessibilityHint="Show booking request status filters"
             >
               <Filter size={20} color={designTokens.colors.semantic.primary} />
             </TouchableOpacity>
@@ -620,7 +620,7 @@ export default function BookingsScreen() {
 
         {showFilters && (
           <View style={styles.controlsPanel}>
-            <Caption style={styles.controlsLabel}>Filter by status</Caption>
+            <Caption style={styles.controlsLabel}>Filter by booking status</Caption>
             <View style={styles.controlChips}>
               {[
                 { key: 'all', label: 'All' },
@@ -655,7 +655,7 @@ export default function BookingsScreen() {
 
         {showSortOptions && (
           <View style={styles.controlsPanel}>
-            <Caption style={styles.controlsLabel}>Sort bookings</Caption>
+            <Caption style={styles.controlsLabel}>Sort by</Caption>
             <View style={styles.controlChips}>
               {[
                 { key: 'date', label: 'Date' },

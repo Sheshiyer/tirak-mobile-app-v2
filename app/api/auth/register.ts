@@ -62,14 +62,17 @@ export const register = async (userData: RegisterData): Promise<RegisterResponse
     // Fallback to original shape if already mapped by backend
     return api as RegisterResponse;
   } catch (error) {
-    console.error("Error registering user:", error);
-    
     // Handle different error types
     if (axios.isAxiosError(error)) {
-      console.error("Axios error:", error.response?.data);
-      throw new Error(error.response?.data?.message || "Registration failed");
+      const message = error.response?.data?.message || error.response?.data?.error || "Registration failed";
+      logger.warn("Registration request failed:", {
+        status: error.response?.status,
+        message,
+      });
+      throw new Error(message);
     }
     
+    logger.warn("Registration request failed:", error);
     throw new Error("Network error occurred");
   }
 };

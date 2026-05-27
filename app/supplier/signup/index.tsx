@@ -39,11 +39,10 @@ export default function SupplierSignup() {
         </View>
         
         <View style={styles.card}>
-          <Text style={styles.title}>Become a Tirak Supplier</Text>
+          <Text style={styles.title}>Become a Tirak Local Guide</Text>
           
           <Text style={styles.description}>
-            Join our platform and connect with customers looking for your services.
-            Complete the following steps to create your supplier profile.
+            Create a verified guide profile travelers can trust. Add your details, photos, experiences, regions, and availability.
           </Text>
           
           <ProgressBar
@@ -56,7 +55,7 @@ export default function SupplierSignup() {
               'Verify',
               'Photos',
               'Categories',
-              'Services',
+              'Experiences',
               'Regions',
               'Schedule',
             ]}
@@ -68,9 +67,9 @@ export default function SupplierSignup() {
                 <Text style={styles.stepNumberText}>1</Text>
               </View>
               <View style={styles.stepContent}>
-                <Text style={styles.stepTitle}>Basic Information</Text>
+                <Text style={styles.stepTitle}>Profile Basics</Text>
                 <Text style={styles.stepDescription}>
-                  Provide your personal details and contact information
+                  Add your name, contact details, and guide introduction
                 </Text>
               </View>
             </View>
@@ -82,7 +81,7 @@ export default function SupplierSignup() {
               <View style={styles.stepContent}>
                 <Text style={styles.stepTitle}>ID Verification</Text>
                 <Text style={styles.stepDescription}>
-                  Upload your ID card for verification purposes
+                  Verify your identity before your guide profile goes live
                 </Text>
               </View>
             </View>
@@ -94,7 +93,7 @@ export default function SupplierSignup() {
               <View style={styles.stepContent}>
                 <Text style={styles.stepTitle}>Upload Photos</Text>
                 <Text style={styles.stepDescription}>
-                  Add photos to showcase your services to potential customers
+                  Add clear photos so travelers know who they are booking
                 </Text>
               </View>
             </View>
@@ -104,9 +103,9 @@ export default function SupplierSignup() {
                 <Text style={styles.stepNumberText}>4</Text>
               </View>
               <View style={styles.stepContent}>
-                <Text style={styles.stepTitle}>Select Categories</Text>
+                <Text style={styles.stepTitle}>Guide Categories</Text>
                 <Text style={styles.stepDescription}>
-                  Choose categories that best describe your services
+                  Choose the local interests travelers can book with you
                 </Text>
               </View>
             </View>
@@ -116,9 +115,9 @@ export default function SupplierSignup() {
                 <Text style={styles.stepNumberText}>5</Text>
               </View>
               <View style={styles.stepContent}>
-                <Text style={styles.stepTitle}>Services & Pricing</Text>
+                <Text style={styles.stepTitle}>Experiences & Rates</Text>
                 <Text style={styles.stepDescription}>
-                  Define your services and set your pricing
+                  Create bookable experiences with duration and guide rate
                 </Text>
               </View>
             </View>
@@ -128,9 +127,9 @@ export default function SupplierSignup() {
                 <Text style={styles.stepNumberText}>6</Text>
               </View>
               <View style={styles.stepContent}>
-                <Text style={styles.stepTitle}>Service Regions</Text>
+                <Text style={styles.stepTitle}>Guide Regions</Text>
                 <Text style={styles.stepDescription}>
-                  Select the regions where you offer your services
+                  Select the cities and neighborhoods where you can host
                 </Text>
               </View>
             </View>
@@ -142,7 +141,7 @@ export default function SupplierSignup() {
               <View style={styles.stepContent}>
                 <Text style={styles.stepTitle}>Set Availability</Text>
                 <Text style={styles.stepDescription}>
-                  Define your weekly schedule and availability
+                  Open the dates and times travelers can request you
                 </Text>
               </View>
             </View>

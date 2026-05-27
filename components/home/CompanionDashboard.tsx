@@ -347,13 +347,12 @@ const CompanionDashboardContent: React.FC<CompanionDashboardProps> = ({ userName
     refetch();
   };
 
-  // Mock data for demo/unauthenticated users (empty to show empty state)
-  const mockBookings: BookingListItem[] = [];
+  const emptyBookings: BookingListItem[] = [];
 
-  // Use real data if authenticated and available, otherwise use mock data
+  // Use real data if authenticated and available, otherwise show an honest empty state.
   const displayBookings = isAuthenticated && bookingsData?.success 
     ? (bookingsData.data.bookings || bookingsData.data.items || [])
-    : mockBookings;
+    : emptyBookings;
   
   const showLoadingState = isAuthenticated && isLoading || isLoadingStats;
   const showErrorState = isAuthenticated && error && !error.message.includes('401');
@@ -365,7 +364,7 @@ const CompanionDashboardContent: React.FC<CompanionDashboardProps> = ({ userName
     // Show empty state for authenticated users when API hasn't loaded yet but no error
     (isAuthenticated && !isLoading && !error && !bookingsData) ||
     // Show empty state for unauthenticated users (demo mode)
-    (!isAuthenticated && mockBookings.length === 0)
+    (!isAuthenticated && emptyBookings.length === 0)
   );
 
   // Debug logging
@@ -375,15 +374,13 @@ const CompanionDashboardContent: React.FC<CompanionDashboardProps> = ({ userName
   // logger.log('- error:', !!error);
   // logger.log('- bookingsData?.success:', bookingsData?.success);
   // logger.log('- bookingsData?.data?.bookings?.length:', bookingsData?.data?.bookings?.length);
-  // logger.log('- mockBookings.length:', mockBookings.length);
+  // logger.log('- emptyBookings.length:', emptyBookings.length);
   // logger.log('- showLoadingState:', showLoadingState);
   // logger.log('- showErrorState:', showErrorState);
   // logger.log('- showEmptyState:', showEmptyState);
   // logger.log('- displayBookings.length:', displayBookings.length);
 
   const handleNavigation = (route: SupplierRoute) => {
-    logger.log('Navigating to:', route, 'Platform:', Platform.OS, 'Dev mode:', __DEV__);
-
     // Add extra safety for Android APK builds
     const isAndroidProduction = Platform.OS === 'android' && !__DEV__;
 
@@ -393,19 +390,17 @@ const CompanionDashboardContent: React.FC<CompanionDashboardProps> = ({ userName
         setTimeout(() => {
           try {
             router.push(route as any);
-            logger.log('Navigation successful to:', route);
           } catch (delayedError) {
-            console.error('Delayed navigation error:', delayedError);
+            logger.warn('Delayed companion dashboard navigation failed:', delayedError);
             showFallbackAlert(route);
           }
         }, 150);
       } else {
         // Immediate navigation for development and iOS
         router.push(route as any);
-        logger.log('Navigation successful to:', route);
       }
     } catch (error) {
-      console.error('Navigation error for route:', route, error);
+      logger.warn('Companion dashboard navigation failed:', { route, error });
       showFallbackAlert(route);
     }
   };
@@ -422,8 +417,8 @@ const CompanionDashboardContent: React.FC<CompanionDashboardProps> = ({ userName
     setTimeout(() => {
       Alert.alert(
         featureNames[route] || 'Feature',
-        'This feature is coming soon in the next update!\n\nWe\'re working hard to bring you the best experience.',
-        [{ text: 'Got it!', style: 'default' }]
+        'We could not open this screen. Please try again from the bottom navigation or settings.',
+        [{ text: 'OK', style: 'default' }]
       );
     }, 100);
   };
@@ -440,17 +435,17 @@ const CompanionDashboardContent: React.FC<CompanionDashboardProps> = ({ userName
         
         <View style={styles.statsRow as ViewStyle}>
           <View style={styles.statItem as ViewStyle}>
-            <Text style={styles.statValue as TextStyle}>{stats?.totalBookings}</Text>
+            <Text style={styles.statValue as TextStyle}>{stats?.totalBookings ?? 0}</Text>
             <Text style={styles.statLabel as TextStyle}>{t('userHome.companion.bookings')}</Text>
           </View>
           <Divider orientation="vertical" margin="sm" />
           <View style={styles.statItem as ViewStyle}>
-            <Text style={styles.statValue as TextStyle}>{stats?.averageRating}</Text>
+            <Text style={styles.statValue as TextStyle}>{stats?.averageRating ?? 0}</Text>
             <Text style={styles.statLabel as TextStyle}>{t('userHome.companion.rating')}</Text>
           </View>
           <Divider orientation="vertical" margin="sm" />
           <View style={styles.statItem as ViewStyle}>
-            <Text style={styles.statValue as TextStyle}>{stats?.thisMonthEarnings}</Text>
+            <Text style={styles.statValue as TextStyle}>{stats?.thisMonthEarnings ?? 0}</Text>
             <Text style={styles.statLabel as TextStyle}>{t('userHome.companion.thisWeek')}</Text>
           </View>
         </View>

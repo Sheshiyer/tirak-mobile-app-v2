@@ -415,7 +415,7 @@ export default function ProfileEditScreen() {
     if (!profile.bio?.trim() || profile.bio.trim().length < 30) {
       Alert.alert(
         'Bio too short',
-        'Please write at least 30 characters in your bio so travellers can learn about you.',
+        'Write at least 30 characters so travelers understand your guide style.',
         [{ text: 'OK' }]
       );
       return;
@@ -424,7 +424,7 @@ export default function ProfileEditScreen() {
     if (!profilePhotoUri && !profile.profilePhoto) {
       Alert.alert(
         'Profile Photo Required',
-        'Please add a profile photo. Travellers are much more likely to book guides with a clear, welcoming photo.',
+        'Add a clear, welcoming profile photo so travelers know who they are booking.',
         [{ text: 'Add Photo', onPress: handleProfilePhotoChange }, { text: 'Later', style: 'cancel' }]
       );
       return;

@@ -31,23 +31,23 @@ export default function SuccessScreen() {
           <Check size={48} color="white" />
         </View>
         
-        <Text style={styles.title}>Registration Complete!</Text>
+        <Text style={styles.title}>Guide Profile Started</Text>
         
         <Text style={styles.message}>
-          Congratulations! Your supplier account has been created successfully. You can now start managing your services and accepting bookings.
+          Your Tirak guide account is ready. Complete your profile, add experiences, and open availability so travelers can request you.
         </Text>
         
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>What's Next?</Text>
+          <Text style={styles.cardTitle}>Next steps</Text>
           
           <View style={styles.stepItem}>
             <View style={styles.stepNumber}>
               <Text style={styles.stepNumberText}>1</Text>
             </View>
             <View style={styles.stepContent}>
-              <Text style={styles.stepTitle}>Complete Your Profile</Text>
+              <Text style={styles.stepTitle}>Complete your guide profile</Text>
               <Text style={styles.stepDescription}>
-                Add more details to make your profile stand out
+                Add a warm bio, languages, and clear profile photos
               </Text>
             </View>
           </View>
@@ -57,9 +57,9 @@ export default function SuccessScreen() {
               <Text style={styles.stepNumberText}>2</Text>
             </View>
             <View style={styles.stepContent}>
-              <Text style={styles.stepTitle}>Set Up Your Services</Text>
+              <Text style={styles.stepTitle}>Add your experiences</Text>
               <Text style={styles.stepDescription}>
-                Review and refine your service offerings
+                Describe what travelers can book and what each day includes
               </Text>
             </View>
           </View>
@@ -69,9 +69,9 @@ export default function SuccessScreen() {
               <Text style={styles.stepNumberText}>3</Text>
             </View>
             <View style={styles.stepContent}>
-              <Text style={styles.stepTitle}>Manage Your Availability</Text>
+              <Text style={styles.stepTitle}>Open your availability</Text>
               <Text style={styles.stepDescription}>
-                Update your schedule to maximize bookings
+                Choose the dates and times travelers can request
               </Text>
             </View>
           </View>
@@ -81,16 +81,16 @@ export default function SuccessScreen() {
               <Text style={styles.stepNumberText}>4</Text>
             </View>
             <View style={styles.stepContent}>
-              <Text style={styles.stepTitle}>Start Receiving Bookings</Text>
+              <Text style={styles.stepTitle}>Start receiving requests</Text>
               <Text style={styles.stepDescription}>
-                Respond to customer inquiries and bookings
+                Review traveler requests, approve bookings, and keep chat clear
               </Text>
             </View>
           </View>
         </View>
         
         <Button
-          title="Go to Dashboard"
+          title="Go to Guide Dashboard"
           onPress={handleGoToDashboard}
           style={styles.button}
         />

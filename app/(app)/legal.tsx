@@ -14,31 +14,31 @@ import { ArrowLeft } from 'lucide-react-native';
 const PRIVACY_POLICY = `Last updated: May 2026
 
 **1. Introduction**
-Tirak ("we", "us", or "our") is a cultural travel experiences marketplace that connects travellers with verified local guides in Thailand. We are committed to protecting your privacy and handling your personal data responsibly.
+Tirak ("we", "us", or "our") helps travelers discover Thailand through verified local guides and bookable cultural experiences. We protect your privacy so planning, booking, and messaging can happen with confidence.
 
 **2. Information We Collect**
 - Account information: name, email address, phone number
 - Profile information: bio, profile photos, languages spoken, areas of expertise
 - Usage data: searches, bookings, messages, and interactions within the app
 - Device information: device type, operating system, app version
-- Location: only when you explicitly grant permission, and only for guide location tags
+- Location: only when you explicitly grant permission, and only for guide location tags or nearby discovery
 
 **3. How We Use Your Information**
 - To operate and improve the Tirak platform
-- To match travellers with appropriate local guides
+- To help travelers find relevant local guides and experiences
 - To process bookings and facilitate communications
-- To send booking confirmations and service updates
+- To send booking confirmations, message alerts, safety updates, and service notices
 - To ensure platform safety and prevent fraud
 - To comply with legal obligations
 
 **4. Information Sharing**
 We do not sell your personal data. We share information only:
-- Between travellers and guides as needed to facilitate bookings and communication
+- Between travelers and guides as needed to facilitate bookings and communication
 - With service providers who help us operate the platform (e.g., cloud hosting via Cloudflare)
 - If required by law or to protect user safety
 
 **5. Data Retention**
-We retain your account data for as long as your account is active. You may request deletion of your account at any time from Settings → Delete Account. Deleted accounts are anonymised within 30 days.
+We retain your account data for as long as your account is active. You may request deletion of your account at any time from Settings > Delete Account. Deleted accounts are anonymised within 30 days.
 
 **6. Your Rights**
 You have the right to access, correct, or delete your personal data. Contact us at support@tirak.app for any data requests.
@@ -58,14 +58,14 @@ const TERMS_OF_SERVICE = `Last updated: May 2026
 By using the Tirak app, you agree to these Terms of Service. If you do not agree, please do not use the app.
 
 **2. What Tirak Is**
-Tirak is a cultural travel experiences marketplace that connects international travellers with verified local guides and experience hosts in Thailand. All guides are independent contractors, not Tirak employees.
+Tirak is a cultural travel marketplace for Thailand. Travelers can find verified local guides, compare experiences, chat in-app, and request bookings. Guides are independent contractors, not Tirak employees.
 
 **3. Permitted Uses**
 Tirak is a platform for:
-- Booking cultural tours, day trips, and local experiences
+- Booking cultural tours, day trips, food walks, and local experiences
 - Language practice and cultural exchange sessions
-- Guided exploration of food, arts, and traditions
-- Business travel assistance and local introductions
+- Guided exploration of food, arts, traditions, neighborhoods, and everyday Thailand
+- Business travel support and local introductions
 
 **4. Prohibited Uses**
 You must not use Tirak to:
@@ -76,16 +76,16 @@ You must not use Tirak to:
 - Solicit personal contact information to bypass the platform
 
 **5. Guide Verification**
-Guides undergo identity verification before being listed. However, Tirak does not guarantee guide qualifications beyond stated information. Use your judgement and communicate clearly before booking.
+Guides complete Tirak verification before being listed. We review identity and profile details, but travelers should still read each profile, ask questions in chat, and confirm meeting details before booking.
 
 **6. Bookings and Payment**
-Bookings are confirmed once accepted by the guide. Payment terms are agreed directly between traveller and guide, facilitated through the platform. Tirak is not responsible for payment disputes between parties.
+Bookings are confirmed once accepted by the guide. Guide rates and cash-payment details are shown in the booking flow when available. Tirak is not responsible for payment disputes between parties.
 
 **7. Cancellations**
 Cancellation policies are set by individual guides. Review the guide's policy before booking.
 
 **8. Safety**
-Your safety is our priority. If you feel unsafe or witness inappropriate behaviour, use the in-app Report function or contact us immediately at safety@tirak.app.
+Keep planning and booking details inside Tirak when possible, meet in public places, and share your itinerary with someone you trust. If something feels wrong, use Report in the app or contact us immediately at safety@tirak.app.
 
 **9. Limitation of Liability**
 Tirak provides a marketplace platform and is not liable for the actions of guides or travellers, or for any direct, indirect, or consequential damages arising from use of the platform.

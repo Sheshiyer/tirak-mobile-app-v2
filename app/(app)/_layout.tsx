@@ -376,7 +376,7 @@ export default function AppLayout() {
                 onPress={() => navigateTo('/settings')}
               >
                 <Shield size={22} color={designTokens.colors.semantic.surface} />
-                <Text style={styles.menuItemText}>Privacy & Safety</Text>
+                <Text style={styles.menuItemText}>Trust & Safety</Text>
               </TouchableOpacity>
 
               <TouchableOpacity

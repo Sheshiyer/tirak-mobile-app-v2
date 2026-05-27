@@ -34,21 +34,21 @@ const BookingDetailsScreen = () => {
 
   const handleCancelBooking = () => {
     Alert.alert(
-      'Cancel Booking',
-      'Are you sure you want to cancel this booking?\n\n• Free cancellation 48h+ before the experience\n• 50% fee applies within 48h\n\nThis action cannot be undone.',
+      'Cancel booking',
+      'Cancel this Tirak booking?\n\nFree cancellation applies 48h+ before the experience. Within 48h, the guide cancellation policy may apply.',
       [
-        { text: 'Keep Booking', style: 'cancel' },
+        { text: 'Keep booking', style: 'cancel' },
         {
-          text: 'Cancel Booking',
+          text: 'Cancel booking',
           style: 'destructive',
           onPress: async () => {
             setCancelling(true);
             try {
               await updateStatusMutation.mutateAsync({ id: id as string, statusData: { status: 'cancelled' } });
-              Alert.alert('Booking Cancelled', 'Your booking has been cancelled. Refund (if applicable) will be processed within 5–7 business days.');
+              Alert.alert('Booking cancelled', 'This Tirak booking has been cancelled.');
               router.back();
             } catch (err: any) {
-              Alert.alert('Error', err?.message || 'Failed to cancel booking. Please try again or contact support.');
+              Alert.alert('Could not cancel booking', err?.message || 'Please try again or contact support.');
             } finally {
               setCancelling(false);
             }
@@ -63,7 +63,7 @@ const BookingDetailsScreen = () => {
       <RadialGradient variant="appBackground" style={styles.container}>
         <SafeAreaView style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
         <ActivityIndicator size="large" color={designTokens.colors.semantic.primary} />
-        <Text style={styles.loadingText}>Loading booking details...</Text>
+        <Text style={styles.loadingText}>Loading Tirak booking...</Text>
         </SafeAreaView>
       </RadialGradient>
     );
@@ -72,8 +72,8 @@ const BookingDetailsScreen = () => {
   if (error || !data?.success) {
     return (
       <RadialGradient variant="appBackground" style={styles.container}>
-        <Text style={styles.errorText}>Failed to load booking details.</Text>
-        <Button title="Go Back" onPress={() => router.back()} />
+        <Text style={styles.errorText}>We could not load this booking.</Text>
+        <Button title="Go back" onPress={() => router.back()} />
       </RadialGradient>
     );
   }
@@ -86,7 +86,7 @@ const BookingDetailsScreen = () => {
   const timeline = booking.timeline || [];
   const displayPerson = isCompanion ? customer : companion;
   const displayFallback = isCompanion ? companion : customer;
-  const displayName = displayPerson?.name || displayFallback?.name || (isCompanion ? 'Traveller' : 'Local Guide');
+  const displayName = displayPerson?.name || displayFallback?.name || (isCompanion ? 'Traveler' : 'Local Guide');
   const displayImage = displayPerson?.profileImage || displayFallback?.profileImage || '';
   const startAt = new Date(`${booking.date.split('T')[0]}T${booking.startTime}:00`);
   const endAt = new Date(`${booking.date.split('T')[0]}T${booking.endTime}:00`);
@@ -207,7 +207,7 @@ const BookingDetailsScreen = () => {
 
         <Card style={styles.card}>
           {/* Customer & Companion Info */}
-          <Subheading>{!isCompanion ? 'Local Guide' : 'Traveller'}</Subheading>
+          <Subheading>{!isCompanion ? 'Local Guide' : 'Traveler'}</Subheading>
           <View style={styles.headerRow}>
             <ProfileImage uri={displayImage} size={64} />
             <View style={styles.headerText}>
@@ -256,17 +256,17 @@ const BookingDetailsScreen = () => {
             </View>
           )}
           <View style={styles.section}>
-            <Subheading>Service / Experience</Subheading>
+            <Subheading>Experience</Subheading>
             <Body>{service?.name || experience?.name || 'N/A'}</Body>
           </View>
 
           {/* Date, Time, Location, Meeting Point */}
           <View style={styles.section}>
-            <Subheading>Booking Date</Subheading>
+            <Subheading>Date</Subheading>
             <Body>{booking.date.split('T')[0]}</Body>
           </View>
           <View style={styles.section}>
-            <Subheading>Booking Time</Subheading>
+            <Subheading>Time</Subheading>
             <Body>{booking.startTime} - {booking.endTime} ({booking.duration} mins)</Body>
           </View>
 
@@ -275,7 +275,7 @@ const BookingDetailsScreen = () => {
               <View style={styles.countdownHeader}>
                 <Clock size={18} color={designTokens.colors.semantic.primary} />
                 <Subheading style={styles.countdownTitle}>
-                  {isCompanion ? 'Experience starts in' : 'Your local guide starts in'}
+                  {isCompanion ? 'Experience starts in' : 'Your guide starts in'}
                 </Subheading>
               </View>
               <Heading style={styles.countdownValue}>{countdownText}</Heading>
@@ -305,7 +305,7 @@ const BookingDetailsScreen = () => {
 
           {/* Payment & Fees */}
           <View style={styles.section}>
-            <Subheading>Payment Status</Subheading>
+            <Subheading>Payment</Subheading>
             <Body>{getPaymentStatusCopy()}</Body>
           </View>
           
@@ -356,11 +356,11 @@ const BookingDetailsScreen = () => {
                 accessibilityLabel="Cancel this booking"
               >
                 <Body style={styles.cancelButtonText}>
-                  {cancelling ? 'Cancelling…' : 'Cancel Booking'}
+                  {cancelling ? 'Cancelling...' : 'Cancel booking'}
                 </Body>
               </TouchableOpacity>
               <Caption style={styles.cancelHint}>
-                Free cancellation 48h+ before experience · 50% fee within 48h
+                Review cancellation terms before cancelling close to the start time.
               </Caption>
             </View>
           )}

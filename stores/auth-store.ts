@@ -63,7 +63,6 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             // Store tokens in secure storage
             await secureStorage.setItemAsync("authToken", response.data.accessToken);
             await secureStorage.setItemAsync("refreshToken", response.data.refreshToken);
-            console.log("Login response:", response);
 
             // Create user object from response
             const user: User = {

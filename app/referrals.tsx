@@ -26,10 +26,10 @@ export default function ReferralsScreen() {
     if (!referral) return;
     try {
       await Share.share({
-        message: `Join Tirak with my referral code ${referral.referralCode}: ${referral.shareUrl}`,
+        message: `Join Tirak and find trusted local guides in Thailand. Use my code ${referral.referralCode}: ${referral.shareUrl}`,
       });
     } catch {
-      Alert.alert('Unable to share', 'Please try again.');
+      Alert.alert('Share unavailable', 'Please try again.');
     }
   };
 
@@ -39,10 +39,10 @@ export default function ReferralsScreen() {
     applyReferralCode.mutate(code, {
       onSuccess: () => {
         setInviteCode('');
-        Alert.alert('Referral applied', 'The inviter has received Tirak Coins.');
+        Alert.alert('Invite code applied', 'Your inviter has received Tirak Coins.');
       },
       onError: () => {
-        Alert.alert('Unable to apply code', 'Please check the code and try again.');
+        Alert.alert('Could not apply code', 'Check the code and try again.');
       },
     });
   };
@@ -57,7 +57,7 @@ export default function ReferralsScreen() {
           <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
             <ArrowLeft size={22} color={designTokens.colors.semantic.text} />
           </TouchableOpacity>
-          <Text style={styles.title}>Referral Program</Text>
+          <Text style={styles.title}>Tirak Coins</Text>
           <View style={styles.iconSpacer} />
         </View>
 
@@ -67,8 +67,8 @@ export default function ReferralsScreen() {
           </View>
         ) : error || !referral ? (
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Referral details unavailable</Text>
-            <Text style={styles.body}>Please try again when you are connected.</Text>
+            <Text style={styles.cardTitle}>Rewards unavailable</Text>
+            <Text style={styles.body}>Connect again to see your invite code and Tirak Coins.</Text>
           </View>
         ) : (
           <View style={styles.content}>
@@ -84,21 +84,21 @@ export default function ReferralsScreen() {
               <View style={styles.row}>
                 <Gift size={22} color={designTokens.colors.semantic.primary} />
                 <View style={styles.rowText}>
-                  <Text style={styles.cardTitle}>Invite friends</Text>
+                  <Text style={styles.cardTitle}>Invite travelers and guides</Text>
                   <Text style={styles.body}>
-                    Earn {referral.awardCoins} Tirak Coins when a new traveler or companion joins with your code.
+                    Earn {referral.awardCoins} Tirak Coins when someone joins Tirak with your code.
                   </Text>
                 </View>
               </View>
 
               <View style={styles.codeBox}>
-                <Text style={styles.codeLabel}>Your code</Text>
+                <Text style={styles.codeLabel}>Your invite code</Text>
                 <Text style={styles.code}>{referral.referralCode}</Text>
               </View>
 
               <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
                 <Share2 size={18} color={designTokens.colors.semantic.surface} />
-                <Text style={styles.shareText}>Share Invite</Text>
+                <Text style={styles.shareText}>Share Code</Text>
               </TouchableOpacity>
             </View>
 
@@ -115,7 +115,7 @@ export default function ReferralsScreen() {
             </View>
 
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Have an invite code?</Text>
+              <Text style={styles.cardTitle}>Have a Tirak code?</Text>
               <Text style={styles.body}>Apply it once after joining so your inviter receives Tirak Coins.</Text>
               <View style={styles.inputRow}>
                 <TextInput

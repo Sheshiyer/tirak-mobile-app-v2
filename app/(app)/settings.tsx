@@ -104,12 +104,12 @@ export default function SettingsScreen() {
     };
 
     if (Platform.OS === 'web') {
-      const confirmed = window.confirm('Logout\n\nAre you sure you want to logout?');
+      const confirmed = window.confirm('Sign out\n\nSign out of this Tirak account?');
       if (confirmed) performLogout();
     } else {
-      Alert.alert('Logout', 'Are you sure you want to logout?', [
+      Alert.alert('Sign out', 'Sign out of this Tirak account?', [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Logout', style: 'destructive', onPress: performLogout },
+        { text: 'Sign out', style: 'destructive', onPress: performLogout },
       ]);
     }
   };
@@ -118,11 +118,11 @@ export default function SettingsScreen() {
     const confirmDelete = () => {
       Alert.alert(
         'Delete Account',
-        'This action is permanent. Your profile, bookings, and messages will be removed. Are you absolutely sure?',
+        'This is permanent. Your profile, bookings, messages, and saved guides will be removed.',
         [
           { text: 'Cancel', style: 'cancel' },
           {
-            text: 'Delete Forever',
+            text: 'Delete Account',
             style: 'destructive',
             onPress: performDeleteAccount,
           },
@@ -157,7 +157,7 @@ export default function SettingsScreen() {
     };
 
     if (Platform.OS === 'web') {
-      const confirmed = window.confirm('Delete Account\n\nThis is permanent. Are you sure?');
+      const confirmed = window.confirm('Delete Account\n\nThis permanently removes your Tirak account, profile, bookings, and messages.');
       if (confirmed) performDeleteAccount();
     } else {
       confirmDelete();
@@ -170,13 +170,13 @@ export default function SettingsScreen() {
         {/* Profile Section */}
         <Card style={styles.profileCard}>
           <View style={styles.profileHeader}>
-            <Text style={styles.sectionTitle}>Account</Text>
+            <Text style={styles.sectionTitle}>Your Tirak Account</Text>
           </View>
           
           <SettingsItem
             icon={<User size={22} color={designTokens.colors.semantic.primary} />}
             title="Edit Profile"
-            subtitle="Update your personal information"
+            subtitle="Keep your photo, contact details, and travel style current"
             onPress={() => router.push('/profile/edit')}
           />
         </Card>
@@ -184,19 +184,19 @@ export default function SettingsScreen() {
         {/* App Settings */}
         <Card style={styles.settingsCard}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>App Settings</Text>
+            <Text style={styles.sectionTitle}>Preferences</Text>
           </View>
           
           <SettingsItem
             icon={<Bell size={22} color={designTokens.colors.semantic.primary} />}
             title="Notifications"
-            subtitle="Manage your notification preferences"
+            subtitle="Choose booking, message, and reminder alerts"
             onPress={() =>  router.push('/(app)/profile/notificationSettings')}
           />
           <SettingsItem
             icon={<Gift size={22} color={designTokens.colors.semantic.primary} />}
-            title="Referral Program"
-            subtitle="Invite friends and earn Tirak Coins"
+            title="Tirak Coins"
+            subtitle="Invite travelers or guides and earn future benefits"
             onPress={() => router.push('/referrals' as any)}
           />
           
@@ -207,7 +207,7 @@ export default function SettingsScreen() {
             title="Language"
             subtitle="English"
             onPress={() => {
-              Alert.alert('Coming Soon', 'Language settings will be available in a future update.');
+              Alert.alert('Language pass coming soon', 'English is active now. Thai copy will be reviewed separately.');
             }}
           />
         </Card>
@@ -215,19 +215,19 @@ export default function SettingsScreen() {
         {/* Privacy & Security */}
         <Card style={styles.settingsCard}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Privacy & Security</Text>
+            <Text style={styles.sectionTitle}>Trust & Safety</Text>
           </View>
           
           <SettingsItem
             icon={<Shield size={22} color={designTokens.colors.semantic.primary} />}
             title="Privacy Policy"
-            subtitle="Read our privacy policy"
+            subtitle="See how Tirak protects your data"
             onPress={() => openExternalLink(PRIVACY_POLICY_URL, `Visit ${PRIVACY_POLICY_URL}`)}
           />
           <SettingsItem
             icon={<FileText size={22} color={designTokens.colors.semantic.primary} />}
             title="Terms of Service"
-            subtitle="Read our terms of service"
+            subtitle="Review the rules for travelers and guides"
             onPress={() => router.push('/legal?type=terms')}
           />
         </Card>
@@ -255,9 +255,9 @@ export default function SettingsScreen() {
           <SettingsItem
             icon={<Star size={22} color={designTokens.colors.semantic.primary} />}
             title="Rate App"
-            subtitle="Rate us on the App Store"
+            subtitle="Share feedback after your next Tirak day"
             onPress={() => {
-              Alert.alert('Thank You!', 'We appreciate your feedback.');
+              Alert.alert('Thank you', 'Your feedback helps shape Tirak for travelers and guides.');
             }}
           />
         </Card>
@@ -265,7 +265,7 @@ export default function SettingsScreen() {
         {/* Danger Zone */}
         <Card style={styles.settingsCard}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Account</Text>
+            <Text style={styles.sectionTitle}>Account Access</Text>
           </View>
           <SettingsItem
             icon={
@@ -274,7 +274,7 @@ export default function SettingsScreen() {
                 : <Trash2 size={22} color={designTokens.colors.semantic.error} />
             }
             title="Delete Account"
-            subtitle="Permanently delete your account and data"
+            subtitle="Permanently remove your profile, bookings, and messages"
             onPress={handleDeleteAccount}
             danger={true}
           />
@@ -284,8 +284,8 @@ export default function SettingsScreen() {
         <Card style={styles.settingsCard}>
           <SettingsItem
             icon={<LogOut size={22} color={designTokens.colors.semantic.error} />}
-            title="Logout"
-            subtitle="Sign out of your account"
+            title="Sign Out"
+            subtitle="Leave this Tirak account on this device"
             onPress={handleLogout}
             showChevron={false}
             danger={true}

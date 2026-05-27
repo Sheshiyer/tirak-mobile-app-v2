@@ -85,31 +85,31 @@ const AcceptConfirmationModal: React.FC<AcceptConfirmationModalProps> = ({
               style={styles.confirmationHeader}
             >
               <CheckCircle size={32} color={designTokens.colors.semantic.surface} />
-              <Heading style={styles.confirmationTitle}>Accept Booking Request</Heading>
+              <Heading style={styles.confirmationTitle}>Approve Traveler Request</Heading>
               <Caption style={styles.confirmationSubtitle}>
-                Confirm the details below before accepting
+                Review the time, place, and guide rate before approving.
               </Caption>
             </LinearGradient>
 
             {/* Content */}
             <View style={styles.confirmationContent}>
-              {/* Customer Info */}
+              {/* Traveler Info */}
               <View style={styles.confirmationSection}>
                 <View style={styles.sectionHeader}>
                   <MessageSquare size={16} color={designTokens.colors.semantic.primary} />
-                  <Subheading style={styles.sectionTitle}>Customer</Subheading>
+                  <Subheading style={styles.sectionTitle}>Traveler</Subheading>
                 </View>
                 <Body style={styles.sectionValue}>{request.customerName}</Body>
                 {request.isRepeatCustomer && (
-                  <Caption style={styles.repeatBadge}>Repeat Customer</Caption>
+                  <Caption style={styles.repeatBadge}>Repeat Traveler</Caption>
                 )}
               </View>
 
-              {/* Service Details */}
+              {/* Experience Details */}
               <View style={styles.confirmationSection}>
                 <View style={styles.sectionHeader}>
                   <Star size={16} color={designTokens.colors.semantic.primary} />
-                  <Subheading style={styles.sectionTitle}>Service</Subheading>
+                  <Subheading style={styles.sectionTitle}>Experience</Subheading>
                 </View>
                 <Body style={styles.sectionValue}>{request.serviceName}</Body>
                 <Caption style={styles.sectionSubtext}>{request.serviceCategory}</Caption>
@@ -133,13 +133,13 @@ const AcceptConfirmationModal: React.FC<AcceptConfirmationModalProps> = ({
               <View style={styles.confirmationSection}>
                 <View style={styles.sectionHeader}>
                   <DollarSign size={16} color={designTokens.colors.semantic.primary} />
-                  <Subheading style={styles.sectionTitle}>Total Amount</Subheading>
+                  <Subheading style={styles.sectionTitle}>Guide Rate</Subheading>
                 </View>
                 <Heading style={styles.priceValue}>
                   {formatCurrency(request.totalAmount)}
                 </Heading>
                 <Caption style={styles.sectionSubtext}>
-                  Base: {formatCurrency(request.basePrice)} + Fee: {formatCurrency(request.serviceFee)}
+                  Paid in cash directly to you unless another arrangement is shown.
                 </Caption>
               </View>
 
@@ -159,9 +159,9 @@ const AcceptConfirmationModal: React.FC<AcceptConfirmationModalProps> = ({
                 <View style={styles.notesContent}>
                   <Caption style={styles.notesTitle}>Important:</Caption>
                   <Caption style={styles.notesText}>
-                    • You'll be committed to this booking once accepted{'\n'}
-                    • Customer will be notified immediately{'\n'}
-                    • Cancellation may affect your rating
+                    • You are committing to this booking once approved{'\n'}
+                    • The traveler will be notified immediately{'\n'}
+                    • Cancellation may affect guide trust signals
                   </Caption>
                 </View>
               </View>
@@ -177,7 +177,7 @@ const AcceptConfirmationModal: React.FC<AcceptConfirmationModalProps> = ({
                 disabled={loading}
               />
               <Button
-                title={loading ? "Accepting..." : "Accept Booking"}
+                title={loading ? "Approving..." : "Approve Booking"}
                 onPress={onConfirm}
                 style={styles.acceptButton}
                 loading={loading}
@@ -205,13 +205,13 @@ export const RequestActions: React.FC<RequestActionsProps> = ({
 
   const handleAcceptConfirm = async () => {
     setIsAccepting(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setIsAccepting(false);
-    setShowAcceptModal(false);
-    onAccept(request.id);
+
+    try {
+      await Promise.resolve(onAccept(request.id));
+      setShowAcceptModal(false);
+    } finally {
+      setIsAccepting(false);
+    }
   };
 
   const handleDeclinePress = () => {

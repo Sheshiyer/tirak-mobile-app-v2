@@ -38,7 +38,7 @@ export default function ProfileScreen() {
 
     // Web-compatible confirmation
     if (Platform.OS === 'web') {
-      const confirmed = window.confirm('Logout\n\nAre you sure you want to logout?');
+      const confirmed = window.confirm('Sign out\n\nSign out of this Tirak account?');
       if (confirmed) {
         await performLogout();
       }
@@ -55,24 +55,24 @@ export default function ProfileScreen() {
     },
     {
       icon: <Bell size={20} color={designTokens.colors.semantic.text} />,
-      title: 'Notifications',
+      title: 'Notification Preferences',
       onPress: () => router.push('/settings'),
     },
 
     {
       icon: <Shield size={20} color={designTokens.colors.semantic.text} />,
-      title: 'Privacy & Security',
+      title: 'Trust & Safety',
       onPress: () => router.push('/legal'),
     },
     {
       icon: <Heart size={20} color={designTokens.colors.semantic.text} />,
-      title: 'Saved',
+      title: 'Saved Guides',
       onPress: () => router.push('/favorites'),
       hideForCompanion: true,
     },
     {
       icon: <Award size={20} color={designTokens.colors.semantic.text} />,
-      title: 'Reviews & Ratings',
+      title: 'Traveler Reviews',
       onPress: () => router.push('/settings'),
       hideForCustomer: true,
     },
@@ -108,7 +108,7 @@ export default function ProfileScreen() {
               />
               <Text style={styles.profileName}>{user?.name || 'User'}</Text>
               <Text style={styles.profileRole}>
-                {isCompanion ? 'Local Guide' : 'Traveller'}
+                {isCompanion ? 'Local Guide' : 'Traveler'}
               </Text>
               {isCompanion && (
                 <View style={styles.statsContainer}>
@@ -130,7 +130,7 @@ export default function ProfileScreen() {
           {/* Quick Stats for Companion */}
           {isCompanion && (
             <Card style={styles.quickStatsCard} padding={20}>
-              <Text style={styles.cardTitle}>Quick Stats</Text>
+              <Text style={styles.cardTitle}>Guide Snapshot</Text>
               <View style={styles.quickStatsGrid}>
                 <View style={styles.quickStatItem}>
                   <Text style={styles.quickStatValue}>12</Text>
@@ -186,7 +186,7 @@ export default function ProfileScreen() {
                 <View style={[styles.menuItemIcon, styles.logoutIcon]}>
                   <LogOut size={20} color={designTokens.colors.semantic.error} />
                 </View>
-                <Text style={[styles.menuItemText, styles.logoutText]}>Logout</Text>
+                <Text style={[styles.menuItemText, styles.logoutText]}>Sign Out</Text>
               </View>
             </TouchableOpacity>
           </Card>
@@ -194,7 +194,7 @@ export default function ProfileScreen() {
           {/* App Version */}
           <View style={styles.footer}>
             <Text style={styles.footerText}>Tirak v1.0.0</Text>
-            <Text style={styles.footerSubtext}>Made with ❤️ in Thailand</Text>
+            <Text style={styles.footerSubtext}>Built for local days in Thailand</Text>
           </View>
         </View>
       </ScrollView>

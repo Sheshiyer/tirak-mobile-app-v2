@@ -172,7 +172,7 @@ export const RequestCard: React.FC<RequestCardProps> = ({
                   {request.customerRating} ({request.customerReviewCount} reviews)
                 </Caption>
                 {request.isRepeatCustomer && (
-                  <Caption style={styles.repeatText}>• Repeat Customer</Caption>
+                  <Caption style={styles.repeatText}>Repeat Traveler</Caption>
                 )}
               </View>
             </View>
@@ -187,7 +187,7 @@ export const RequestCard: React.FC<RequestCardProps> = ({
           </View>
         </View>
 
-        {/* Service Details */}
+        {/* Experience Details */}
         <View style={styles.serviceSection}>
           <Subheading style={styles.serviceName}>{request.serviceName}</Subheading>
           <Caption style={styles.serviceCategory}>{request.serviceCategory}</Caption>
@@ -229,7 +229,7 @@ export const RequestCard: React.FC<RequestCardProps> = ({
         {/* Pricing */}
         <View style={styles.pricingSection}>
           <View style={styles.priceRow}>
-            <Body style={styles.priceLabel}>Total Amount:</Body>
+            <Body style={styles.priceLabel}>Guide Rate:</Body>
             <Subheading style={styles.priceAmount}>
               {formatCurrency(request.totalAmount)}
             </Subheading>

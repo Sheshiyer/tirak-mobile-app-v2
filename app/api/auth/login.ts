@@ -36,13 +36,17 @@ export const login = async (userData: LoginData): Promise<LoginResponse> => {
     
     return response.data;
   } catch (error) {
-    console.error("Error logging in user:", error);
-    
     // Handle different error types
     if (axios.isAxiosError(error)) {
-      throw new Error(error.response?.data?.message || "Login failed");
+      const message = error.response?.data?.message || error.response?.data?.error || "Login failed";
+      logger.warn("Login request failed:", {
+        status: error.response?.status,
+        message,
+      });
+      throw new Error(message);
     }
     
+    logger.warn("Login request failed:", error);
     throw new Error("Network error occurred");
   }
 };

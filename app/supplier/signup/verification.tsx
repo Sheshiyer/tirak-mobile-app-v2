@@ -150,7 +150,7 @@ export default function VerificationScreen() {
               Identity Verification
             </Heading>
             <Subheading style={styles.subtitle}>
-              To ensure trust and safety for travelers, we need to verify your identity as a Local Cultural Guide. Your information is securely protected.
+              Verification helps travelers book with confidence. We securely review your identity before your Tirak guide profile goes live.
             </Subheading>
 
             <ProgressBar
@@ -166,7 +166,7 @@ export default function VerificationScreen() {
                 <Shield size={20} color={designTokens.colors.semantic.primary} />
               </View>
               <Body style={styles.infoText}>
-                Your Thai ID information is securely encrypted and only used for Cultural Guide verification. Customer bookings will never see your personal ID details.
+                Your Thai ID information is encrypted and used only for guide verification. Travelers will never see your personal ID details.
               </Body>
             </View>
 

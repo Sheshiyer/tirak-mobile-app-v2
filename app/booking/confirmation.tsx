@@ -41,13 +41,13 @@ export default function BookingConfirmationScreen() {
           />
         </View>
         
-        <Text style={styles.title}>Booking Confirmed!</Text>
+        <Text style={styles.title}>Guide Request Sent</Text>
         <Text style={styles.subtitle}>
-          Your booking has been successfully confirmed. We've sent the details to your email.
+          Your Tirak guide has the details. Keep chat open for meeting-point updates.
         </Text>
         
         <Card style={styles.bookingCard} padding={20}>
-          <Text style={styles.bookingTitle}>Booking Details</Text>
+          <Text style={styles.bookingTitle}>Request Details</Text>
           
           <View style={styles.bookingDetail}>
             <Text style={styles.detailLabel}>Booking ID</Text>
@@ -55,7 +55,7 @@ export default function BookingConfirmationScreen() {
           </View>
           
           <View style={styles.bookingDetail}>
-            <Text style={styles.detailLabel}>Companion</Text>
+            <Text style={styles.detailLabel}>Local Guide</Text>
             <Text style={styles.detailValue}>Nisa Thanakit</Text>
           </View>
           
@@ -82,18 +82,18 @@ export default function BookingConfirmationScreen() {
           <View style={styles.divider} />
           
           <View style={styles.bookingDetail}>
-            <Text style={styles.detailLabel}>Total Amount</Text>
+            <Text style={styles.detailLabel}>Guide Rate</Text>
             <Text style={styles.totalValue}>฿2,750</Text>
           </View>
           
           <View style={styles.bookingDetail}>
             <Text style={styles.detailLabel}>Payment</Text>
-            <Text style={styles.detailValue}>To be arranged with companion</Text>
+            <Text style={styles.detailValue}>Paid in cash directly to the guide</Text>
           </View>
         </Card>
         
         <Card style={styles.nextStepsCard} padding={20}>
-          <Text style={styles.nextStepsTitle}>Next Steps</Text>
+          <Text style={styles.nextStepsTitle}>Next steps</Text>
           
           <View style={styles.stepItem}>
             <View style={styles.stepIcon}>
@@ -102,7 +102,7 @@ export default function BookingConfirmationScreen() {
             <View style={styles.stepContent}>
               <Text style={styles.stepTitle}>Add to Calendar</Text>
               <Text style={styles.stepDescription}>
-                Don't forget to add this booking to your calendar to receive reminders.
+                Save the time so your Tirak day is easy to find later.
               </Text>
             </View>
           </View>
@@ -112,9 +112,9 @@ export default function BookingConfirmationScreen() {
               <MessageCircle size={24} color={designTokens.colors.semantic.primary} />
             </View>
             <View style={styles.stepContent}>
-              <Text style={styles.stepTitle}>Message Your Companion</Text>
+              <Text style={styles.stepTitle}>Message your guide</Text>
               <Text style={styles.stepDescription}>
-                Discuss meeting point and any specific requirements with your companion.
+                Confirm the meeting point, pace, food needs, and anything your guide should know.
               </Text>
             </View>
           </View>
@@ -131,7 +131,7 @@ export default function BookingConfirmationScreen() {
           />
 
           <Button
-            title="Message Companion"
+            title="Message Guide"
             variant="white"
             onPress={handleMessageCompanion}
             fullWidth

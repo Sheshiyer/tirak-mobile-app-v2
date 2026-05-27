@@ -149,7 +149,7 @@ export default function NotificationsScreen() {
     return (
       <RadialGradient variant="appBackground" style={styles.container}>
         <Text style={styles.headerTitle}>{t('notifications.notifications')}</Text>
-        <Text style={{ textAlign: 'center', marginTop: 40 }}>Loading...</Text>
+        <Text style={{ textAlign: 'center', marginTop: 40 }}>{t('notifications.loadingNotifications')}</Text>
       </RadialGradient>
     );
   }
@@ -158,7 +158,7 @@ export default function NotificationsScreen() {
     return (
       <RadialGradient variant="appBackground" style={styles.container}>
         <Text style={styles.headerTitle}>{t('notifications.notifications')}</Text>
-        <Text style={{ color: designTokens.colors.semantic.error, textAlign: 'center', marginTop: 40 }}>Failed to load notifications.</Text>
+        <Text style={{ color: designTokens.colors.semantic.error, textAlign: 'center', marginTop: 40 }}>{t('notifications.failedToLoadNotifications')}.</Text>
         <TouchableOpacity onPress={() => refetch()} style={{ marginTop: 20 }}>
           <Text style={{ color: designTokens.colors.semantic.primary }}>{t('notifications.retry')}</Text>
         </TouchableOpacity>

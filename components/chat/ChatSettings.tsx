@@ -77,7 +77,7 @@ export const ChatSettings: React.FC<ChatSettingsProps> = ({
   const handleBlock = () => {
     Alert.alert(
       'Block Contact',
-      `Are you sure you want to block ${companion.name}? You won't receive messages from them anymore.`,
+      `Block ${companion.name}? You will no longer receive messages from this conversation.`,
       [
         { text: 'Cancel', style: 'cancel' },
         { 
@@ -95,7 +95,7 @@ export const ChatSettings: React.FC<ChatSettingsProps> = ({
   const handleReport = () => {
     Alert.alert(
       'Report Contact',
-      `Report ${companion.name} for inappropriate behavior?`,
+      `Report ${companion.name}? Tirak will review the conversation and follow up if needed.`,
       [
         { text: 'Cancel', style: 'cancel' },
         { 
@@ -323,14 +323,14 @@ export const ChatSettings: React.FC<ChatSettingsProps> = ({
           />
         </View>
 
-        {/* Safety & Privacy */}
+        {/* Trust & Safety */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Safety & Privacy</Text>
+          <Text style={styles.sectionTitle}>Trust & Safety</Text>
           
           <SettingItem
             icon={<Shield size={20} color={designTokens.colors.semantic.error} />}
             title="Block Contact"
-            subtitle="Stop receiving messages"
+            subtitle="Stop messages from this person"
             onPress={handleBlock}
             danger
           />
@@ -338,7 +338,7 @@ export const ChatSettings: React.FC<ChatSettingsProps> = ({
           <SettingItem
             icon={<Shield size={20} color={designTokens.colors.semantic.error} />}
             title="Report Contact"
-            subtitle="Report inappropriate behavior"
+            subtitle="Send this conversation to Tirak"
             onPress={handleReport}
             danger
           />

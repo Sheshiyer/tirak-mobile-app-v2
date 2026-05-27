@@ -52,7 +52,7 @@ const NotificationSettings = () => {
         >
           <ArrowLeft size={24} color={designTokens.colors.semantic.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Notification Settings</Text>
+        <Text style={styles.headerTitle}>Notification Preferences</Text>
        <View style={{width: 40}} />
       </View>
         <View style={styles.settingRow}>
@@ -60,7 +60,7 @@ const NotificationSettings = () => {
             <View style={styles.settingIcon}>
               <Smartphone size={20} color={designTokens.colors.semantic.warning} />
             </View>
-            <Text style={styles.label}>Push Notifications</Text>
+            <Text style={styles.label}>Push alerts</Text>
           </View>
           <Switch
             value={push}
@@ -79,7 +79,7 @@ const NotificationSettings = () => {
             <View style={styles.settingIcon}>
               <Mail size={20} color={designTokens.colors.semantic.warning} />
             </View>
-            <Text style={styles.label}>Email Notifications</Text>
+            <Text style={styles.label}>Email alerts</Text>
           </View>
           <Switch
             value={email}
@@ -98,7 +98,7 @@ const NotificationSettings = () => {
             <View style={styles.settingIcon}>
               <Bell size={20} color={designTokens.colors.semantic.primary} />
             </View>
-            <Text style={styles.label}>SMS Notifications</Text>
+            <Text style={styles.label}>SMS reminders</Text>
           </View>
           <Switch
             value={sms}

@@ -60,7 +60,7 @@ const { width } = Dimensions.get('window');
 const REPORT_REASONS = [
   'Inappropriate content or photos',
   'Misleading profile information',
-  'Suspicious or fraudulent behaviour',
+  'Suspicious or fraudulent behavior',
   'Harassment or offensive messages',
   'Offering prohibited services',
   'Other',
@@ -278,7 +278,7 @@ export default function CompanionProfileScreen() {
 
   const submitReport = () => {
     if (!selectedReportReason) {
-      Alert.alert('Select a reason', 'Please select a reason for your report.');
+      Alert.alert('Select a reason', 'Choose what Tirak should review before submitting.');
       return;
     }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -675,11 +675,11 @@ export default function CompanionProfileScreen() {
                       )}
                     </>
                   ) : renderProfileEmptyState(
-                    isOwnProfile ? 'Add the languages you guide in' : 'Languages not added yet',
+                    isOwnProfile ? 'Add the languages you guide in' : 'Languages not listed yet',
                     isOwnProfile
                       ? 'Languages are a major booking signal for travelers choosing a local guide.'
                       : 'This guide has not listed their languages yet.',
-                    'Update it here',
+                    'Update profile',
                     handleUpdateProfile
                   )}
                 </View>
@@ -706,7 +706,7 @@ export default function CompanionProfileScreen() {
                         onPress={handleUpdateServices}
                         accessibilityRole="button"
                       >
-                        <Text style={styles.profileEmptyActionText as TextStyle}>Update it here</Text>
+                        <Text style={styles.profileEmptyActionText as TextStyle}>Add experience</Text>
                         <ChevronRight size={16} color={designTokens.colors.semantic.primary} />
                       </TouchableOpacity>
                     )}
@@ -854,13 +854,13 @@ export default function CompanionProfileScreen() {
         <View style={styles.reportOverlay as ViewStyle}>
           <View style={styles.reportSheet as ViewStyle}>
             <View style={styles.reportHeader as ViewStyle}>
-              <Text style={styles.reportTitle as TextStyle}>Report this guide</Text>
+              <Text style={styles.reportTitle as TextStyle}>Report this local guide</Text>
               <TouchableOpacity onPress={() => setShowReportModal(false)}>
                 <Text style={styles.reportClose as TextStyle}>✕</Text>
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.reportSubtitle as TextStyle}>Why are you reporting this profile?</Text>
+            <Text style={styles.reportSubtitle as TextStyle}>What should Tirak review?</Text>
 
             {REPORT_REASONS.map((reason) => (
               <TouchableOpacity
@@ -878,7 +878,7 @@ export default function CompanionProfileScreen() {
 
             <TextInput
               style={styles.reportInput as any}
-              placeholder="Additional details (optional)"
+              placeholder="Add details for the Tirak safety team (optional)"
               placeholderTextColor={designTokens.colors.semantic.textSecondary}
               value={reportDetails}
               onChangeText={setReportDetails}
@@ -887,7 +887,7 @@ export default function CompanionProfileScreen() {
             />
 
             <Button
-              title="Submit Report"
+              title="Submit report"
               variant="primary"
               onPress={submitReport}
               style={styles.reportSubmitButton as ViewStyle}

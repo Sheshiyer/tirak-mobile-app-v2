@@ -39,6 +39,11 @@ export const handleApiError = (error: any): void => {
       logger.log('API 404 Not Found:', message);
       return;
     }
+
+    if (status === 400 || status === 409 || status === 429) {
+      logger.warn('API request did not complete:', status, message);
+      return;
+    }
     
     // Log other errors
     logger.error('API Error:', status, message);

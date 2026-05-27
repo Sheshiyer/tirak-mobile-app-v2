@@ -51,20 +51,20 @@ export const CommunicationTools: React.FC<CommunicationToolsProps> = ({
   };
 
   const handleSendReminder = () => {
-    const reminderMessage = `Hi ${request.customerName}! This is a friendly reminder about our ${request.serviceName} tomorrow. I'll see you at ${request.meetingPoint} at ${request.requestedTime}. Looking forward to it!`;
+    const reminderMessage = `Hi ${request.customerName}, this is a friendly reminder about our ${request.serviceName} tomorrow. I'll see you at ${request.meetingPoint} at ${request.requestedTime}. Message me here if anything changes.`;
     
     if (onSendMessage) {
       onSendMessage(reminderMessage);
-      Alert.alert('Reminder Sent', 'Your reminder message has been sent to the customer.');
+      Alert.alert('Reminder sent', 'Your reminder has been sent to the traveler.');
     }
   };
 
   const handleSendDirections = () => {
-    const directionsMessage = `Hi ${request.customerName}! Here are directions to our meeting point: ${request.meetingPoint}. I'll be there 10 minutes early and you can message me here if you need anything.`;
+    const directionsMessage = `Hi ${request.customerName}, here are directions to our meeting point: ${request.meetingPoint}. I'll be there 10 minutes early and you can message me here if you need anything.`;
     
     if (onSendMessage) {
       onSendMessage(directionsMessage);
-      Alert.alert('Directions Sent', 'Location details have been sent to the customer.');
+      Alert.alert('Directions sent', 'Meeting details have been sent to the traveler.');
     }
   };
 
@@ -80,7 +80,7 @@ export const CommunicationTools: React.FC<CommunicationToolsProps> = ({
     {
       id: 'message',
       title: 'Send Message',
-      description: 'Chat with customer using templates',
+      description: 'Chat with the traveler using templates',
       icon: <MessageSquare size={20} color={designTokens.colors.semantic.primary} />,
       action: handleMessage,
       available: true,
@@ -88,7 +88,7 @@ export const CommunicationTools: React.FC<CommunicationToolsProps> = ({
     {
       id: 'reminder',
       title: 'Send Reminder',
-      description: 'Remind about upcoming booking',
+      description: 'Send a friendly reminder before the booking',
       icon: <Clock size={20} color={designTokens.colors.semantic.warning} />,
       action: handleSendReminder,
       available: isUpcoming() && request.status === 'accepted',
@@ -144,9 +144,9 @@ export const CommunicationTools: React.FC<CommunicationToolsProps> = ({
   return (
     <Card style={styles.container} padding={16}>
       <View style={styles.header}>
-        <Subheading style={styles.title}>Communication Tools</Subheading>
+        <Subheading style={styles.title}>Traveler Messages</Subheading>
         <Caption style={styles.subtitle}>
-          Stay in touch with {request.customerName}
+          Keep plans clear with {request.customerName}
         </Caption>
       </View>
 
@@ -201,7 +201,7 @@ export const CommunicationTools: React.FC<CommunicationToolsProps> = ({
         <View style={styles.statusInfo}>
           <Star size={14} color={designTokens.colors.semantic.success} />
           <Caption style={styles.statusText}>
-            Booking confirmed • Keep your customer updated
+            Booking confirmed. Keep the traveler updated.
           </Caption>
         </View>
       )}
@@ -210,7 +210,7 @@ export const CommunicationTools: React.FC<CommunicationToolsProps> = ({
         <View style={styles.statusInfo}>
           <Clock size={14} color={designTokens.colors.semantic.warning} />
           <Caption style={styles.statusText}>
-            Pending response • Message customer for questions
+            Pending response. Message the traveler if you need details.
           </Caption>
         </View>
       )}

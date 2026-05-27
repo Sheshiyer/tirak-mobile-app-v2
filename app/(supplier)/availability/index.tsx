@@ -119,7 +119,7 @@ export default function AvailabilityCalendarScreen() {
           onDone={onClose}
           minimumDate={minimumDate}
           maximumDate={maximumDate}
-          doneButtonText="Confirm"
+          doneButtonText={t('availability.confirm')}
         />
       );
     }
@@ -246,7 +246,7 @@ export default function AvailabilityCalendarScreen() {
         )}
 
         <Text style={[styles.dateFieldLabel, { marginTop: designTokens.spacing.scale.lg }]}>
-          To
+          {t('availability.to')}
         </Text>
         <TouchableOpacity
           style={styles.dateInputRow}

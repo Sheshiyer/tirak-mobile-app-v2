@@ -152,7 +152,7 @@ export const RequestAnalytics: React.FC<RequestAnalyticsProps> = ({
   const renderOverviewMetrics = () => (
     <View style={styles.metricsGrid}>
       <MetricCard
-        title="Total Requests"
+        title="Traveler Requests"
         value={analytics.totalRequests.toString()}
         subtitle="This period"
         icon={<MessageSquare size={20} color={designTokens.colors.semantic.primary} />}
@@ -181,9 +181,9 @@ export const RequestAnalytics: React.FC<RequestAnalyticsProps> = ({
       />
       
       <MetricCard
-        title="Repeat Customers"
+        title="Repeat Travelers"
         value={`${analytics.repeatCustomerRate}%`}
-        subtitle="Customer loyalty"
+        subtitle="Traveler trust"
         icon={<Star size={20} color={designTokens.colors.semantic.accent} />}
         trend="up"
         trendValue="+8%"
@@ -221,7 +221,7 @@ export const RequestAnalytics: React.FC<RequestAnalyticsProps> = ({
 
       {/* Top Services */}
       <Card style={styles.chartCard} padding={16}>
-        <Subheading style={styles.chartTitle}>Top Performing Services</Subheading>
+        <Subheading style={styles.chartTitle}>Top Experiences</Subheading>
         <View style={styles.servicesChart}>
           {analytics.topServices.map((service, index) => (
             <View key={index} style={styles.serviceItem}>

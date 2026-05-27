@@ -8,6 +8,10 @@ export const logger = {
     if (isDev) console.warn('[tirak]', ...args);
   },
   error: (...args: unknown[]) => {
+    if (isDev) {
+      console.warn('[tirak:error]', ...args);
+      return;
+    }
     console.error('[tirak]', ...args);
   },
   debug: (...args: unknown[]) => {

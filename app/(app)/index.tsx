@@ -96,8 +96,6 @@ export default function HomeScreen() {
   const { data: featuredCompanionsData, isLoading: companionsLoading, error: companionsError, refetch } = useFeaturedCompanions();
   const [refreshing, setRefreshing] = useState(false);
 
-  console.log('user', user);
-
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     SoundManager.play('pullRefresh');
