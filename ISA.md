@@ -9,7 +9,7 @@ progress: 111/204
 mode: interactive
 iteration: 3
 started: 2026-07-18T10:31:32Z
-updated: 2026-07-18T21:15:00Z
+updated: 2026-07-18T21:19:38Z
 ---
 
 ## Problem
@@ -442,6 +442,11 @@ For the execution iteration, complete `T-001` through `T-080` in dependency orde
   learned: payment promotion starts with provenance, frozen contracts, trusted tools, additive data evolution, financial operations, and evidence gates before deployment
   criterion now: ISC-82–123 define the complete contract-first execution boundary
 
+- 2026-07-19 | conjectured: A manually checked list of baseline hashes was sufficient integrity evidence for the recovery approval gate
+  refuted by: the executable verifier initially disagreed with the exclusion aggregate because JavaScript locale collation did not reproduce the original byte-sorted manifest producer
+  learned: recovery manifests require a rerunnable fail-closed verifier that reproduces the original byte ordering and rejects every undeclared repository change
+  criterion now: ISC-131 includes `npm run release:verify-baseline`, its negative bootstrap proof, and its clean-tree PASS while retaining separate human approval
+
 ## Verification
 
 - Mobile: Jest `7/7` suites and `39/39` tests pass; `npx tsc --noEmit` and `git diff --check` pass.
@@ -466,3 +471,4 @@ For the execution iteration, complete `T-001` through `T-080` in dependency orde
 - Phase 1 immutable recovery points (ISC-126, ISC-129–130): mobile `3c0ecbf4218992857bc4de180311d8d892205436`, backend `ffadf78200b54d0bc986b5d711184705dc68269c`, and wiki `7b5baee7a7f24f032b12ee6a7bf62a68a97c672e` are local no-deploy commits with verified parent, tree, and binary-diff hashes.
 - Phase 1 manifest gate (ISC-131 pending): `docs/execution/phase-1/t-008-cross-repository-baseline-manifest.md` binds all repository identities, evidence/control hashes, fifteen mobile exclusions, deterministic wiki output, and six blocker classes. Human approval is still required and grants no fanout, publication, staging, or deployment authority.
 - T-008 pre-approval verification: manifest commit `c1a059f5d7c1c2e804deb3ef38c794b09efae47c`, tree `294f04d989ac1bfef876ccdab11f6c9fcca64076`, and manifest SHA-256 `bb73332e21f4d45493eae89906b895c5e34654293994cb19979203f882251db7` were derived after commit; backend and wiki are clean, and mobile has only the fifteen declared untracked exclusions. ReReadCheck confirms the full rollout remains active while T-008 approval is the current authorized boundary.
+- T-008 executable integrity proof: verifier commit `5a4bf9fef3679cb90218fed2b253879be05488b3` adds `npm run release:verify-baseline`; the committed-tree run passes three repository identities and binary diffs, seven evidence/control hashes, the immutable manifest artifact, the 80-task/145-edge graph, fifteen exclusion hashes, and exact repository status. Human approval remains pending.
