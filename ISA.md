@@ -4,12 +4,12 @@ slug: 20260718-160132_tirak-apple-omise-realignment
 project: Tirak
 effort: comprehensive
 effort_source: auto
-phase: execute
+phase: verify
 progress: 111/204
 mode: interactive
 iteration: 3
 started: 2026-07-18T10:31:32Z
-updated: 2026-07-18T21:13:19Z
+updated: 2026-07-18T21:15:00Z
 ---
 
 ## Problem
@@ -465,3 +465,4 @@ For the execution iteration, complete `T-001` through `T-080` in dependency orde
 - Phase 1 baseline inventory and proof (ISC-124–125, ISC-127–128): mobile Jest 7/7 and TypeScript pass; backend Vitest 9/9 and TypeScript pass; both staged secret scans and diff checks pass; the backend evidence preserves the seven-error historical migration replay plus red seed, tooling, and restitution probes.
 - Phase 1 immutable recovery points (ISC-126, ISC-129–130): mobile `3c0ecbf4218992857bc4de180311d8d892205436`, backend `ffadf78200b54d0bc986b5d711184705dc68269c`, and wiki `7b5baee7a7f24f032b12ee6a7bf62a68a97c672e` are local no-deploy commits with verified parent, tree, and binary-diff hashes.
 - Phase 1 manifest gate (ISC-131 pending): `docs/execution/phase-1/t-008-cross-repository-baseline-manifest.md` binds all repository identities, evidence/control hashes, fifteen mobile exclusions, deterministic wiki output, and six blocker classes. Human approval is still required and grants no fanout, publication, staging, or deployment authority.
+- T-008 pre-approval verification: manifest commit `c1a059f5d7c1c2e804deb3ef38c794b09efae47c`, tree `294f04d989ac1bfef876ccdab11f6c9fcca64076`, and manifest SHA-256 `bb73332e21f4d45493eae89906b895c5e34654293994cb19979203f882251db7` were derived after commit; backend and wiki are clean, and mobile has only the fifteen declared untracked exclusions. ReReadCheck confirms the full rollout remains active while T-008 approval is the current authorized boundary.
