@@ -104,7 +104,14 @@ export const BookingSummaryStep: React.FC<BookingSummaryStepProps> = ({
   onNext,
   onPrevious,
 }) => {
-  const { bookingData, calculateTotal, goToStep, prepareBookingRequest, setBookingComplete } = useBookingStore();
+  const {
+    bookingData,
+    calculateTotal,
+    goToStep,
+    prepareBookingRequest,
+    setBookingComplete,
+    setSubmittedBooking,
+  } = useBookingStore();
   const [termsAccepted, setTermsAccepted] = useState(false);
   const createBookingMutation = useCreateBooking();
   const posthog = usePostHog();
@@ -189,8 +196,9 @@ export const BookingSummaryStep: React.FC<BookingSummaryStepProps> = ({
           payment_status: result.data.booking.paymentStatus,
           duration_minutes: result.data.booking.duration,
         });
+        setSubmittedBooking(result.data.booking);
         setBookingComplete(true);
-    onNext();
+        onNext();
       } else {
         console.error('❌ Booking creation failed - Invalid response format:', {
           timestamp: new Date().toISOString(),
@@ -233,8 +241,7 @@ export const BookingSummaryStep: React.FC<BookingSummaryStepProps> = ({
     });
   };
 
-  const groupSize = bookingData.service?.customizations?.groupSize || 1;
-  const basePrice = Math.round(convertCurrency(bookingData.service?.price || 0, bookingData.service?.currency, 'THB')) * groupSize;
+  const basePrice = Math.round(convertCurrency(bookingData.service?.price || 0, bookingData.service?.currency, 'THB'));
   const addOnPrice = bookingData.service?.customizations?.addOns?.reduce((total, addOnId) => {
     // Mock add-on prices (should match ServiceSelectionStep)
     const addOnPrices: Record<string, number> = {
@@ -308,7 +315,7 @@ export const BookingSummaryStep: React.FC<BookingSummaryStepProps> = ({
               <View style={styles.detailRow}>
                 <User size={16} color={designTokens.colors.semantic.textSecondary} />
                 <Text style={styles.detailText}>
-                      {bookingData.service.customizations.groupSize} {t('bookingSummary.person')}
+                      {bookingData.service.customizations.groupSize} travelers included
                 </Text>
                   </View>
                 )}
@@ -455,7 +462,7 @@ export const BookingSummaryStep: React.FC<BookingSummaryStepProps> = ({
           
           <View style={styles.pricingDetails}>
             <View style={styles.priceRow}>
-              <Text style={styles.priceLabel}>Guide rate</Text>
+              <Text style={styles.priceLabel}>Named itinerary</Text>
               <View style={styles.priceValueGroup}>
                 <Text style={styles.priceValue}>{formatTravelerCurrency(basePrice, 'THB')}</Text>
                 {formatOriginalCurrencyContext(bookingData.service?.price || 0, bookingData.service?.currency) ? (
@@ -471,7 +478,9 @@ export const BookingSummaryStep: React.FC<BookingSummaryStepProps> = ({
               </View>
             )}
             
-            <Text style={styles.paymentNote}>Paid in cash directly to your guide</Text>
+            <Text style={styles.paymentNote}>
+              Payment stays unavailable until the guide confirms this itinerary.
+            </Text>
             
             <View style={styles.divider} />
             
@@ -509,7 +518,7 @@ export const BookingSummaryStep: React.FC<BookingSummaryStepProps> = ({
       <BookingStepFooter
         onPrevious={onPrevious}
         onNext={handleNext}
-        nextTitle={t('bookingSummary.confirm')}
+        nextTitle="Send booking request"
         nextDisabled={!termsAccepted}
         showPrevious={true}
         showNext={true}

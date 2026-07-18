@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,7 @@ import { router } from 'expo-router';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { designTokens, componentTokens } from '@/constants/design-tokens';
-import { MapPin, Heart, MessageCircle, Star, Verified, Send } from 'lucide-react-native';
+import { Map, MapPin, Heart, Star, Verified } from 'lucide-react-native';
 import { Companion } from '@/types/companion';
 import { useTranslation } from 'react-i18next';
 import { useFavoritesStore } from '@/stores/favorites-store';
@@ -34,7 +34,6 @@ interface CompanionCardProps {
   companion: Companion;
   onPress: () => void;
   onFavorite: () => void;
-  onMessage: () => void;
   index: number;
 }
 
@@ -43,16 +42,14 @@ const EnhancedCompanionCard: React.FC<CompanionCardProps> = ({
   companion,
   onPress,
   onFavorite,
-  onMessage,
   index,
 }) => {
-  const [imageLoaded, setImageLoaded] = useState(false);
   const scaleAnim = new Animated.Value(1);
-  const { t } = useTranslation();
   const isFavorite = useFavoritesStore((state) => state.isFavorite(companion.id));
+  const experienceTitle = companion.services[0] || 'Guided Thailand Itinerary';
   const displayPrice = companion.price && companion.price > 0
     ? `฿${companion.price.toLocaleString()}`
-    : 'Request guide rate';
+    : 'See itinerary options';
   const showReviews = companion.reviews > 0;
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
@@ -91,13 +88,14 @@ const EnhancedCompanionCard: React.FC<CompanionCardProps> = ({
       >
         {/* Image Container with Overlay Elements */}
         <View style={styles.imageContainer}>
-          <Image
-            source={{ uri: companion.image }}
-            style={styles.companionImage}
-            contentFit="cover"
-            onLoad={() => setImageLoaded(true)}
-            transition={300}
-          />
+          <LinearGradient
+            colors={['#7048E8', '#FF8A65']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.activityArtwork}
+          >
+            <Map size={64} color="rgba(255,255,255,0.9)" />
+          </LinearGradient>
 
           {/* Gradient Overlay */}
           <LinearGradient
@@ -106,13 +104,6 @@ const EnhancedCompanionCard: React.FC<CompanionCardProps> = ({
             start={{ x: 0, y: 0 }}
             end={{ x: 0, y: 1 }}
           />
-
-          {/* Online Status Indicator */}
-          {companion.online && (
-            <View style={styles.onlineIndicator}>
-              <View style={styles.onlineDot} />
-            </View>
-          )}
 
           {/* Verification Badge */}
           {companion.verified && (
@@ -134,22 +125,19 @@ const EnhancedCompanionCard: React.FC<CompanionCardProps> = ({
                 fill={isFavorite ? designTokens.colors.semantic.accent : 'transparent'}
               />
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={onMessage}
-              activeOpacity={0.8}
-            >
-              <MessageCircle size={18} color={designTokens.colors.semantic.surface} />
-            </TouchableOpacity>
           </View>
         </View>
         {/* Content Container */}
         <View style={styles.contentContainer}>
-          {/* Name and Location */}
+          {/* Named experience first, guide identity second */}
           <View style={styles.headerInfo}>
-            <Text style={styles.companionName} numberOfLines={1}>
-              {companion.name}
+            <Text style={styles.experienceTitle} numberOfLines={2}>
+              {experienceTitle}
             </Text>
+            <View style={styles.guideCredential}>
+              <Image source={{ uri: companion.image }} style={styles.guideAvatar} contentFit="cover" />
+              <Text style={styles.guideName} numberOfLines={1}>Led by {companion.name}</Text>
+            </View>
             <View style={styles.locationRow}>
               <MapPin size={12} color={designTokens.colors.semantic.textSecondary} />
               <Text style={styles.locationText} numberOfLines={1}>
@@ -171,32 +159,27 @@ const EnhancedCompanionCard: React.FC<CompanionCardProps> = ({
             </View>
           </View>
 
-          {/* Services */}
+          {/* Other named itineraries */}
           <View style={styles.servicesContainer}>
-            {companion.services.slice(0, 2).map((service, index) => (
+            {companion.services.slice(1, 3).map((service, index) => (
               <View key={index} style={styles.serviceChip}>
                 <Text style={styles.serviceText}>{service}</Text>
               </View>
             ))}
-            {companion.services.length > 2 && (
-              <Text style={styles.moreServices}>+{companion.services.length - 2}</Text>
+            {companion.services.length > 3 && (
+              <Text style={styles.moreServices}>+{companion.services.length - 3}</Text>
             )}
           </View>
 
           {companion.price > 0 ? (
             <View style={styles.priceContainer}>
               <Text style={styles.priceText}>{displayPrice}</Text>
-              <Text style={styles.priceUnit}>/day</Text>
+              <Text style={styles.priceUnit}> itinerary total</Text>
             </View>
           ) : (
-            <TouchableOpacity
-              style={styles.rateRequestButton}
-              onPress={onMessage}
-              activeOpacity={0.85}
-            >
-              <Send size={14} color={designTokens.colors.semantic.primary} />
+            <View style={styles.rateRequestButton}>
               <Text style={styles.rateRequestText}>{displayPrice}</Text>
-            </TouchableOpacity>
+            </View>
           )}
         </View>
       </TouchableOpacity>
@@ -216,7 +199,7 @@ export const FeaturedCompanionsSection: React.FC<FeaturedCompanionsSectionProps>
 
 
   const handleCompanionPress = (companionId: string) => {
-    router.push(`/companion/${companionId}`);
+    router.push(`/companion/${companionId}?experienceIndex=0`);
   };
 
   const handleFavorite = (companion: Companion) => {
@@ -239,17 +222,11 @@ export const FeaturedCompanionsSection: React.FC<FeaturedCompanionsSectionProps>
     });
   };
 
-  const handleMessage = (companionId: string) => {
-    // TODO: Navigate to chat
-    router.push(`/chat/${companionId}`);
-  };
-
   const renderCompanionCard = ({ item, index }: { item: Companion; index: number }) => (
     <EnhancedCompanionCard
       companion={item}
       onPress={() => handleCompanionPress(item.id)}
       onFavorite={() => handleFavorite(item)}
-      onMessage={() => handleMessage(item.id)}
       index={index}
     />
   );
@@ -399,9 +376,11 @@ const styles = StyleSheet.create({
     height: 200,
     width: '100%',
   },
-  companionImage: {
+  activityArtwork: {
     width: '100%',
     height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   imageOverlay: {
     position: 'absolute',
@@ -411,21 +390,6 @@ const styles = StyleSheet.create({
     height: '60%',
   },
 
-  // Status Indicators
-  onlineIndicator: {
-    position: 'absolute',
-    top: designTokens.spacing.scale.sm,
-    left: designTokens.spacing.scale.sm,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    borderRadius: designTokens.borderRadius.full,
-    padding: designTokens.spacing.scale.xs,
-  },
-  onlineDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: designTokens.colors.semantic.accent,
-  },
   verificationBadge: {
     position: 'absolute',
     top: designTokens.spacing.scale.sm,
@@ -476,11 +440,27 @@ const styles = StyleSheet.create({
   headerInfo: {
     marginBottom: designTokens.spacing.scale.sm,
   },
-  companionName: {
+  experienceTitle: {
     ...designTokens.typography.styles.body,
     fontWeight: designTokens.typography.weights.semibold,
     color: designTokens.colors.semantic.text,
     marginBottom: designTokens.spacing.scale.xs,
+  },
+  guideName: {
+    ...designTokens.typography.styles.caption,
+    color: designTokens.colors.semantic.textSecondary,
+    flex: 1,
+  },
+  guideCredential: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: designTokens.spacing.scale.xs,
+    marginBottom: designTokens.spacing.scale.xs,
+  },
+  guideAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
   },
   locationRow: {
     flexDirection: 'row',

@@ -34,7 +34,6 @@ import {
   Grid3X3,
   List,
   Heart,
-  MessageCircle,
   ChevronDown,
   X,
   Sliders,
@@ -97,15 +96,15 @@ export default function SearchScreen() {
   const { t } = useTranslation();
   const categories = [
     { id: 'all', name: t('search.all'), iconComponent: Sparkles },
-    { id: 'travel', name: t('search.travel'), iconComponent: Plane },
-    { id: 'nightlife', name: t('search.nightlife'), iconComponent: Moon },
-    { id: 'cinema', name: t('search.cinema'), iconComponent: Film },
-    { id: 'holiday', name: t('search.holiday'), iconComponent: Umbrella },
-    { id: 'wellness', name: t('search.wellness'), iconComponent: Award },
-    { id: 'explorer', name: t('search.explorer'), iconComponent: Compass },
-    { id: 'private', name: t('search.private'), iconComponent: Star },
-    { id: 'events', name: t('search.events'), iconComponent: Music },
-    { id: 'sports', name: t('search.sports'), iconComponent: Dumbbell },
+    { id: 'city-tour', name: 'Old Town Walks', iconComponent: Plane },
+    { id: 'food', name: 'Food Trails', iconComponent: Moon },
+    { id: 'markets', name: 'Market Routes', iconComponent: Film },
+    { id: 'heritage', name: 'Temple Trails', iconComponent: Umbrella },
+    { id: 'islands', name: 'Island Days', iconComponent: Award },
+    { id: 'nature', name: 'Nature Routes', iconComponent: Compass },
+    { id: 'arts', name: 'Arts & Craft Visits', iconComponent: Star },
+    { id: 'wellness', name: 'Wellness Routes', iconComponent: Music },
+    { id: 'events', name: 'Festival Visits', iconComponent: Dumbbell },
   ];
   
   const locations = [t('search.allLocations'), t('search.bangkok'), t('search.phuket'), t('search.chiangMai'), t('search.pattaya')];
@@ -139,7 +138,6 @@ export default function SearchScreen() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
   const [priceRange, setPriceRange] = useState([1000, 5000]);
-  const [onlineOnly, setOnlineOnly] = useState(false);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -189,10 +187,7 @@ export default function SearchScreen() {
       params.languages = selectedLanguages;
     }
 
-    // Quick filters
-    if (onlineOnly) {
-      params.available = true;
-    }
+    // Trust filter
     if (verifiedOnly) {
       params.verified = true;
     }
@@ -214,26 +209,25 @@ export default function SearchScreen() {
     }
 
     return params;
-  }, [searchQuery, selectedCategory, selectedLocation, priceRange, selectedLanguages, onlineOnly, verifiedOnly, sortBy]);
+  }, [searchQuery, selectedCategory, selectedLocation, priceRange, selectedLanguages, verifiedOnly, sortBy]);
 
   // Track search_performed with a short debounce to avoid firing on every keystroke
   useEffect(() => {
     const hasQuery = !!searchQuery.trim();
-    const hasFilters = selectedCategory !== 'all' || selectedLocation !== 'All Locations' || onlineOnly || verifiedOnly || selectedLanguages.length > 0;
+    const hasFilters = selectedCategory !== 'all' || selectedLocation !== 'All Locations' || verifiedOnly || selectedLanguages.length > 0;
     if (!hasQuery && !hasFilters) return;
     const timer = setTimeout(() => {
       posthog.capture('search_performed', {
         query: searchQuery.trim() || null,
         category: selectedCategory !== 'all' ? selectedCategory : null,
         location: selectedLocation !== 'All Locations' ? selectedLocation : null,
-        online_only: onlineOnly,
         verified_only: verifiedOnly,
         language_count: selectedLanguages.length,
         sort_by: sortBy,
       });
     }, 800);
     return () => clearTimeout(timer);
-  }, [searchQuery, selectedCategory, selectedLocation, onlineOnly, verifiedOnly, selectedLanguages, sortBy]);
+  }, [searchQuery, selectedCategory, selectedLocation, verifiedOnly, selectedLanguages, sortBy]);
 
   // Fetch companions using the API
   const { data: companionsData, isLoading: companionsLoading, error: companionsError } = useCompanionsQuery(searchParams);
@@ -256,28 +250,22 @@ export default function SearchScreen() {
       selectedCategory !== 'all' ||
       selectedLocation !== 'All Locations' ||
       selectedLanguages.length > 0 ||
-      onlineOnly ||
       verifiedOnly ||
       sortBy !== 'relevance'
     );
-  }, [selectedCategory, selectedLocation, selectedLanguages, onlineOnly, verifiedOnly, sortBy]);
+  }, [selectedCategory, selectedLocation, selectedLanguages, verifiedOnly, sortBy]);
 
   const clearAllFilters = () => {
     setSelectedCategory('all');
     setSelectedLocation('All Locations');
     setSelectedLanguages([]);
-    setOnlineOnly(false);
     setVerifiedOnly(false);
     setSortBy('relevance');
   };
 
   // Navigation handlers
   const handleCompanionPress = (companionId: string) => {
-    router.push(`/companion/${companionId}`);
-  };
-
-  const handleMessagePress = (companionId: string) => {
-    router.push(`/chat/${companionId}`);
+    router.push(`/companion/${companionId}?experienceIndex=0`);
   };
 
   const openFilterModal = () => {
@@ -476,7 +464,6 @@ export default function SearchScreen() {
       companion={item}
       viewMode={viewMode}
             onPress={() => handleCompanionPress(item.id)}
-      onMessage={() => handleMessagePress(item.id)}
     />
   );
 
@@ -707,17 +694,6 @@ export default function SearchScreen() {
               
               <View style={styles.quickFiltersContainer}>
                 <View style={styles.switchContainer}>
-                  <Text style={styles.switchLabel}>{t('search.onlineNow')}</Text>
-                  <Switch
-                    value={onlineOnly}
-                    onValueChange={setOnlineOnly}
-                    trackColor={{ false: designTokens.colors.semantic.border, true: `${designTokens.colors.semantic.primary}80` }}
-                    thumbColor={onlineOnly ? designTokens.colors.semantic.primary : designTokens.colors.semantic.surface}
-                    ios_backgroundColor={designTokens.colors.semantic.border}
-                  />
-                </View>
-                
-                <View style={styles.switchContainer}>
                   <Text style={styles.switchLabel}>{t('search.verifiedOnly')}</Text>
                   <Switch
                     value={verifiedOnly}
@@ -739,7 +715,6 @@ export default function SearchScreen() {
                 setPriceRange([1000, 5000]);
                 setSelectedLanguages([]);
                 setSelectedDate(null);
-                setOnlineOnly(false);
                 setVerifiedOnly(false);
               }}
             >
@@ -882,13 +857,6 @@ export default function SearchScreen() {
             <View style={styles.filterSection}>
               <Text style={styles.filterLabel}>{t('search.quickFilters')}</Text>
               <View style={styles.quickFilters}>
-                <CategoryChip
-                  title={t('search.onlineNow')}
-                  selected={onlineOnly}
-                  onPress={() => setOnlineOnly(!onlineOnly)}
-                  size="small"
-                  style={styles.quickFilterChip}
-                />
                 <CategoryChip
                   title={t('search.verifiedOnly')}
                   selected={verifiedOnly}
@@ -1133,17 +1101,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 150,
   },
-  onlineIndicatorGrid: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: designTokens.colors.semantic.success,
-    borderWidth: 2,
-    borderColor: designTokens.colors.semantic.surface,
-  },
   favoriteButton: {
     position: 'absolute',
     top: 10,
@@ -1195,13 +1152,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: designTokens.colors.semantic.textSecondary,
     marginLeft: 4,
-  },
-  onlineIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: designTokens.colors.semantic.success,
-    marginLeft: 8,
   },
   ratingContainer: {
     flexDirection: 'row',

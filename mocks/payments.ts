@@ -7,15 +7,12 @@ export interface MockPayment {
   payeeName: string;
   amount: number;
   currency: 'THB';
-  method: 'promptpay' | 'cash' | 'card' | 'bank_transfer';
+  method: 'promptpay';
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded' | 'cancelled';
   description: string;
   transactionId?: string;
   promptPayQR?: string;
   promptPayRef?: string;
-  cardLast4?: string;
-  cardBrand?: string;
-  bankName?: string;
   commission: number;
   commissionRate: number;
   netAmount: number;
@@ -76,7 +73,7 @@ export const mockPayments: MockPayment[] = [
     payeeName: 'Somchai Kittisak',
     amount: 3000,
     currency: 'THB',
-    method: 'cash',
+    method: 'promptpay',
     status: 'pending',
     description: 'Phuket Beach & Diving - Jan 20, 2024',
     commission: 450,
@@ -132,7 +129,7 @@ export const mockPayments: MockPayment[] = [
     currency: 'THB',
     method: 'promptpay',
     status: 'refunded',
-    description: 'Evening Dinner Date - Jan 22, 2024 (Cancelled)',
+    description: 'Chao Phraya Evening Food Route - Jan 22, 2024 (Cancelled)',
     transactionId: 'txn_promptpay_003',
     promptPayQR: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
     promptPayRef: 'PP240114001',
@@ -171,24 +168,9 @@ export const calculateCommission = (amount: number, rate: number = 0.15) => {
   return Math.round(amount * rate);
 };
 
-export const calculatePaymentFees = (amount: number, method: MockPayment['method']) => {
+export const calculatePaymentFees = (amount: number, _method: MockPayment['method']) => {
   const platformFee = calculateCommission(amount);
-  let paymentFee = 0;
-
-  switch (method) {
-    case 'promptpay':
-      paymentFee = Math.round(amount * 0.01); // 1% for PromptPay
-      break;
-    case 'card':
-      paymentFee = Math.round(amount * 0.029); // 2.9% for cards
-      break;
-    case 'bank_transfer':
-      paymentFee = 15; // Flat fee for bank transfer
-      break;
-    case 'cash':
-      paymentFee = 0; // No payment processing fee for cash
-      break;
-  }
+  const paymentFee = Math.round(amount * 0.01); // Mock PromptPay fee.
 
   return {
     platform: platformFee,

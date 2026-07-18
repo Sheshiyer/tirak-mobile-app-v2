@@ -171,7 +171,7 @@ export const ServiceSelectionStep: React.FC<ServiceSelectionStepProps> = ({ onNe
             </View>
             <View style={styles.servicePrice}>
               <Text style={styles.priceText}>{formatTravelerCurrency(service.price, service.currency)}</Text>
-              <Text style={styles.priceUnit}>{t('chooseExperience.perPerson')}</Text>
+              <Text style={styles.priceUnit}>{t('chooseExperience.itineraryTotal')}</Text>
               {formatOriginalCurrencyContext(service.price, service.currency) ? (
                 <Text style={styles.sourcePriceText}>{formatOriginalCurrencyContext(service.price, service.currency)}</Text>
               ) : null}

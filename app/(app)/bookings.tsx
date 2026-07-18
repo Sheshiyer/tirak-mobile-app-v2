@@ -41,6 +41,7 @@ import {
   Timer
 } from 'lucide-react-native';
 import { router } from 'expo-router';
+import { getBookingExperienceLabel, getBookingExperienceState } from '@/utils/booking-state';
 
 const { width } = Dimensions.get('window');
 
@@ -260,12 +261,13 @@ export default function BookingsScreen() {
     if (isCompanion) {
       if (booking.status === 'pending') return 'Pending approval';
       if (booking.paymentStatus === 'paid') return 'Paid';
-      return 'Cash due to guide';
+      if (booking.status === 'confirmed') return 'Awaiting traveler PromptPay';
+      return 'Payment pending';
     }
 
-    if (booking.paymentStatus === 'paid') return 'Paid';
-    if (booking.status === 'pending') return 'Pending guide approval';
-    return 'Pay guide in cash';
+    return getBookingExperienceLabel(
+      getBookingExperienceState(booking.status, booking.paymentStatus),
+    );
   };
 
   const handleCompanionStatusUpdate = async (booking: BookingListItem, status: 'confirmed' | 'cancelled') => {

@@ -1,5 +1,7 @@
 # PWA Setup Guide
 
+> Current public product language must follow `mobile-app-scope.md`. This setup guide documents web packaging only; older terminology in implementation identifiers is not approved customer-facing copy.
+
 This document describes the Progressive Web App (PWA) configuration for Tirak.
 
 ## Overview
@@ -33,7 +35,7 @@ The `web` section in `app.json` contains PWA configuration:
 ```json
 {
   "web": {
-    "name": "Tirak - Companion Marketplace",
+    "name": "Tirak - Local Experiences",
     "shortName": "Tirak",
     "themeColor": "#000000",
     "backgroundColor": "#ffffff",
@@ -206,4 +208,3 @@ The PWA can be deployed to:
 - [MDN: Progressive Web Apps](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps)
 - [Web.dev: PWA](https://web.dev/progressive-web-apps/)
 - [Expo Web Documentation](https://docs.expo.dev/workflow/web/)
-

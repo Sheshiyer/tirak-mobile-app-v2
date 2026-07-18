@@ -120,7 +120,7 @@ const buildStatsFromBookings = async (): Promise<SupplierStatsResponse> => {
     message: 'Stats derived from booking and profile data',
     data: {
       user: {
-        name: profile?.displayName || [profile?.firstName, profile?.lastName].filter(Boolean).join(' ') || 'Test Companion',
+        name: profile?.displayName || [profile?.firstName, profile?.lastName].filter(Boolean).join(' ') || 'Test Guide',
         profileImage: profile?.profilePhoto,
         bio: profile?.bio,
         location: profile?.location,
@@ -168,7 +168,7 @@ const getDemoStats = async (): Promise<SupplierStatsResponse> => buildStatsFromB
   message: 'Demo stats loaded',
   data: {
     user: {
-      name: 'Test Companion',
+      name: 'Test Guide',
       profileImage: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?q=80&w=1000&auto=format&fit=crop',
       bio: 'I help travellers experience Bangkok through everyday rituals, local markets, temple etiquette, food stalls, river shortcuts, and small cultural details that make Thailand feel personal.',
       location: 'Bangkok, Thailand',

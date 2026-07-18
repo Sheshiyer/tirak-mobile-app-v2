@@ -71,7 +71,7 @@ const TEST_COMPANION_PROFILE: CompanionProfile = {
   userId: '30c6d267-22d1-4cd0-8bdc-46993c14c143',
   firstName: 'Test',
   lastName: 'Companion',
-  displayName: 'Test Companion',
+  displayName: 'Test Guide',
   coverPhoto: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1200&auto=format&fit=crop',
   profilePhoto: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?q=80&w=1000&auto=format&fit=crop',
   bio: 'I help travellers experience Bangkok through everyday rituals, local markets, temple etiquette, food stalls, river shortcuts, and small cultural details that make Thailand feel personal.',

@@ -42,7 +42,12 @@ import { TranslationToggle } from '@/components/chat/TranslationToggle';
 import { ChatSettings } from '@/components/chat/ChatSettings';
 import { EnhancedMessageInput } from '@/components/chat/EnhancedMessageInput';
 import { useTranslation } from 'react-i18next';
-import { isTestCompanionId } from '@/utils/companion-display';
+import { useBookingQuery } from '@/app/api/booking/booking';
+import { getBookingExperienceState } from '@/utils/booking-state';
+import {
+  bookingMessageFromSocketEvent,
+  type RealtimeChatMessage,
+} from '@/utils/chat-websocket';
 
 // TypeScript interfaces for type safety
 interface Message {
@@ -95,7 +100,20 @@ const TypingIndicator: React.FC<TypingIndicatorProps> = ({ companion, visible })
 };
 
 export default function ChatScreen() {
-  const { id, starter } = useLocalSearchParams<{ id: string; starter?: string }>();
+  const { id, starter, bookingId } = useLocalSearchParams<{
+    id: string;
+    starter?: string;
+    bookingId?: string;
+  }>();
+  const scopedBookingId = typeof bookingId === 'string'
+    ? bookingId
+    : Array.isArray(bookingId)
+      ? bookingId[0]
+      : '';
+  const {
+    data: scopedBookingResponse,
+    isLoading: isBookingLoading,
+  } = useBookingQuery(scopedBookingId);
   const { user } = useAuthStore();
   const [roomId, setRoomId] = useState<string | null>(null);
   const [otherParty, setOtherParty] = useState<OtherParty | null>(null);
@@ -113,7 +131,7 @@ export default function ChatScreen() {
   const { t } = useTranslation();
 
   // Map backend message shape to local Message interface
-  const backendMsgToLocal = useCallback((msg: BackendChatMessage): Message => ({
+  const backendMsgToLocal = useCallback((msg: BackendChatMessage | RealtimeChatMessage): Message => ({
     id: msg.id,
     text: msg.content ?? undefined,
     sender: msg.isOwn ? 'user' : 'companion',
@@ -126,23 +144,27 @@ export default function ChatScreen() {
   // Connect WebSocket for real-time messages and typing indicators
   const connectWS = useCallback((rId: string, userId: string, token: string) => {
     const wsUrl =
-      `wss://${BACKEND_URL.replace(/^https?:\/\//, '')}/api/chat/rooms/${rId}/ws` +
-      `?userId=${encodeURIComponent(userId)}&token=${encodeURIComponent(token)}`;
-    const ws = new WebSocket(wsUrl);
+      `wss://${BACKEND_URL.replace(/^https?:\/\//, '')}/api/chat/rooms/${rId}/ws`;
+    const ws = new (WebSocket as any)(wsUrl, undefined, {
+      headers: { Authorization: `Bearer ${token}` },
+    }) as WebSocket;
     wsRef.current = ws;
 
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data as string);
-        if (data.type === 'new_message' && data.message && !data.message.isOwn) {
-          setMessages(prev => [...prev, backendMsgToLocal(data.message)]);
+        const bookingMessage = bookingMessageFromSocketEvent(data, userId);
+        if (bookingMessage) {
+          setMessages(prev => prev.some(item => item.id === bookingMessage.id)
+            ? prev
+            : [...prev, backendMsgToLocal(bookingMessage)]);
         }
-        if (data.type === 'typing_start') {
+        if (data.type === 'typing_start' && data.data?.userId !== userId) {
           setIsTyping(true);
           if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
           typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 3000);
         }
-        if (data.type === 'typing_stop') {
+        if (data.type === 'typing_stop' && data.data?.userId !== userId) {
           setIsTyping(false);
           if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
         }
@@ -157,33 +179,31 @@ export default function ChatScreen() {
     setIsLoading(true);
     setChatError(null);
     const rawId = typeof id === 'string' ? id : Array.isArray(id) ? id[0] : '';
-
-    if (!rawId) {
-      setChatError('We could not find this conversation.');
+    if (!rawId || !scopedBookingId) {
+      setChatError('Booking chat opens after a guide confirms an itinerary. Open it from the confirmed booking.');
       setIsLoading(false);
       return;
     }
 
-    if (rawId.startsWith('demo_room_')) {
-      setRoomId(rawId);
-      const roomDetail = await getRoomDetail(rawId);
-      if (roomDetail) {
-        setOtherParty(roomDetail.otherParty);
-        setMessages(roomDetail.messages.map(backendMsgToLocal));
-      } else {
-        setChatError('We could not load this conversation. Check your connection and try again.');
-      }
+    if (isBookingLoading) return;
+
+    const scopedBooking = scopedBookingResponse?.data?.booking;
+    if (
+      !scopedBooking
+      || !getBookingExperienceState(scopedBooking.status, scopedBooking.paymentStatus).canChat
+    ) {
+      setChatError('Booking chat is unavailable until the guide confirms this itinerary.');
       setIsLoading(false);
       return;
     }
 
-    if (!isUUID(rawId) || isTestCompanionId(rawId)) {
-      // rawId is a known preview participant ID from a profile/search screen.
-      const newRoomId = await createOrGetRoom(rawId);
+    if (!isUUID(rawId)) {
+      // Compatibility participant IDs are resolved only through the confirmed booking.
+      const newRoomId = await createOrGetRoom(rawId, scopedBookingId);
       if (newRoomId) {
-        router.replace(`/chat/${newRoomId}`);
+        router.replace(`/chat/${newRoomId}?bookingId=${encodeURIComponent(scopedBookingId)}`);
       } else {
-        setChatError('This chat is not available yet. Please try from Messages or the companion profile.');
+        setChatError('This booking chat is not available yet. Please reopen it from Booking Details.');
         setIsLoading(false);
       }
       return;
@@ -192,7 +212,7 @@ export default function ChatScreen() {
     // UUIDs can be either room IDs from Messages or participant IDs from profiles.
     // Try room detail first; if that misses, create/get the room for that participant.
     const roomDetail = await getRoomDetail(rawId);
-    if (roomDetail) {
+    if (roomDetail?.bookingId === scopedBookingId) {
       setRoomId(rawId);
       setOtherParty(roomDetail.otherParty);
       setMessages(roomDetail.messages.map(backendMsgToLocal));
@@ -203,15 +223,23 @@ export default function ChatScreen() {
         connectWS(rawId, user.id, token);
       }
     } else {
-      const newRoomId = await createOrGetRoom(rawId);
+      const newRoomId = await createOrGetRoom(rawId, scopedBookingId);
       if (newRoomId) {
-        router.replace(`/chat/${newRoomId}`);
+        router.replace(`/chat/${newRoomId}?bookingId=${encodeURIComponent(scopedBookingId)}`);
       } else {
-        setChatError('This chat is not available yet. Please try from Messages or the companion profile.');
+        setChatError('This booking chat is not available yet. Please reopen it from Booking Details.');
         setIsLoading(false);
       }
     }
-  }, [id, user, backendMsgToLocal, connectWS]);
+  }, [
+    id,
+    scopedBookingId,
+    scopedBookingResponse,
+    isBookingLoading,
+    user,
+    backendMsgToLocal,
+    connectWS,
+  ]);
 
   useEffect(() => {
     initChat();

@@ -5,8 +5,6 @@ import {
   Heart, 
   MessageCircle, 
   Calendar, 
-  Users, 
-  FileText,
   Package,
   Star,
   MapPin,
@@ -95,7 +93,7 @@ export const SearchEmptyState: React.FC<{ query?: string; onClearSearch?: () => 
       description={
         query
           ? 'Try adjusting your search terms or filters'
-          : 'Search for companions, services, or locations'
+          : 'Search guided experiences, itineraries, or locations'
       }
       actionLabel={query ? 'Clear search' : undefined}
       onAction={onClearSearch}
@@ -108,8 +106,8 @@ export const FavoritesEmptyState: React.FC<{ onBrowse?: () => void }> = ({ onBro
     <EmptyState
       variant="favorites"
       title="No favorites yet"
-      description="Save companions you like to easily find them later"
-      actionLabel="Browse companions"
+      description="Save guided experiences to compare their itineraries later"
+      actionLabel="Browse experiences"
       onAction={onBrowse}
     />
   );
@@ -120,8 +118,8 @@ export const MessagesEmptyState: React.FC<{ onStartChat?: () => void }> = ({ onS
     <EmptyState
       variant="messages"
       title="No messages yet"
-      description="Start a conversation with a companion to see your messages here"
-      actionLabel="Find companions"
+      description="Booking chat appears only inside a confirmed booking for a named itinerary"
+      actionLabel="Browse experiences"
       onAction={onStartChat}
     />
   );
@@ -132,8 +130,8 @@ export const BookingsEmptyState: React.FC<{ onBook?: () => void }> = ({ onBook }
     <EmptyState
       variant="bookings"
       title="No bookings yet"
-      description="Book a companion to see your appointments here"
-      actionLabel="Find companions"
+      description="Request a guided experience to see the booking here"
+      actionLabel="Browse experiences"
       onAction={onBook}
     />
   );
@@ -166,7 +164,7 @@ export const LocationEmptyState: React.FC<{ onEnableLocation?: () => void }> = (
     <EmptyState
       icon={MapPin}
       title="Location access needed"
-      description="Enable location services to find companions near you"
+      description="Enable location services to find guided experiences near you"
       actionLabel="Enable location"
       onAction={onEnableLocation}
     />

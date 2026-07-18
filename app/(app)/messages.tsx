@@ -222,6 +222,7 @@ export default function MessagesScreen() {
       setConversations(
         rooms.map((room: ChatRoom) => ({
           id: room.id,
+          bookingId: room.bookingId,
           companionName: formatFirstName(room.otherParty.name),
           companionImage: room.otherParty.image ?? '',
           lastMessage: formatLastMessagePreview(room),
@@ -259,7 +260,7 @@ export default function MessagesScreen() {
               onPress={() => {
                 // Navigate to chat screen with companion ID
                 // logger.log('Navigate to chat:', conversation.id);
-                router.push(`/chat/${conversation.id}`);
+                router.push(`/chat/${conversation.id}?bookingId=${encodeURIComponent(conversation.bookingId || '')}`);
               }}
             />
           ))

@@ -7,6 +7,11 @@ import { isTestCompanionId } from '@/utils/companion-display';
 import { handleApiError, isUnauthorizedError } from '@/utils/api-errors';
 import { useAuthStore } from '@/stores/auth-store';
 import {
+  assertCompleteBookingRequest,
+  normalizeBookingPaymentStatus,
+  type NormalizedBookingPaymentStatus,
+} from '@/utils/booking-contract';
+import {
   scheduleThreeHourBookingReminder,
   showBookingCreatedNotification,
   syncBookingReminderNotifications,
@@ -17,7 +22,7 @@ const DEMO_BOOKINGS_STORAGE_KEY = 'tirak-demo-bookings';
 // TypeScript interfaces for booking API
 export interface CreateBookingRequest {
   companionId: string; // Must be UUID format
-  serviceId?: string; // Must be UUID format
+  serviceId: string; // Required guided experience UUID
   date: string;
   startTime: string;
   endTime?: string;
@@ -67,7 +72,7 @@ export interface BookingTimelineItem {
 }
 
 export type BookingStatus = "pending" | "confirmed" | "in_progress" | "completed" | "cancelled";
-export type PaymentStatus = "pending" | "paid" | "refunded";
+export type PaymentStatus = NormalizedBookingPaymentStatus;
 
 export interface Booking {
   meetingPoint: string;
@@ -126,6 +131,7 @@ export interface CreateBookingResponse {
 }
 
 const createDemoBookingResponse = (bookingData: CreateBookingRequest): CreateBookingResponse => {
+  assertCompleteBookingRequest(bookingData);
   const now = new Date().toISOString();
   const serviceName = bookingData.serviceId === 'test-evening-food-trail'
     ? 'Evening Food Trail'
@@ -141,7 +147,7 @@ const createDemoBookingResponse = (bookingData: CreateBookingRequest): CreateBoo
         companionId: bookingData.companionId,
         companion: {
           id: bookingData.companionId,
-          name: 'Test Companion',
+          name: 'Test Guide',
           profileImage: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?q=80&w=1000&auto=format&fit=crop',
           rating: 5,
         },
@@ -155,7 +161,7 @@ const createDemoBookingResponse = (bookingData: CreateBookingRequest): CreateBoo
         },
         serviceId: bookingData.serviceId,
         service: {
-          id: bookingData.serviceId || 'test-market-temple-walk',
+          id: bookingData.serviceId,
           name: serviceName,
           price: servicePrice,
         },
@@ -213,6 +219,32 @@ export interface UpdateBookingStatusResponse {
   };
   message: string;
 }
+
+const normalizeBooking = <T extends Booking | BookingListItem>(booking: T): T => ({
+  ...booking,
+  paymentStatus: normalizeBookingPaymentStatus(booking.paymentStatus),
+});
+
+const normalizeBookingDetailsResponse = <
+  T extends BookingDetailsResponse | CreateBookingResponse | UpdateBookingStatusResponse,
+>(response: T): T => ({
+  ...response,
+  data: {
+    ...response.data,
+    booking: normalizeBooking(response.data.booking),
+  },
+});
+
+const normalizeBookingsListResponse = (
+  response: BookingsListResponse,
+): BookingsListResponse => ({
+  ...response,
+  data: {
+    ...response.data,
+    bookings: response.data.bookings?.map(normalizeBooking),
+    items: response.data.items?.map(normalizeBooking),
+  },
+});
 
 // Query parameters for fetching bookings
 export interface BookingsQueryParams {
@@ -315,10 +347,7 @@ export const createBooking = async (bookingData: CreateBookingRequest): Promise<
     
     const url = apiUrl('/api/bookings');
     
-    // Validate required fields
-    if (!bookingData.companionId || !bookingData.date || !bookingData.startTime || !bookingData.duration) {
-      throw new Error('Missing required booking fields');
-    }
+    assertCompleteBookingRequest(bookingData);
     
     // Clean up optional arrays to prevent sending empty arrays
     const cleanedData = {
@@ -354,10 +383,11 @@ export const createBooking = async (bookingData: CreateBookingRequest): Promise<
 
     // logger.log("Create booking response:", response.data);
     
-    await showBookingCreatedNotification(response.data.data.booking, 'traveler');
-    await scheduleThreeHourBookingReminder(response.data.data.booking, 'traveler');
+    const normalizedResponse = normalizeBookingDetailsResponse(response.data);
+    await showBookingCreatedNotification(normalizedResponse.data.booking, 'traveler');
+    await scheduleThreeHourBookingReminder(normalizedResponse.data.booking, 'traveler');
 
-    return response.data;
+    return normalizedResponse;
   } catch (error) {
     if (isUnauthorizedError(error)) {
       throw new Error("Please log in again to create this booking.");
@@ -544,7 +574,7 @@ const getDemoBookingDetails = async (id: string): Promise<BookingDetailsResponse
         companionId: '30c6d267-22d1-4cd0-8bdc-46993c14c143',
         companion: {
           id: '30c6d267-22d1-4cd0-8bdc-46993c14c143',
-          name: 'Test Companion',
+          name: 'Test Guide',
           profileImage: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?q=80&w=1000&auto=format&fit=crop',
           rating: 5,
         },
@@ -670,23 +700,24 @@ export const fetchBookings = async (params: BookingsQueryParams = {}): Promise<B
       },
     });
 
-    logger.log("Bookings list response:", response.data);
+    const normalizedResponse = normalizeBookingsListResponse(response.data);
+    logger.log("Bookings list response:", normalizedResponse);
 
     if (__DEV__) {
       const storedDemoBookings = await readStoredDemoBookings();
       if (storedDemoBookings.length > 0) {
         const storedItems = storedDemoBookings.map(toBookingListItem);
-        const responseItems = response.data?.data?.bookings || response.data?.data?.items || [];
+        const responseItems = normalizedResponse.data.bookings || normalizedResponse.data.items || [];
         const storedIds = new Set(storedItems.map((item) => item.id));
         const mergedResponse = {
-          ...response.data,
+          ...normalizedResponse,
           data: {
-            ...response.data.data,
+            ...normalizedResponse.data,
             items: [
               ...storedItems,
               ...responseItems.filter((item: BookingListItem) => !storedIds.has(item.id)),
             ],
-            pagination: response.data.data.pagination || {
+            pagination: normalizedResponse.data.pagination || {
               page: 1,
               limit: 20,
               total: storedItems.length + responseItems.length,
@@ -699,10 +730,10 @@ export const fetchBookings = async (params: BookingsQueryParams = {}): Promise<B
       }
     }
 
-    const responseItems = response.data?.data?.bookings || response.data?.data?.items || [];
+    const responseItems = normalizedResponse.data.bookings || normalizedResponse.data.items || [];
     await syncBookingReminderNotifications(responseItems, getCurrentNotificationRole());
 
-    return response.data;
+    return normalizedResponse;
   } catch (error: any) {
     handleApiError(error);
     if (isUnauthorizedError(error)) {
@@ -751,7 +782,7 @@ export const fetchBookingById = async (id: string): Promise<BookingDetailsRespon
 
     // logger.log("Booking details response:", response.data);
     
-    return response.data;
+    return normalizeBookingDetailsResponse(response.data);
   } catch (error: any) {
     handleApiError(error);
     if (isUnauthorizedError(error)) {
@@ -805,9 +836,10 @@ export const updateBookingStatus = async (
 
     // logger.log("Update booking status response:", response.data);
     
-    await scheduleThreeHourBookingReminder(response.data.data.booking, 'companion');
+    const normalizedResponse = normalizeBookingDetailsResponse(response.data);
+    await scheduleThreeHourBookingReminder(normalizedResponse.data.booking, 'companion');
 
-    return response.data;
+    return normalizedResponse;
   } catch (error) {
     handleApiError(error);
     if (isUnauthorizedError(error)) {
@@ -859,11 +891,7 @@ export const useCreateBooking = () => {
       
       const url = apiUrl('/api/bookings');
       
-      // Validate required fields
-      if (!bookingData.companionId || !bookingData.date || !bookingData.startTime || !bookingData.duration) {
-        // console.error('❌ Validation failed: Missing required booking fields'); 
-        throw new Error('Missing required booking fields');
-      }
+      assertCompleteBookingRequest(bookingData);
 
       // Clean up optional arrays to prevent sending empty arrays
       const cleanedData = {
@@ -918,10 +946,11 @@ export const useCreateBooking = () => {
         throw new Error('Invalid API response format');
       }
       
-      await showBookingCreatedNotification(response.data.data.booking, 'traveler');
-      await scheduleThreeHourBookingReminder(response.data.data.booking, 'traveler');
+      const normalizedResponse = normalizeBookingDetailsResponse(response.data);
+      await showBookingCreatedNotification(normalizedResponse.data.booking, 'traveler');
+      await scheduleThreeHourBookingReminder(normalizedResponse.data.booking, 'traveler');
 
-      return response.data;
+      return normalizedResponse;
     },
     onSuccess: (data) => {
       logger.log("✅ Mutation succeeded:", {

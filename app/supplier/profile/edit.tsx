@@ -143,7 +143,7 @@ export default function ProfileEditScreen() {
       setProfile({
         ...mappedProfile,
         profilePhoto: user?.profileImage || mappedProfile.profilePhoto,
-        displayName: mappedProfile.displayName || user?.name || 'Test Companion',
+        displayName: mappedProfile.displayName || user?.name || 'Test Guide',
       });
     }
   }, [profileData, user?.profileImage, user?.name]);

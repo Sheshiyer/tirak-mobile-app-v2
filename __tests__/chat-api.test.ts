@@ -19,6 +19,10 @@ jest.mock('@/utils/logger', () => ({
   },
 }));
 
+jest.mock('@/utils/api-errors', () => ({
+  handleApiError: jest.fn(),
+}));
+
 const mockFetch = jest.fn();
 
 global.fetch = mockFetch as unknown as typeof fetch;
@@ -39,6 +43,7 @@ describe('chat-api service', () => {
   test('loads backend chat rooms with bearer auth', async () => {
     const room = {
       id: 'room-1',
+      bookingId: 'booking-1',
       status: 'active',
       otherParty: {
         id: 'supplier-1',
@@ -67,7 +72,7 @@ describe('chat-api service', () => {
     );
   });
 
-  test('falls back to review chat rooms when backend has no rooms', async () => {
+  test('returns no rooms when the authenticated backend has no confirmed-booking chats', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ success: true, data: { items: [] } }),
@@ -75,17 +80,16 @@ describe('chat-api service', () => {
 
     const rooms = await getRooms();
 
-    expect(rooms.length).toBeGreaterThan(0);
-    expect(rooms.some((room: any) => room.id === 'demo_room_test_companion')).toBe(true);
+    expect(rooms).toEqual([]);
   });
 
-  test('does not call the backend without an auth token and still exposes review rooms', async () => {
+  test('does not call the backend or synthesize rooms without an auth token', async () => {
     mockGetItemAsync.mockResolvedValueOnce(null);
 
     const rooms = await getRooms();
 
     expect(mockFetch).not.toHaveBeenCalled();
-    expect(rooms.some((room: any) => room.id === 'demo_room_test_companion')).toBe(true);
+    expect(rooms).toEqual([]);
   });
 
   test('creates backend rooms for real users', async () => {
@@ -94,7 +98,7 @@ describe('chat-api service', () => {
       json: async () => ({ success: true, data: { roomId: 'room-real', existed: false } }),
     });
 
-    await expect(createOrGetRoom('real-user-id')).resolves.toBe('room-real');
+    await expect(createOrGetRoom('real-user-id', 'booking-123')).resolves.toBe('room-real');
     expect(mockFetch).toHaveBeenCalledWith(
       'https://chat.test/api/chat/rooms',
       {
@@ -103,35 +107,29 @@ describe('chat-api service', () => {
           Authorization: 'Bearer token-123',
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ otherUserId: 'real-user-id' }),
+        body: JSON.stringify({ bookingId: 'booking-123' }),
       },
     );
   });
 
-  test('routes review companions to deterministic demo rooms', async () => {
-    await expect(createOrGetRoom('30c6d267-22d1-4cd0-8bdc-46993c14c143')).resolves.toBe(
-      'demo_room_test_companion',
-    );
-    await expect(createOrGetRoom('companion_001')).resolves.toBe('demo_room_001');
+  test('refuses to create pre-booking chat rooms', async () => {
+    await expect(createOrGetRoom('real-user-id')).resolves.toBeNull();
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
-  test('loads demo room detail and appends sent demo messages', async () => {
-    const before = await getRoomDetail('demo_room_test_companion');
-
-    const sent = await sendMessage('demo_room_test_companion', 'Can we meet at 10?');
-    const after = await getRoomDetail('demo_room_test_companion');
-
-    expect(sent).toMatchObject({
-      senderId: 'user_current',
-      senderName: 'You',
-      type: 'text',
-      content: 'Can we meet at 10?',
-      isOwn: true,
+  test('never bypasses the backend for review or legacy guide identifiers', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: true, data: { roomId: 'room-seeded', existed: true } }),
     });
-    expect(after?.messages).toHaveLength((before?.messages.length ?? 0) + 1);
-    expect(after?.messages.at(-1)).toMatchObject({ content: 'Can we meet at 10?' });
-    expect(mockFetch).not.toHaveBeenCalled();
+
+    await expect(
+      createOrGetRoom('30c6d267-22d1-4cd0-8bdc-46993c14c143', 'review-booking'),
+    ).resolves.toBe('room-seeded');
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://chat.test/api/chat/rooms',
+      expect.objectContaining({ body: JSON.stringify({ bookingId: 'review-booking' }) }),
+    );
   });
 
   test('posts real room messages to the backend', async () => {

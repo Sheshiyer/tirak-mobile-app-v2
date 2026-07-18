@@ -1,209 +1,108 @@
 # App Store Connect Metadata — Tirak
 
-> **Purpose:** Product-ready copy for App Store Connect, TestFlight notes, and release review.  
-> **Positioning:** Tirak is a travel marketplace for trusted local guides, cultural experiences, booking, and chat in Thailand.
+Last updated: 2026-07-18
 
----
+This copy is a release candidate. Confirm that the submitted binary and screenshots match it before use.
 
 ## App Name
 
-```
-Tirak — Local Guides Thailand
-```
+`Tirak — Thailand Experiences`
 
-## Subtitle (30 chars max)
+## Subtitle
 
-```
-Authentic Cultural Experiences
-```
+`Guided Local Experiences`
 
----
+## Promotional Text
 
-## App Description (4,000 chars max)
+`Discover food, culture, market, craft, and city experiences with clear itineraries across Thailand.`
 
-> The **first 170 characters** are shown before "More" — make them count.
+## App Description
 
-```
-Tirak connects international travellers with trusted local guides across Thailand for authentic cultural experiences, food tours, temple walks, market visits, and more.
+Tirak is a marketplace for discovering and booking guided cultural experiences in Thailand.
 
-DISCOVER THAILAND LIKE A LOCAL
+EXPLORE BY EXPERIENCE
 
-Whether you're visiting Bangkok, Chiang Mai, Phuket, or beyond, Tirak helps you go beyond tourist traps and experience the real Thailand through the eyes of knowledgeable local guides.
+Browse named food walks, temple routes, market visits, cooking activities, neighborhood tours, arts experiences, and other itinerary-based activities. Each listing explains what you will do, where you will go, how long it takes, what is included, and the total experience price.
 
-WHAT YOU CAN DO WITH TIRAK
+KNOW YOUR ITINERARY
 
-• Browse profiles of trusted local guides, each with experience details and guest reviews
-• Book guided food tours, street market walks, temple circuits, cooking classes, and cultural activities
-• Message your guide directly to customise your experience before you arrive
-• Pay securely for experiences — no cash uncertainty on arrival
-• Receive travel tips and local knowledge from people who actually live there
+Review the route, meeting point, duration, group format, accessibility information, inclusions, exclusions, cancellation terms, and service reviews before requesting a date.
 
-WHY TIRAK IS DIFFERENT
+VERIFIED LOCAL EXPERTISE
 
-Most travel apps send you to the same Tripadvisor spots. Tirak curates local guides who know where the best $1 noodles are, which temple to visit at sunrise, and which market stays open past midnight.
+See the responsible local guide's identity, languages, relevant experience, and reviews for completed travel services. Guide information supports the listed activity; bookings are always for a specific guided experience.
 
-Our guides are:
-✓ Local residents and tourism professionals with relevant experience
-✓ Fluent in English and other major languages
-✓ Passionate about sharing Thai culture authentically
+CLEAR BOOKING STATUS
 
-PERFECT FOR
+Submit a dated booking request and wait for the guide to confirm the itinerary. Secure payment becomes available only after confirmation. Use booking chat for practical details such as the meeting point, timing, dietary needs, accessibility, language preferences, and itinerary questions.
 
-• Solo travellers wanting safety and local knowledge
-• Couples looking for unique experiences beyond standard tours
-• Families needing child-friendly, flexible activities
-• Digital nomads and long-stay visitors who want to see Thailand deeply
+TRAVEL WITH SUPPORT
 
-HOW IT WORKS
+Tirak includes booking records, reporting and blocking controls, support contact information, payment status, and service reviews tied to completed bookings.
 
-1. Browse guides by city, activity type, or language
-2. View profiles, experience listings, availability, and verified reviews
-3. Book directly and pay securely in-app
-4. Meet your guide at the agreed location and explore
+Tirak does not provide dating, companionship, escort, adult, romantic matching, or social-discovery services. Payments are for the named real-world guided experience, never for a person's time or company.
 
-AVAILABLE ACROSS THAILAND
+## Keywords
 
-Bangkok · Chiang Mai · Phuket · Koh Samui · Pai · Chiang Rai · Ayutthaya · Kanchanaburi · Hua Hin · And more
+`Thailand travel,guided experience,food tour,temple walk,market tour,cooking class,Bangkok`
 
----
+## Category
 
-Tirak ("ที่รัก") means "beloved" in Thai — because we believe the best travel memories are made when someone who loves their home city shows you around it.
-```
-
----
-
-## Keywords (100 chars max — comma-separated, no spaces after commas)
-
-```
-Thailand travel,local guide,cultural tour,Bangkok guide,food tour,temple walk,Chiang Mai,authentic
-```
-
-**Rationale:** Targets "Thailand travel", "local guide", "cultural tour" — all App Store-safe, non-ambiguous travel keywords. No "companion", "social", or relational terms.
-
----
-
-## App Category
-
-- **Primary:** Travel
-- **Secondary:** Lifestyle
-
----
-
-## Age Rating
-
-All age-rating questions should be answered:
-
-| Question | Answer |
-|----------|--------|
-| Cartoon or Fantasy Violence | None |
-| Realistic Violence | None |
-| Prolonged Graphic or Sadistic Realistic Violence | None |
-| Profanity or Crude Humor | None |
-| Mature/Suggestive Themes | **None** |
-| Horror/Fear Themes | None |
-| Medical/Treatment Information | None |
-| Alcohol, Tobacco, or Drug Use or References | None |
-| Simulated Gambling | None |
-| Sexual Content or Nudity | **None** |
-| Graphic Sexual Content and Nudity | **None** |
-
-**Result:** 4+ (suitable for all ages)
-
----
+- Primary: Travel
+- Do not add a secondary category unless its submitted content is independently reviewed.
 
 ## App Review Notes
 
-> Paste this verbatim into the "Notes" field when submitting for review.
+Use this note only after the binary-wide release gate passes:
 
-```
-Tirak is a cultural travel experience marketplace that connects tourists with certified local guides in Thailand. It is similar in concept to Airbnb Experiences or Klook — users can browse guide profiles, book guided activities such as temple visits, food tours, cooking classes, and market walks, and communicate with their guide before and during the trip.
+> Tirak is a Travel marketplace for specific guided cultural activities in Thailand. In this build, every booking begins from a named experience with an itinerary, destination, date, duration, inclusions, total service price, and responsible local guide. A guide profile supplies credentials for the listed service and is not independently bookable.
+>
+> The traveler requests a dated itinerary first. Payment is unavailable while the request is pending and becomes available only after the guide confirms that itinerary. Payment is collected by Tirak for the real-world guided travel service. Chat is tied to an existing booking and is labeled for meeting-point, timing, accessibility, dietary, language, and itinerary logistics.
+>
+> The current build contains no dating, companionship, escort, adult, romantic matching, social discovery, paid-company, general chat, or “available now” people-discovery feature. The former `Private` category and direct-cash flow have been removed.
+>
+> Review path: (1) open Explore, (2) select a named experience, (3) review its itinerary and guide credentials, (4) submit a dated booking request, (5) open the pre-seeded confirmed booking, (6) inspect the PromptPay QR without needing to complete a Thai-bank payment, (7) open the separate pre-seeded paid booking to inspect the verified paid state and booking-scoped logistics chat, and (8) review reporting, blocking, support, privacy, and cancellation controls.
+>
+> Test credentials plus the pre-seeded confirmed and paid booking identifiers are supplied privately in App Store Connect. No reviewer-only payment bypass is present in the production binary.
 
-The platform does NOT facilitate any adult services, escort services, companionship services, dating, or social networking.
+## Screenshot Plan
 
-The word "companion" appeared in our original app branding and the GitHub repository name, referring to "travel companion" in the tourism sense (a guide who accompanies you). We have since removed all such language from the app interface — all user-visible text now uses "Local Guide" or "Guide" throughout.
+| Order | Screen | Required visual evidence | Caption |
+| --- | --- | --- | --- |
+| 1 | Experience discovery | Named activity cards; activity imagery dominates | Guided experiences across Thailand |
+| 2 | Experience detail | Itinerary, duration, destination, inclusions | Know the plan before you request |
+| 3 | Guide credentials | Credentials and languages below experience context | Local expertise for this itinerary |
+| 4 | Pending booking | “Awaiting guide confirmation”; no pay/chat CTA | Request a specific date |
+| 5 | Confirmed checkout | Experience title, server total, PromptPay | Pay Tirak for the confirmed experience |
+| 6 | Booking chat | Meeting-point and itinerary conversation | Coordinate practical trip details |
+| 7 | Safety/support | Report, block, support, cancellation | Clear support for every booking |
 
-Guides on the platform are licensed local tourism professionals or knowledgeable residents who offer cultural experiences. All service listings are activity-based (temple walks, food tours, photography walks, cooking classes, market visits, etc.).
+Do not submit screenshots whose dominant visual is a portrait carousel, people search, generic chat, hourly availability, romantic/nightlife imagery without a defined activity, or any retired category.
 
-Test account credentials should be provided privately inside App Store Connect review notes, not committed to the public repository.
+## Suggested Reply to the July 15 Rejection
 
-The review account should have a pre-populated profile so Apple can browse guide listings, view experience details, and test the booking flow without needing real payment.
-```
+Hello App Review Team,
 
----
+Thank you for identifying the concern under Guideline 1.1.4. We reviewed the full product flow and agree that the earlier build could be interpreted as compensated companionship because discovery was too profile-led and some legacy language and payment instructions did not make the purchased travel service sufficiently clear.
 
-## Privacy Policy URL
+We have changed the product rather than relying only on an explanation. The submitted build now begins with named guided experiences and a defined itinerary. Guide information appears as credentials for that activity and is not independently bookable. A traveler must request a specific experience, date, and start time; the guide must confirm that itinerary before payment becomes available. Tirak then collects payment for the confirmed real-world guided travel service. Chat is available only in the booking context for meeting-point, timing, accessibility, dietary, language, and itinerary logistics.
 
-```
-https://tirak.app/privacy
-```
+We removed the former `Private` category, direct-cash instructions, person-first booking prompts, pre-booking general chat, date-themed sample content, and compensated-companionship language. The app does not provide dating, companionship, escort, adult, romantic matching, social discovery, or payment for a person's time or company.
 
-> ⚠️ Ensure this URL is live before submitting. Apple requires a functional privacy policy link.
+Please follow the review path in the App Review Notes. If any specific screen still creates a different impression, please identify it and we will address it immediately.
 
----
+Thank you,
+Tirak Team
 
-## Support URL
+## Submission Gate
 
-```
-mailto:support@tirak.app
-```
-
-Help Center email: `help@tirak.app`
-Contact Support email: `support@tirak.app`
-
----
-
-## Marketing URL (optional)
-
-```
-https://tirak.co
-```
-
----
-
-## Screenshots — Guidance
-
-Apple rejected partly because screenshot previews showed profile browsing UI that resembled a dating app. Replace all screenshots with the following content:
-
-### iPhone 6.9" (required)
-
-| Screenshot | Content |
-|------------|---------|
-| 1 | Home screen showing "Featured Local Guides" with cultural activity photos (temple, street food, market) |
-| 2 | Guide profile showing experience listings: "Old City Temple Walk", "Night Market Street Food Tour" |
-| 3 | Booking wizard — step showing calendar/date selection with guide name and activity at top |
-| 4 | Chat screen with a guide, visible exchange about meeting point at Wat Pho |
-| 5 | Booking confirmation showing activity name, date, meeting point (not profile photo prominently) |
-
-### Screenshot overlay text (Apple allows promotional text on screenshots)
-
-Use these caption overlays:
-1. "Discover Thailand beyond the tourist trail"
-2. "Book certified local guides for food tours, temple walks & more"  
-3. "Choose your date — guides fit around your schedule"
-4. "Chat directly with your guide before you arrive"
-5. "Explore authentically — confirmed in seconds"
-
----
-
-## What's New (Version 1.5.1 Release Candidate)
-
-```
-• Refined onboarding for travellers and local guides
-• Cleaner guide profiles, booking details, and confirmation flow
-• Chat-first communication with guide and traveller context
-• Booking requests, approval actions, availability, and services for local guides
-• Profile, notification, referral, and settings improvements for TestFlight QA
-```
-
----
-
-## Checklist Before Submitting
-
-- [ ] Privacy policy URL is live and accessible
-- [ ] Test account works and credentials are provided privately in App Store Connect
-- [ ] All screenshots show cultural/travel content only (no profile-browsing UI that looks social/dating)
-- [ ] Age rating answers all set to "None" for sensitive categories  
-- [ ] Category is set to Travel (primary), Lifestyle (secondary)
-- [ ] App Review Notes text is pasted in the Notes field
-- [ ] App name is "Tirak — Local Guides Thailand" (with em dash)
-- [ ] Subtitle is "Authentic Cultural Experiences" (30 chars)
+- [ ] The tested archive is the same build uploaded to App Store Connect.
+- [ ] Experience cards, not people cards, dominate discovery and screenshots.
+- [ ] No retired category is reachable from navigation, filters, deep links, or fixtures.
+- [ ] No pre-booking general chat or “available now” people discovery is reachable.
+- [ ] Pending bookings expose neither payment nor chat.
+- [ ] Confirmed bookings identify the experience and server-authoritative total.
+- [ ] App copy, both locale bundles, mocks, legal pages, notifications, and emails pass the prohibited-language scan.
+- [ ] Store name, subtitle, description, keywords, screenshots, review notes, age rating, privacy answers, and category all match the binary.
+- [ ] Review credentials work on the review backend and include separate pre-seeded confirmed-unpaid and paid bookings, so a Thai banking app is not required.
+- [ ] Privacy policy, support URL, terms, cancellation, reporting, and blocking controls are live.

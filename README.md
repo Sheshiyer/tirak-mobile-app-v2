@@ -26,9 +26,9 @@ Tirak was created for travellers who want more than a list of places to visit.
 
 We believe the best travel memories come from context: why a temple matters, which stall has been serving the same family recipe for decades, when a market really comes alive, and what a visitor should know before entering a local space.
 
-Tirak brings that context into one simple app. Travellers can discover local guides, explore experiences, book time, message before meeting, and keep their trip details in one place. Local guides can share their expertise, manage availability, present services, and receive booking requests through a focused guide dashboard.
+Tirak brings that context into one simple app. Travellers browse named guided experiences, review a clear itinerary, request a date, pay after guide confirmation, and keep trip logistics in one booking. Local guides publish defined activities, manage itinerary availability, and receive booking requests through a focused guide dashboard.
 
-The name Tirak comes from Thai usage of "beloved" or "dear". For us, it points to the kind of travel we want to support: thoughtful, respectful, human, and memorable.
+Tirak supports thoughtful, respectful travel through clearly described local activities and accountable bookings.
 
 ## Product Preview
 
@@ -51,12 +51,12 @@ Tirak is a travel marketplace for authentic local experiences in Thailand.
 
 Travellers can:
 
-- Browse trusted local guide profiles.
-- Discover food tours, temple walks, market visits, cultural routes, and city experiences.
-- Request guide rates and choose available dates.
-- Confirm bookings and keep trip details accessible.
-- Chat with their guide before and after booking.
-- Save favourite guides for later.
+- Browse named food tours, temple walks, market visits, cultural routes, and city experiences.
+- Review the itinerary, duration, meeting point, inclusions, total price, and guide credentials.
+- Request a specific experience date and wait for guide confirmation.
+- Pay Tirak for a confirmed real-world guided experience.
+- Use booking chat for meeting-point and itinerary logistics after confirmation.
+- Save favourite experiences for later.
 
 Local guides can:
 
@@ -74,7 +74,7 @@ Tirak is not a dating, social discovery, or adult-service platform. It is built 
 | Field | Detail |
 | --- | --- |
 | App name | Tirak |
-| App Store name | Tirak - Local Guides Thailand |
+| App Store name | Tirak — Thailand Experiences |
 | Category | Travel |
 | Current release candidate | 1.5.1 |
 | Primary market | Thailand |
@@ -122,8 +122,8 @@ It is for travellers who want:
 
 - Local context instead of generic listings.
 - Human guidance without losing control of their itinerary.
-- Clear profiles, availability, and booking details.
-- A safer way to communicate before meeting a guide.
+- Clear itineraries, guide credentials, and booking details.
+- A booking-scoped way to coordinate practical trip logistics.
 
 It is for local guides who want:
 
@@ -136,7 +136,7 @@ It is for local guides who want:
 
 Warm, practical, and culturally respectful.
 
-Tirak should feel like a knowledgeable local friend: clear about logistics, generous with context, and never vague about what is being offered.
+Tirak should feel like a knowledgeable travel service: clear about logistics, generous with context, and never vague about what is being offered.
 
 We avoid language that sounds romantic, suggestive, or ambiguous. The product speaks in the language of travel, culture, safety, and local expertise.
 
@@ -144,10 +144,10 @@ We avoid language that sounds romantic, suggestive, or ambiguous. The product sp
 
 | Field | Copy |
 | --- | --- |
-| App Store name | Tirak - Local Guides Thailand |
-| Subtitle | Authentic Cultural Experiences |
+| App Store name | Tirak — Thailand Experiences |
+| Subtitle | Guided Local Experiences |
 | Primary category | Travel |
-| Age rating target | 4+ |
+| Age rating | Complete from the submitted binary and listing content |
 | Support | support@tirak.app |
 | Help | help@tirak.app |
 | Privacy | https://tirak.app/privacy |

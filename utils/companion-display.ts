@@ -38,9 +38,19 @@ export const getCompanionLocation = (companion: any): string => {
 };
 
 export const getCompanionServices = (companion: any): string[] => {
-  if (Array.isArray(companion?.services) && companion.services.length > 0) {
-    return companion.services;
-  }
+  const namedItineraries = (items: unknown): string[] => Array.isArray(items)
+    ? items
+      .map((item: any) => typeof item === 'string'
+        ? normalizeText(item)
+        : normalizeText(item?.title) || normalizeText(item?.name))
+      .filter(Boolean)
+    : [];
+
+  const experiences = namedItineraries(companion?.experiences);
+  if (experiences.length > 0) return experiences;
+
+  const services = namedItineraries(companion?.services);
+  if (services.length > 0) return services;
 
   if (Array.isArray(companion?.specialization) && companion.specialization.length > 0) {
     return companion.specialization;
@@ -51,10 +61,10 @@ export const getCompanionServices = (companion: any): string[] => {
   }
 
   if (isTestCompanion(companion)) {
-    return ['Temple walks', 'Market tasting'];
+    return ['Old Town Market & Temple Walk', 'Evening Food Trail'];
   }
 
-  return ['Local experiences'];
+  return ['Guided Thailand Itinerary'];
 };
 
 export const getCompanionImage = (companion: any): string => {

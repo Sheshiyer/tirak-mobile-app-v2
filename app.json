@@ -2,7 +2,7 @@
   "expo": {
     "name": "Tirak",
     "slug": "tirak-companion-marketplace",
-    "description": "Tirak connects travellers with trusted local guides across Thailand for authentic cultural experiences, booking, chat, and guide-led discovery.",
+    "description": "Discover and book named guided cultural experiences across Thailand with clear itineraries, confirmed bookings, and trip-logistics chat.",
     "version": "1.5.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",

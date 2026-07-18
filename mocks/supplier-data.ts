@@ -177,7 +177,7 @@ export const mockSupplierActivities: SupplierActivity[] = [
   {
     id: 'activity-005',
     type: 'message_received',
-    title: 'New Message',
+    title: 'New booking message',
     description: 'Question about meeting location for tomorrow\'s tour',
     customerName: 'Lisa Wang',
     customerImage: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=1000&auto=format&fit=crop',
@@ -405,7 +405,7 @@ export const mockSupplierNotifications: SupplierNotification[] = [
   {
     id: 'notif-002',
     type: 'message',
-    title: 'New Message',
+    title: 'New booking message',
     message: 'Question about meeting location for tomorrow\'s tour',
     timestamp: '2024-12-20T09:15:00Z',
     read: false,

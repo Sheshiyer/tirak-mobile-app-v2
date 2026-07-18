@@ -13,13 +13,15 @@ import { useAuthStore } from '@/stores/auth-store';
 import { useCurrencyConversion } from '@/utils/currency';
 import { TEST_COMPANION_ID, isTestCompanion } from '@/utils/companion-display';
 import { ArrowLeft, CalendarPlus, CheckCircle, Clock, MessageCircle, XCircle } from 'lucide-react-native';
+import { PromptPayPayment } from '@/components/payments/PromptPayPayment';
+import { getBookingExperienceLabel, getBookingExperienceState } from '@/utils/booking-state';
 
 const BookingDetailsScreen = () => {
   const { user, isAuthenticated } = useAuthStore();
   const isCompanion = user?.userType === 'companion' || user?.userType === 'supplier';
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { data, isLoading, error } = useBookingQuery(id);
+  const { data, isLoading, error, refetch } = useBookingQuery(id);
   const updateStatusMutation = useUpdateBookingStatus();
   const [cancelling, setCancelling] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
@@ -99,11 +101,12 @@ const BookingDetailsScreen = () => {
     ? `${countdownDays}d ${countdownHours}h ${countdownMinutes}m`
     : 'Starting now';
   const isPendingCompanionRequest = isCompanion && booking.status === 'pending';
+  const experienceState = getBookingExperienceState(booking.status, booking.paymentStatus);
 
   const formatBookingStatus = () => {
     switch (booking.status) {
       case 'pending':
-        return isCompanion ? 'Pending approval' : 'Waiting for guide approval';
+        return isCompanion ? 'Pending approval' : 'Requested';
       case 'confirmed':
         return 'Confirmed';
       case 'in_progress':
@@ -119,14 +122,15 @@ const BookingDetailsScreen = () => {
 
   const getPaymentStatusCopy = () => {
     if (booking.paymentStatus === 'paid') return 'Paid';
-    if (booking.status === 'pending') return 'Payment not collected yet';
-    return 'Pay guide in cash';
+    if (booking.status === 'pending') return 'Unavailable until guide confirmation';
+    if (isCompanion) return 'Awaiting traveler PromptPay';
+    return getBookingExperienceLabel(experienceState);
   };
 
   const formatCalendarDate = (date: Date) => date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
   const handleAddToCalendar = async () => {
     const title = encodeURIComponent(`Tirak: ${service?.name || experience?.name || 'Local guide booking'}`);
-    const details = encodeURIComponent(`Booking with ${displayName}. Payment is handled in cash directly with the guide.`);
+    const details = encodeURIComponent(`Confirmed Tirak itinerary with ${displayName}. Keep logistics in booking chat.`);
     const location = encodeURIComponent([booking.meetingPoint, booking.location].filter(Boolean).join(', '));
     const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${formatCalendarDate(startAt)}/${formatCalendarDate(endAt)}&details=${details}&location=${location}`;
 
@@ -144,7 +148,7 @@ const BookingDetailsScreen = () => {
       : isTestCompanion(booking.companion)
         ? TEST_COMPANION_ID
         : booking.companionId;
-    router.push(`/chat/${chatTarget}`);
+    router.push(`/chat/${chatTarget}?bookingId=${encodeURIComponent(booking.id)}`);
   };
 
   const handleApproveBooking = async () => {
@@ -283,10 +287,12 @@ const BookingDetailsScreen = () => {
                 {booking.date.split('T')[0]} at {booking.startTime}
               </Caption>
               <View style={styles.detailActions}>
-                <TouchableOpacity style={styles.messageButton} onPress={handleMessage}>
-                  <MessageCircle size={18} color={designTokens.colors.semantic.surface} />
-                  <Text style={styles.messageButtonText}>Message</Text>
-                </TouchableOpacity>
+                {experienceState.canChat && (
+                  <TouchableOpacity style={styles.messageButton} onPress={handleMessage}>
+                    <MessageCircle size={18} color={designTokens.colors.semantic.surface} />
+                    <Text style={styles.messageButtonText}>Booking chat</Text>
+                  </TouchableOpacity>
+                )}
                 <TouchableOpacity style={styles.calendarButton} onPress={handleAddToCalendar}>
                   <CalendarPlus size={18} color={designTokens.colors.semantic.primary} />
                   <Text style={styles.calendarButtonText}>Add to Calendar</Text>
@@ -308,11 +314,15 @@ const BookingDetailsScreen = () => {
             <Subheading>Payment</Subheading>
             <Body>{getPaymentStatusCopy()}</Body>
           </View>
+
+          {!isCompanion && experienceState.canPay && (
+            <PromptPayPayment bookingId={booking.id} onPaid={() => refetch()} />
+          )}
           
           <View style={styles.section}>
-            <Subheading>Guide Rate</Subheading>
+            <Subheading>Itinerary Total</Subheading>
             <Body>฿{booking.totalAmount?.toLocaleString() || 'N/A'}{usdTotal ? ` (${usdTotal})` : ''}</Body>
-            <Caption style={styles.cashNote}>Paid in cash directly to the guide</Caption>
+            <Caption style={styles.paymentNote}>Amount comes from the backend booking record.</Caption>
           </View>
 
           {/* Preferences & Special Requests */}
@@ -513,7 +523,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     flexShrink: 1,
   },
-  cashNote: {
+  paymentNote: {
     color: designTokens.colors.semantic.textSecondary,
     marginTop: 4,
   },

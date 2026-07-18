@@ -115,9 +115,9 @@ export default function SupplierSignup() {
                 <Text style={styles.stepNumberText}>5</Text>
               </View>
               <View style={styles.stepContent}>
-                <Text style={styles.stepTitle}>Experiences & Rates</Text>
+                <Text style={styles.stepTitle}>Itineraries & Prices</Text>
                 <Text style={styles.stepDescription}>
-                  Create bookable experiences with duration and guide rate
+                  Create named experiences with duration, route, inclusions, and total price
                 </Text>
               </View>
             </View>
@@ -151,9 +151,9 @@ export default function SupplierSignup() {
                 <Text style={styles.stepNumberText}>8</Text>
               </View>
               <View style={styles.stepContent}>
-                <Text style={styles.stepTitle}>Subscription Payment</Text>
+                <Text style={styles.stepTitle}>Review & Submit</Text>
                 <Text style={styles.stepDescription}>
-                  Choose a subscription plan and complete payment
+                  Confirm the provider commitments and submit for verification
                 </Text>
               </View>
             </View>

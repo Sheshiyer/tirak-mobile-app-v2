@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { designTokens } from '@/constants/design-tokens';
-import { MapPin, Star, Heart, MessageCircle, Camera } from 'lucide-react-native';
+import { Map, MapPin, Star, Heart, Camera } from 'lucide-react-native';
 import { useFavoritesStore } from '@/stores/favorites-store';
 import { useTranslation } from 'react-i18next';
 interface Companion {
@@ -27,7 +27,6 @@ interface CompanionCardProps {
   viewMode?: 'grid' | 'list';
   onPress?: () => void;
   onFavorite?: () => void;
-  onMessage?: () => void;
 }
 
 export const CompanionCard: React.FC<CompanionCardProps> = ({
@@ -35,12 +34,12 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
   viewMode = 'grid',
   onPress,
   onFavorite,
-  onMessage,
 }) => {
   const store = useFavoritesStore();
   const isFavorite = store.isFavorite(companion.id);
   const { toggleFavorite } = store;
   const { t } = useTranslation();
+  const experienceTitle = companion.services[0] || 'Guided Thailand Itinerary';
 
   const formatPrice = (price: number) => {
     if (!price || price === 0) return null;
@@ -69,40 +68,33 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
   };
 
   const renderListImage = () => {
-    if (companion.image) {
-      return (
-        <Image
-          source={{ uri: companion.image }}
-          style={styles.listImage}
-          contentFit="cover"
-          contentPosition="top center"
-        />
-      );
-    }
     return (
-      <LinearGradient colors={['#A85CF9', '#FFBAA0']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.listImage}>
-        <Camera size={24} color="rgba(255,255,255,0.7)" />
+      <LinearGradient colors={['#7048E8', '#FF8A65']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.listImage, styles.activityArtwork]}>
+        <Map size={34} color="rgba(255,255,255,0.9)" />
       </LinearGradient>
     );
   };
 
   const renderGridImage = () => {
-    if (companion.image) {
-      return (
-        <Image
-          source={{ uri: companion.image }}
-          style={styles.gridImage}
-          contentFit="cover"
-          contentPosition="top center"
-        />
-      );
-    }
     return (
-      <LinearGradient colors={['#A85CF9', '#FFBAA0']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.gridImage, styles.imagePlaceholder]}>
-        <Camera size={28} color="rgba(255,255,255,0.7)" />
+      <LinearGradient colors={['#7048E8', '#FF8A65']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.gridImage, styles.activityArtwork]}>
+        <Map size={52} color="rgba(255,255,255,0.9)" />
       </LinearGradient>
     );
   };
+
+  const renderGuideCredential = () => (
+    <View style={styles.guideCredential}>
+      {companion.image ? (
+        <Image source={{ uri: companion.image }} style={styles.guideAvatar} contentFit="cover" />
+      ) : (
+        <View style={[styles.guideAvatar, styles.guideAvatarFallback]}>
+          <Camera size={12} color={designTokens.colors.semantic.textSecondary} />
+        </View>
+      )}
+      <Text style={styles.guideName} numberOfLines={1}>Led by {companion.name}</Text>
+    </View>
+  );
 
   if (viewMode === 'list') {
     return (
@@ -112,15 +104,18 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
         </View>
         <View style={styles.listContent}>
           <View style={styles.listHeader}>
-            <Text style={styles.companionName}>{companion.name}</Text>
+            <View style={styles.titleBlock}>
+              <Text style={styles.experienceTitle} numberOfLines={2}>{experienceTitle}</Text>
+              {renderGuideCredential()}
+            </View>
             <View style={styles.priceContainer}>
               {formatPrice(companion.price) ? (
                 <>
                   <Text style={styles.price}>{formatPrice(companion.price)}</Text>
-                  <Text style={styles.priceUnit}>/{t('companionDetails.day')}</Text>
+                  <Text style={styles.priceUnit}> itinerary total</Text>
                 </>
               ) : (
-                <Text style={styles.priceContact}>Request guide rate</Text>
+                <Text style={styles.priceContact}>See itinerary options</Text>
               )}
             </View>
           </View>
@@ -128,7 +123,6 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
           <View style={styles.locationContainer}>
             <MapPin size={14} color={designTokens.colors.semantic.textSecondary} />
             <Text style={styles.locationText}>{companion.location}</Text>
-            {companion.online && <View style={styles.onlineIndicator} />}
           </View>
           
           <View style={styles.ratingContainer}>
@@ -146,13 +140,13 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
           </View>
           
           <View style={styles.servicesContainer}>
-            {companion.services.slice(0, 2).map((service, index) => (
+            {companion.services.slice(1, 3).map((service, index) => (
               <View key={index} style={styles.serviceTag}>
                 <Text style={styles.serviceText}>{service}</Text>
               </View>
             ))}
-            {companion.services.length > 2 && (
-              <Text style={styles.moreServices}>+{companion.services.length - 2} {t('common.more')}</Text>
+            {companion.services.length > 3 && (
+              <Text style={styles.moreServices}>+{companion.services.length - 3} {t('common.more')}</Text>
             )}
           </View>
         </View>
@@ -168,9 +162,6 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
               size={20}
             />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton} onPress={onMessage}>
-            <MessageCircle size={20} color={designTokens.colors.semantic.primary} />
-          </TouchableOpacity>
         </View>
       </TouchableOpacity>
     );
@@ -180,7 +171,6 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
     <TouchableOpacity style={styles.gridCard} onPress={onPress}>
       <View style={styles.imageContainer}>
         {renderGridImage()}
-        {companion.online && <View style={styles.onlineIndicatorGrid} />}
         <TouchableOpacity
           style={styles.favoriteButton}
           onPress={handleFavoritePress}
@@ -194,7 +184,8 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
       </View>
       
       <View style={styles.gridContent}>
-        <Text style={styles.companionName} numberOfLines={1}>{companion.name}</Text>
+        <Text style={styles.experienceTitle} numberOfLines={2}>{experienceTitle}</Text>
+        {renderGuideCredential()}
         <View style={styles.locationContainer}>
           <MapPin size={12} color={designTokens.colors.semantic.textSecondary} />
           <Text style={styles.locationText}>{companion.location}</Text>
@@ -218,10 +209,10 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
           {formatPrice(companion.price) ? (
             <>
               <Text style={styles.price}>{formatPrice(companion.price)}</Text>
-              <Text style={styles.priceUnit}>/{t('companionDetails.day')}</Text>
+              <Text style={styles.priceUnit}> itinerary total</Text>
             </>
           ) : (
-            <Text style={styles.priceContact}>Request guide rate</Text>
+            <Text style={styles.priceContact}>See itinerary options</Text>
           )}
         </View>
 
@@ -229,9 +220,9 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
           style={styles.primaryCta}
           onPress={onPress}
           accessibilityRole="button"
-          accessibilityLabel={`View ${companion.name} guide profile`}
+          accessibilityLabel={`View ${experienceTitle} itinerary led by ${companion.name}`}
         >
-          <Text style={styles.primaryCtaText}>View guide</Text>
+          <Text style={styles.primaryCtaText}>View itinerary</Text>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -257,18 +248,11 @@ const styles = StyleSheet.create({
   },
   gridImage: {
     width: '100%',
-    height: 240,
+    height: 150,
   },
-  onlineIndicatorGrid: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: designTokens.colors.semantic.accent,
-    borderWidth: 2,
-    borderColor: designTokens.colors.semantic.surface,
+  activityArtwork: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   favoriteButton: {
     position: 'absolute',
@@ -311,11 +295,35 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 8,
   },
-  companionName: {
+  titleBlock: {
+    flex: 1,
+    marginRight: 8,
+  },
+  experienceTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: designTokens.colors.semantic.text,
+  },
+  guideName: {
+    fontSize: 12,
+    color: designTokens.colors.semantic.textSecondary,
     flex: 1,
+  },
+  guideCredential: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 6,
+  },
+  guideAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
+  guideAvatarFallback: {
+    backgroundColor: designTokens.colors.semantic.background,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   locationContainer: {
     flexDirection: 'row',
@@ -326,13 +334,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: designTokens.colors.semantic.textSecondary,
     marginLeft: 4,
-  },
-  onlineIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: designTokens.colors.semantic.accent,
-    marginLeft: 8,
   },
   ratingContainer: {
     flexDirection: 'row',

@@ -74,22 +74,22 @@ export default function HomeScreen() {
   const { t } = useTranslation();
 
   const mainCategories = [
-    { id: 'travel', name: t('userHome.travelPartner'), icon: '✈️', color: designTokens.colors.semantic.primary },
-    { id: 'nightlife', name: t('userHome.nightlife'), icon: '🌆', color: designTokens.colors.semantic.warning },
-    { id: 'cinema', name: t('userHome.cinema'), icon: '🎬', color: designTokens.colors.semantic.accent },
+    { id: 'city-tour', name: 'Old Town Walks', icon: '🏘️', color: designTokens.colors.semantic.primary },
+    { id: 'food', name: 'Food Trails', icon: '🍜', color: designTokens.colors.semantic.warning },
+    { id: 'markets', name: 'Market Routes', icon: '🧺', color: designTokens.colors.semantic.accent },
   ] as any;
   
   // All categories — consistent emoji icons with brand colors
   const allCategories = [
-    { id: 'travel', name: t('userHome.travelPartner'), icon: '✈️', color: designTokens.colors.semantic.primary },
-    { id: 'nightlife', name: t('userHome.nightlife'), icon: '🌃', color: designTokens.colors.semantic.warning },
-    { id: 'cinema', name: t('userHome.cinema'), icon: '🎬', color: designTokens.colors.semantic.accent },
-    { id: 'holiday', name: t('userHome.holiday'), icon: '🏖️', color: designTokens.colors.semantic.secondary },
-    { id: 'wellness', name: t('userHome.wellness'), icon: '🧘', color: designTokens.colors.semantic.success },
-    { id: 'explorer', name: t('userHome.explorer'), icon: '🏙️', color: designTokens.colors.semantic.primary },
-    { id: 'private', name: t('userHome.private'), icon: '💎', color: designTokens.colors.semantic.textSecondary },
-    { id: 'events', name: t('userHome.events'), icon: '🎉', color: designTokens.colors.semantic.error },
-    { id: 'sports', name: t('userHome.sports'), icon: '⚽', color: designTokens.colors.semantic.surface },
+    { id: 'city-tour', name: 'Old Town Walks', icon: '🏘️', color: designTokens.colors.semantic.primary },
+    { id: 'food', name: 'Food Trails', icon: '🍜', color: designTokens.colors.semantic.warning },
+    { id: 'markets', name: 'Market Routes', icon: '🧺', color: designTokens.colors.semantic.accent },
+    { id: 'heritage', name: 'Temple Trails', icon: '🛕', color: designTokens.colors.semantic.secondary },
+    { id: 'islands', name: 'Island Days', icon: '🏝️', color: designTokens.colors.semantic.success },
+    { id: 'nature', name: 'Nature Routes', icon: '🌿', color: designTokens.colors.semantic.primary },
+    { id: 'arts', name: 'Arts & Craft Visits', icon: '🎨', color: designTokens.colors.semantic.textSecondary },
+    { id: 'wellness', name: 'Wellness Routes', icon: '🧘', color: designTokens.colors.semantic.error },
+    { id: 'events', name: 'Festival Visits', icon: '🎉', color: designTokens.colors.semantic.surface },
   ] as any;
   // Call all hooks first, unconditionally
   const { user, isHydrated } = useAuthStoreHydrated();

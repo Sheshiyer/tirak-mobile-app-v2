@@ -62,11 +62,6 @@ const initialSignupData: SupplierSignupData = {
     },
     exceptions: [],
   },
-  subscription: {
-    plan: 'basic',
-    paymentMethod: 'promptpay',
-    paymentComplete: false,
-  },
 };
 
 const emptySupplierStats: SupplierStats = {

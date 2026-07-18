@@ -2,7 +2,7 @@ import { logger } from '@/utils/logger';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createBooking, CreateBookingRequest } from '../app/api/booking/booking';
+import { CreateBookingRequest, type Booking } from '../app/api/booking/booking';
 import { apiUrl } from '@/constants/api';
 import { convertCurrency } from '@/utils/currency';
 import axios from 'axios';
@@ -64,7 +64,7 @@ export interface BookingRequests {
 }
 
 export interface BookingPayment {
-  method: 'cash' | 'promptpay' | 'bank_transfer';
+  method: 'promptpay';
   amount: number;
   serviceFee: number;
   totalAmount: number;
@@ -116,6 +116,7 @@ interface ServiceResponse {
 // Store interface
 interface BookingState {
   bookingData: BookingFormData;
+  submittedBooking: Booking | null;
   isLoading: boolean;
   error: string | null;
   services: BookingService[]; // Add this
@@ -154,12 +155,14 @@ interface BookingActions {
   setCompanionData: (companionData: CompanionData) => void;
   prepareBookingRequest: () => CreateBookingRequest | null;
   setBookingComplete: (isComplete: boolean) => void;
+  setSubmittedBooking: (booking: Booking) => void;
 }
 
 export const useBookingStore = create<BookingState & BookingActions>()(
   persist(
     (set, get) => ({
       bookingData: initialBookingData,
+      submittedBooking: null,
       isLoading: false,
       error: null,
       services: [], // Initialize services array
@@ -167,7 +170,7 @@ export const useBookingStore = create<BookingState & BookingActions>()(
       // Step navigation
       nextStep: () => {
         const { bookingData } = get();
-        if (bookingData.currentStep < 7) {
+        if (bookingData.currentStep < 6) {
           set((state) => ({
             bookingData: {
               ...state.bookingData,
@@ -190,7 +193,7 @@ export const useBookingStore = create<BookingState & BookingActions>()(
       },
 
       goToStep: (step: number) => {
-        if (step >= 1 && step <= 7) {
+        if (step >= 1 && step <= 6) {
           set((state) => ({
             bookingData: {
               ...state.bookingData,
@@ -325,16 +328,9 @@ export const useBookingStore = create<BookingState & BookingActions>()(
             return true;
             
           case 5: // Summary (validation)
-            return !!bookingData.service && !!bookingData.dateTime && !!bookingData.location && !!bookingData.payment;
+            return !!bookingData.service && !!bookingData.dateTime && !!bookingData.location;
             
-          case 6: // Payment
-            if (!bookingData.payment) {
-              setError(`step${step}`, 'Please select payment method');
-              return false;
-            }
-            return true;
-            
-          case 7: // Confirmation
+          case 6: // Request confirmation
             return true;
             
           default:
@@ -440,6 +436,7 @@ export const useBookingStore = create<BookingState & BookingActions>()(
       resetBooking: () => {
         set({
           bookingData: initialBookingData,
+          submittedBooking: null,
           isLoading: false,
           error: null,
         });
@@ -517,12 +514,17 @@ export const useBookingStore = create<BookingState & BookingActions>()(
           },
         }));
       },
+
+      setSubmittedBooking: (submittedBooking: Booking) => {
+        set({ submittedBooking });
+      },
     }),
     {
       name: 'booking-storage',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         bookingData: state.bookingData,
+        submittedBooking: state.submittedBooking,
       }),
     }
   )

@@ -1,7 +1,7 @@
 {
-  "name": "Tirak — Local Guides Thailand",
+  "name": "Tirak — Thailand Experiences",
   "short_name": "Tirak",
-  "description": "Tirak connects travellers with certified local guides across Thailand for authentic cultural experiences.",
+  "description": "Discover and request named guided cultural experiences across Thailand with clear itineraries.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -36,13 +36,13 @@
       "purpose": "maskable"
     }
   ],
-  "categories": ["lifestyle", "social", "travel"],
+  "categories": ["travel"],
   "screenshots": [],
   "shortcuts": [
     {
-      "name": "Search Guides",
+      "name": "Search Experiences",
       "short_name": "Search",
-      "description": "Find a local guide for your next experience",
+      "description": "Find a guided itinerary for your Thailand trip",
       "url": "/search",
       "icons": [
         {
@@ -75,4 +75,3 @@
     }
   }
 }
-

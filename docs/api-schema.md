@@ -1,5 +1,7 @@
 # API Schema Documentation
 
+> **Historical compatibility reference — not a release contract.** This file contains legacy route and field names that remain useful while the backend is migrated. It must not be used for product copy, App Store metadata, screenshots, or new payment design. The current product contract is `mobile-app-scope.md`; the current PromptPay contract is `docs/omise-promptpay-architecture.md`.
+
 ## Base Configuration
 ```
 Base URL: https://api.tirak.com/v1

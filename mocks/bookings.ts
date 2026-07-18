@@ -14,7 +14,7 @@ export interface MockBooking {
   meetingPoint: string;
   price: number;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'in-progress';
-  paymentMethod: 'promptpay' | 'cash' | 'card';
+  paymentMethod: 'promptpay';
   paymentStatus: 'pending' | 'paid' | 'refunded';
   specialRequests?: string;
   createdAt: string;
@@ -63,7 +63,7 @@ export const mockBookings: MockBooking[] = [
     meetingPoint: 'Chatuchak Weekend Market Gate 1',
     price: 3000,
     status: 'pending',
-    paymentMethod: 'cash',
+    paymentMethod: 'promptpay',
     paymentStatus: 'pending',
     specialRequests: 'Want to try authentic Thai street food, not too spicy please',
     createdAt: '2024-12-19T14:20:00Z',
@@ -109,7 +109,7 @@ export const mockBookings: MockBooking[] = [
     meetingPoint: 'Four Seasons Resort Spa',
     price: 2400,
     status: 'completed',
-    paymentMethod: 'card',
+    paymentMethod: 'promptpay',
     paymentStatus: 'paid',
     createdAt: '2023-12-20T12:00:00Z',
     updatedAt: '2023-12-28T14:30:00Z',
@@ -146,7 +146,7 @@ export const mockBookings: MockBooking[] = [
     customerId: 'customer_003',
     customerName: 'Mike Chen',
     customerImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1000&auto=format&fit=crop',
-    service: 'Evening Dinner Date',
+    service: 'Chao Phraya Evening Food Route',
     date: '2024-01-22',
     time: '18:00',
     duration: 3,

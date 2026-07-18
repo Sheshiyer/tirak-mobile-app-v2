@@ -58,7 +58,7 @@ export default function FavoritesScreen() {
           profileImage: apiCompanion.profileImage || savedCompanion?.profileImage,
           reviews: Array.isArray(apiCompanion.reviews) ? apiCompanion.reviews.length : savedCompanion?.reviews,
           reviewCount: apiCompanion.reviewCount ?? savedCompanion?.reviewCount,
-          services: apiCompanion.services?.map(service => service.name || 'Service') || savedCompanion?.services || [],
+          services: apiCompanion.services?.map(service => service.name || 'Guided Thailand Itinerary') || savedCompanion?.services || [],
         });
       }
 
@@ -74,15 +74,11 @@ export default function FavoritesScreen() {
     });
   
   const handleCompanionPress = (id: string) => {
-    router.push(`/companion/${id}`);
+    router.push(`/companion/${id}?experienceIndex=0`);
   };
   
   const handleFavorite = (id: string) => {
     useFavoritesStore.getState().removeFavorite(id);
-  };
-  
-  const handleMessage = (id: string) => {
-    router.push(`/chat/${id}`);
   };
   
   const renderEmptyState = () => (
@@ -174,7 +170,6 @@ export default function FavoritesScreen() {
                 viewMode={viewMode}
                 onPress={() => handleCompanionPress(item.id)}
                 onFavorite={() => handleFavorite(item.id)}
-                onMessage={() => handleMessage(item.id)}
               />
               ) : null
             }

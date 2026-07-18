@@ -59,7 +59,7 @@ export default function AvailabilityScreen() {
         <View style={styles.header}>
           <Text style={styles.title}>Set Availability</Text>
           <Text style={styles.subtitle}>
-            Define your weekly schedule and availability. This helps customers know when you're available for bookings.
+            Define when travelers may request your listed guided experiences.
           </Text>
           
           <ProgressBar

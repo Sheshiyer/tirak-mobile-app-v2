@@ -40,7 +40,7 @@ export const mockNotifications: MockNotification[] = [
     id: 'notif_002',
     userId: 'customer_001',
     type: 'message',
-    title: 'New Message',
+    title: 'New booking message',
     message: 'Nisa Thanakit sent you a message about your upcoming tour.',
     data: {
       conversationId: 'conv_001',

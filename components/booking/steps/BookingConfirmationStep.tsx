@@ -5,7 +5,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   Animated,
   Linking,
   Alert,
@@ -13,9 +12,7 @@ import {
 import { 
   CheckCircle, 
   Calendar, 
-  Clock, 
   MapPin, 
-  MessageCircle,
   Home,
   CalendarPlus,
 } from 'lucide-react-native';
@@ -24,9 +21,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ProfileImage } from '@/components/ui/ProfileImage';
 import { useBookingStore } from '@/stores/booking-store';
-import { useCreateBooking } from '@/app/api/booking/booking';
 import { designTokens } from '@/constants/design-tokens';
-import { CompanionData } from '@/types/companion';
 import { useTranslation } from 'react-i18next';
 
 interface BookingConfirmationStepProps {
@@ -36,10 +31,9 @@ interface BookingConfirmationStepProps {
 export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = ({
   onPrevious,
 }) => {
-  const { bookingData, resetBooking } = useBookingStore();
+  const { bookingData, submittedBooking, resetBooking } = useBookingStore();
   const [animationValue] = useState(new Animated.Value(0));
   const [now, setNow] = useState(() => new Date());
-  const createBookingMutation = useCreateBooking();
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -59,17 +53,13 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
   }, []);
 
   // Early return if no companion data
-  if (!bookingData.companionData) {
+  if (!bookingData.companionData || !submittedBooking) {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>{t('bookingConfirmation.noCompanionData')}</Text>
       </View>
     );
   }
-
-  const handleMessageCompanion = () => {
-    router.push(`/chat/${bookingData.companionId}`);
-  };
 
   const handleViewBookings = () => {
     resetBooking();
@@ -98,12 +88,11 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
     });
   };
 
-  const bookingId = createBookingMutation.data?.data?.booking?.id || null;
+  const bookingId = submittedBooking.id;
   const companion = bookingData.companionData;
   const service = bookingData.service;
   const dateTime = bookingData.dateTime;
   const location = bookingData.location;
-  const payment = bookingData.payment;
   const startsAt = dateTime ? new Date(`${dateTime.date}T${dateTime.time}:00`) : null;
   const countdownMs = startsAt ? Math.max(0, startsAt.getTime() - now.getTime()) : 0;
   const countdownDays = Math.floor(countdownMs / (1000 * 60 * 60 * 24));
@@ -125,7 +114,7 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
     const end = new Date(`${dateTime.date}T${dateTime.endTime}:00`);
     const formatCalendarDate = (date: Date) => date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
     const title = encodeURIComponent(`Tirak: ${service?.name || 'Local guide booking'} with ${companion.name}`);
-    const details = encodeURIComponent(`Message your local guide in Tirak before the experience. Pay the guide rate in cash directly to your guide.`);
+    const details = encodeURIComponent('Booking request submitted in Tirak. Payment becomes available only after guide confirmation.');
     const locationText = encodeURIComponent([location?.meetingPoint, location?.area].filter(Boolean).join(', '));
     const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${formatCalendarDate(start)}/${formatCalendarDate(end)}&details=${details}&location=${locationText}`;
 
@@ -158,9 +147,9 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
           <View style={styles.successIcon}>
             <CheckCircle size={64} color={designTokens.colors.semantic.success} />
           </View>
-          <Text style={styles.successTitle}>{t('bookingConfirmation.bookingConfirmed')}</Text>
+          <Text style={styles.successTitle}>Booking request sent</Text>
           <Text style={styles.successSubtitle}>
-            {t('bookingConfirmation.bookingSubmitted')}
+            Your itinerary is requested, not confirmed or paid. The guide will review it next.
           </Text>
           {bookingId && (
             <View style={styles.bookingIdContainer}>
@@ -174,7 +163,7 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
           <Card style={styles.countdownCard} padding={16}>
             <View style={styles.countdownHeader}>
               <Calendar size={20} color={designTokens.colors.semantic.primary} />
-              <Text style={styles.countdownTitle}>Your local guide starts in</Text>
+              <Text style={styles.countdownTitle}>Requested itinerary time</Text>
             </View>
             <Text style={styles.countdownValue}>{countdownText}</Text>
             <Text style={styles.countdownDetail}>
@@ -213,16 +202,6 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
                   <Text style={styles.reviewsText}>({companion.reviews} reviews)</Text>
                   )}
                 </View>
-              </View>
-              
-              <View style={styles.contactButtons}>
-                <TouchableOpacity 
-                  style={styles.contactButton}
-                  onPress={handleMessageCompanion}
-                >
-                  <MessageCircle size={18} color={designTokens.colors.semantic.surface} />
-                  <Text style={styles.contactButtonText}>{t('bookingConfirmation.message')}</Text>
-                </TouchableOpacity>
               </View>
             </View>
           </View>
@@ -269,25 +248,16 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
             </View>
             )}
             
-            {payment && (
-              <>
             <View style={styles.detailSection}>
-              <Text style={styles.detailSectionTitle}>{t('bookingConfirmation.paymentMethod')}</Text>
-              <Text style={styles.detailSectionValue}>
-                    {payment.method === 'cash' ? 'Cash Payment' :
-                     payment.method === 'promptpay' ? 'PromptPay QR' :
-                 'Bank Transfer'}
-              </Text>
+              <Text style={styles.detailSectionTitle}>Booking state</Text>
+              <Text style={styles.detailSectionValue}>Requested</Text>
+              <Text style={styles.detailSectionSubvalue}>Waiting for guide confirmation</Text>
             </View>
-            
+
             <View style={styles.detailSection}>
-              <Text style={styles.detailSectionTitle}>{t('bookingConfirmation.totalAmount')}</Text>
-              <Text style={styles.totalAmount}>
-                    ฿{payment.totalAmount.toLocaleString()}
-              </Text>
+              <Text style={styles.detailSectionTitle}>Payment state</Text>
+              <Text style={styles.detailSectionValue}>Unavailable until confirmed</Text>
             </View>
-              </>
-            )}
           </View>
         </Card>
 
@@ -301,9 +271,9 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
                 <Text style={styles.stepNumberText}>1</Text>
               </View>
               <View style={styles.stepContent}>
-                <Text style={styles.stepTitle}>{t('bookingConfirmation.waitForConfirmation')}</Text>
+                <Text style={styles.stepTitle}>Requested</Text>
                 <Text style={styles.stepDescription}>
-                  {t('bookingConfirmation.waitForConfirmationDescription')}
+                  The guide reviews your named itinerary, timing, meeting point, and requests.
                 </Text>
               </View>
             </View>
@@ -313,9 +283,9 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
                 <Text style={styles.stepNumberText}>2</Text>
               </View>
               <View style={styles.stepContent}>
-                <Text style={styles.stepTitle}>{t('bookingConfirmation.prepareForYourExperience')}</Text>
+                <Text style={styles.stepTitle}>Confirmed</Text>
                 <Text style={styles.stepDescription}>
-                  {t('bookingConfirmation.prepareForYourExperienceDescription')}
+                  Booking chat and PromptPay become available only after backend confirmation.
                 </Text>
               </View>
             </View>
@@ -325,9 +295,9 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
                 <Text style={styles.stepNumberText}>3</Text>
               </View>
               <View style={styles.stepContent}>
-                <Text style={styles.stepTitle}>{t('bookingConfirmation.meetAtTheLocation')}</Text>
+                <Text style={styles.stepTitle}>Paid</Text>
                 <Text style={styles.stepDescription}>
-                  {t('bookingConfirmation.meetAtTheLocationDescription')}
+                  A successful charge marks the confirmed itinerary paid without replacing the booking.
                 </Text>
               </View>
             </View>

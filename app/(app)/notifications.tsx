@@ -51,7 +51,13 @@ export default function NotificationsScreen() {
         }
         break;
       case 'new_message':
-        router.push(`/chat/${notification.data.conversationId}`);
+        if (notification.data?.conversationId && notification.data?.bookingId) {
+          router.push(
+            `/chat/${notification.data.conversationId}?bookingId=${encodeURIComponent(notification.data.bookingId)}`,
+          );
+        } else {
+          router.push('/bookings');
+        }
         break;
       case 'payment_completed':
         router.push(`/bookings`);

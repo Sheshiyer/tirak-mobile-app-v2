@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   SafeAreaView,
-  Alert,
   ScrollView,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -23,7 +22,6 @@ import { DateTimePickerStep } from './steps/DateTimePickerStep';
 import { LocationSelectionStep } from './steps/LocationSelectionStep';
 import { SpecialRequestsStep } from './steps/SpecialRequestsStep';
 import { BookingSummaryStep } from './steps/BookingSummaryStep';
-import { PaymentSelectionStep } from './steps/PaymentSelectionStep';
 import { BookingConfirmationStep } from './steps/BookingConfirmationStep';
 
 interface BookingWizardProps {
@@ -37,8 +35,7 @@ const STEP_LABELS = [
   'Location',
   'Requests',
   'Summary',
-  'Payment',
-  'Confirmation',
+  'Request sent',
 ];
 
 export const BookingWizard: React.FC<BookingWizardProps> = ({
@@ -55,7 +52,6 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
     prevStep,
     goToStep,
     setCompanionId,
-    resetBooking,
   } = useBookingStore();
 
   const currentCompanionId = companionId || (paramCompanionId as string);

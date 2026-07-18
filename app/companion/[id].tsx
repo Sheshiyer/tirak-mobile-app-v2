@@ -43,7 +43,6 @@ import {
   Heart, 
   Share, 
   Star, 
-  MessageCircle, 
   Calendar, 
   MapPin, 
   Globe, 
@@ -120,8 +119,12 @@ function mapCompanionDetails(data: any) {
     rating: data.rating?.average ?? data.rating ?? (isTestProfile ? 5 : 0),
     reviewCount: data.rating?.count ?? data.reviewCount ?? (isTestProfile ? demoReviews.length : 0),
     price: data.price ?? (isTestProfile ? 1800 : 0),
-    currency: data.currency || data.experiences?.[0]?.currency || 'THB',
-    experiences: Array.isArray(data.experiences) && data.experiences.length > 0 ? data.experiences : isTestProfile ? demoExperiences : [],
+    currency: data.currency || 'THB',
+    experiences: Array.isArray(data.experiences) && data.experiences.length > 0
+      ? data.experiences
+      : Array.isArray(data.services) && data.services.length > 0
+        ? data.services
+        : isTestProfile ? demoExperiences : [],
     languages: Array.isArray(data.languages) && data.languages.length > 0 ? data.languages : isTestProfile ? ['English', 'Thai'] : [],
     verified: data.verified ?? data.phoneVerified ?? isTestProfile,
     online: data.online ?? isTestProfile,
@@ -148,7 +151,15 @@ function mapCompanionDetails(data: any) {
 
 export default function CompanionProfileScreen() {
   const { t } = useTranslation();
-  const { id } = useLocalSearchParams();
+  const { id: idParam, experienceIndex: experienceIndexParam } = useLocalSearchParams<{
+    id?: string | string[];
+    experienceIndex?: string | string[];
+  }>();
+  const id = Array.isArray(idParam) ? idParam[0] : idParam;
+  const requestedExperienceIndex = Number(Array.isArray(experienceIndexParam) ? experienceIndexParam[0] : experienceIndexParam);
+  const [selectedExperienceIndex, setSelectedExperienceIndex] = useState<number | null>(
+    Number.isInteger(requestedExperienceIndex) && requestedExperienceIndex >= 0 ? requestedExperienceIndex : null
+  );
   const [selectedTab, setSelectedTab] = useState<'about' | 'services' | 'reviews'>('about');
   const [showAllServices, setShowAllServices] = useState(false);
   const [showAllLanguages, setShowAllLanguages] = useState(false);
@@ -174,9 +185,15 @@ export default function CompanionProfileScreen() {
   const { data: availabilityData, isLoading: isLoadingAvailability } = useCompanionWeeklyAvailability(id as string, '00:00', '23:59');
   
   // Currency conversion — called before early returns (React hook rules)
-  const companionCurrency = companionData?.data?.currency || companionData?.data?.experiences?.[0]?.currency || 'THB';
-  const convertedPrice = useCurrencyConversion(companionData?.data?.price, companionCurrency);
-  const sourcePriceContext = formatOriginalCurrencyContext(companionData?.data?.price, companionCurrency);
+  const apiExperiences = companionData?.data?.experiences?.length
+    ? companionData.data.experiences
+    : companionData?.data?.services || [];
+  const selectedApiExperience = selectedExperienceIndex !== null
+    ? apiExperiences[selectedExperienceIndex]
+    : undefined;
+  const companionCurrency = selectedApiExperience?.currency || companionData?.data?.currency || 'THB';
+  const convertedPrice = useCurrencyConversion(selectedApiExperience?.price, companionCurrency);
+  const sourcePriceContext = formatOriginalCurrencyContext(selectedApiExperience?.price, companionCurrency);
   
   const posthog = usePostHog();
   const navigation = useNavigation();
@@ -187,7 +204,7 @@ export default function CompanionProfileScreen() {
     if (companionData?.data) {
       const companion = companionData.data;
       posthog.capture('companion_profile_viewed', {
-        companion_id: id,
+        companion_id: id || companion.id,
         companion_name: getCompanionDisplayName(companion),
         companion_location: getCompanionLocation(companion),
         companion_rating: companion.rating,
@@ -224,6 +241,9 @@ export default function CompanionProfileScreen() {
   }
   
   const companion = mapCompanionDetails(companionData.data);
+  const selectedExperience = selectedExperienceIndex !== null
+    ? companion.experiences[selectedExperienceIndex] ?? null
+    : null;
   const isTestProfile = isTestCompanion(companion);
   const isOwnProfile =
     user?.id === companion.id ||
@@ -292,15 +312,17 @@ export default function CompanionProfileScreen() {
     );
   };
   
-  const handleChat = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const guideName = companion.displayName || companion.name;
-    const starter = encodeURIComponent(`Hi ${guideName}! I'm interested in exploring Thailand with you. What experiences do you offer?`);
-    router.push(`/chat/${companion.id}?starter=${starter}`);
-  };
-  
   const handleBookNow = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (selectedExperienceIndex === null || !selectedExperience) {
+      setSelectedTab('services');
+      showToast({
+        message: 'Select a named itinerary first',
+        type: 'warning'
+      });
+      return;
+    }
+
     if (!selectedDate) {
       showToast({
         message: t('companionDetails.pleaseSelectDate'),
@@ -310,8 +332,14 @@ export default function CompanionProfileScreen() {
     }
 
     if (companion && companion.experiences && companion.experiences.length > 0) {
-      const defaultService = companion.experiences[0];
-      const defaultDuration = defaultService.durationMinutes || 60;
+      const selectedService = companion.experiences[selectedExperienceIndex];
+      const parsedDurationHours = typeof selectedService.duration === 'number'
+        ? selectedService.duration
+        : Number.parseFloat(selectedService.duration || '');
+      const selectedDuration = selectedService.durationMinutes
+        || (Number.isFinite(parsedDurationHours) ? parsedDurationHours * 60 : 60);
+      const endMinutes = (10 * 60) + selectedDuration;
+      const endTime = `${String(Math.floor(endMinutes / 60) % 24).padStart(2, '0')}:${String(endMinutes % 60).padStart(2, '0')}`;
 
       // Set companion data in the store
       setCompanionData({
@@ -327,21 +355,21 @@ export default function CompanionProfileScreen() {
 
       // Update service in the store
       useBookingStore.getState().updateService({
-        id: defaultService.id,
-        name: defaultService.title,
-        description: defaultService.description,
-        price: defaultService.price,
-        currency: defaultService.currency || companion.currency || 'THB',
-        duration: defaultDuration / 60, // Convert to hours
-        category: defaultService.category || 'Experience',
+        id: selectedService.id,
+        name: selectedService.title || selectedService.name || 'Guided Thailand Itinerary',
+        description: selectedService.description,
+        price: selectedService.price,
+        currency: selectedService.currency || companion.currency || 'THB',
+        duration: selectedDuration / 60,
+        category: selectedService.category || 'Experience',
       });
 
       // Update date/time in the store
       useBookingStore.getState().updateDateTime({
         date: selectedDate,
         time: '10:00', // Default to 10 AM
-        duration: defaultDuration / 60, // Convert minutes to hours
-        endTime: '11:00', // Will be calculated properly in the datetime step
+        duration: selectedDuration / 60,
+        endTime,
         isAvailable: true
       });
 
@@ -554,17 +582,17 @@ export default function CompanionProfileScreen() {
             </TouchableOpacity>
           )}
           
-          {companion.price && companion.price > 0 ? (
+          {selectedExperience && selectedExperience.price > 0 ? (
             <View style={styles.priceContainer as ViewStyle}>
-              <Text style={styles.price as TextStyle}>{convertedPrice || formatTravelerCurrency(companion.price, companion.currency)}</Text>
-              <Text style={styles.priceUnit as TextStyle}>/{t('companionDetails.day')}</Text>
+              <Text style={styles.price as TextStyle}>{convertedPrice || formatTravelerCurrency(selectedExperience.price, selectedExperience.currency || companion.currency)}</Text>
+              <Text style={styles.priceUnit as TextStyle}> itinerary total</Text>
               {sourcePriceContext ? (
                 <Text style={styles.priceSecondary as TextStyle}> ({sourcePriceContext})</Text>
               ) : null}
             </View>
           ) : (
             <View style={styles.priceContainer as ViewStyle}>
-              <Text style={styles.priceContact as TextStyle}>{t('companionDetails.contactForPricing')}</Text>
+              <Text style={styles.priceContact as TextStyle}>Select a named itinerary below to see its total</Text>
             </View>
           )}
           
@@ -583,18 +611,6 @@ export default function CompanionProfileScreen() {
             </View>
           )}
           
-          <View style={styles.actionButtons as ViewStyle}>
-            <Button
-              title={t('companionDetails.chatNow')}
-              variant="primary"
-              size="large"
-              fullWidth
-              onPress={handleChat}
-              style={styles.chatButton as ViewStyle}
-              textStyle={styles.chatButtonText as TextStyle}
-              leftIcon={<MessageCircle size={18} color={designTokens.colors.semantic.surface} />}
-            />
-          </View>
         </Card>
         
         {/* Tabs */}
@@ -716,16 +732,36 @@ export default function CompanionProfileScreen() {
                   {companion.experiences.slice(0, showAllServices ? companion.experiences.length : 4).map((exp: any, index: number) => {
                     const serviceId = exp.id || `service-${index}`;
                     const isExpanded = expandedServices.has(serviceId);
-                    const fullText = `${exp.title} - ${exp.description} (${exp.durationMinutes} min, ${formatTravelerCurrency(exp.price, exp.currency || companion.currency)})`;
+                    const experienceName = exp.title || exp.name || 'Guided Thailand Itinerary';
+                    const experienceDuration = exp.durationMinutes
+                      ? `${exp.durationMinutes} min`
+                      : exp.duration ? `${exp.duration} hr` : 'Duration shown at booking';
+                    const fullText = `${experienceName} - ${exp.description} (${experienceDuration}, ${formatTravelerCurrency(exp.price, exp.currency || companion.currency)})`;
                     const shortText = fullText.length > 80 ? `${fullText.substring(0, 80)}...` : fullText;
                     const needsToggle = fullText.length > 80;
+                    const isSelected = selectedExperienceIndex === index;
                     
                     return (
-                      <View key={serviceId} style={[styles.serviceItem as ViewStyle, { alignItems: 'flex-start' }]}> 
+                      <TouchableOpacity
+                        key={serviceId}
+                        style={[
+                          styles.serviceItem as ViewStyle,
+                          isSelected && styles.serviceItemSelected as ViewStyle,
+                          { alignItems: 'flex-start' },
+                        ]}
+                        onPress={() => {
+                          setSelectedExperienceIndex(index);
+                          setSelectedDate(null);
+                        }}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: isSelected }}
+                        accessibilityLabel={`Select ${experienceName}`}
+                      >
                         <View style={styles.serviceIcon as ViewStyle}>
-                          <Text style={styles.serviceEmoji as TextStyle}>✓</Text>
+                          <Text style={styles.serviceEmoji as TextStyle}>{isSelected ? '✓' : '→'}</Text>
                         </View>
                         <View style={{ flex: 1, minWidth: 0 }}>
+                          {isSelected && <Text style={styles.selectedServiceLabel as TextStyle}>Selected itinerary</Text>}
                           <Text style={[styles.serviceText as TextStyle, { flexWrap: 'wrap' }]}>
                             {isExpanded ? fullText : shortText}
                           </Text>
@@ -745,7 +781,7 @@ export default function CompanionProfileScreen() {
                             </TouchableOpacity>
                           )}
                         </View>
-                      </View>
+                      </TouchableOpacity>
                     );
                   })}
                 </View>
@@ -806,10 +842,14 @@ export default function CompanionProfileScreen() {
 
         {/* Availability */}
         <Card style={styles.availabilityCard as ViewStyle} padding={20}>
-          <Text style={styles.sectionTitle as TextStyle}>{t('companionDetails.availability')}</Text>
-          <Text style={styles.availabilitySubtitle as TextStyle}>{t('companionDetails.selectDateToBook')}</Text>
-          
-          {isLoadingAvailability ? (
+          <Text style={styles.sectionTitle as TextStyle}>Itinerary date slots</Text>
+          <Text style={styles.availabilitySubtitle as TextStyle}>
+            {selectedExperience
+              ? `Choose an available date for ${selectedExperience.title || selectedExperience.name || 'this itinerary'}`
+              : 'Select a named itinerary before choosing a date'}
+          </Text>
+
+          {selectedExperience && (isLoadingAvailability ? (
             <View style={{ flexDirection: 'row', gap: 12, paddingVertical: 12 }}>
               {Array.from({ length: 7 }).map((_, i) => (
                 <ShimmerBox key={i} width={60} height={80} style={{ borderRadius: 12 }} />
@@ -823,17 +863,28 @@ export default function CompanionProfileScreen() {
             >
               {availableDates.map(renderDateItem)}
             </ScrollView>
-          )}
+          ))}
 
           {/* <TouchableOpacity style={styles.calendarButton as ViewStyle}>
             <Text style={styles.calendarButtonText as TextStyle}>View Full Calendar</Text>
             <Calendar size={16} color={designTokens.colors.semantic.primary} />
           </TouchableOpacity> */}
 
-          {/* Conditional Book Now Button */}
-          {selectedDate && (
+          {selectedExperienceIndex === null && (
+            <TouchableOpacity
+              style={styles.selectItineraryButton as ViewStyle}
+              onPress={() => setSelectedTab('services')}
+              accessibilityRole="button"
+            >
+              <Text style={styles.selectItineraryButtonText as TextStyle}>Select a named itinerary first</Text>
+              <ChevronRight size={18} color={designTokens.colors.semantic.primary} />
+            </TouchableOpacity>
+          )}
+
+          {/* Request CTA appears only after explicit itinerary and date selection. */}
+          {selectedDate && selectedExperienceIndex !== null && selectedExperience && (
             <Button
-              title={t('companionDetails.bookNow')}
+              title={`Request ${selectedExperience.title || selectedExperience.name || 'itinerary'}`}
               variant="primary"
               onPress={handleBookNow}
               style={styles.bookNowButton as ViewStyle}
@@ -1209,6 +1260,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: designTokens.colors.semantic.border,
+    borderRadius: designTokens.borderRadius.components.card,
+  },
+  serviceItemSelected: {
+    borderColor: designTokens.colors.semantic.primary,
+    backgroundColor: designTokens.colors.semantic.primary + '0D',
   },
   serviceIcon: {
     width: 30,
@@ -1225,6 +1284,12 @@ const styles = StyleSheet.create({
   serviceText: {
     fontSize: 16,
     color: designTokens.colors.semantic.text,
+  },
+  selectedServiceLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: designTokens.colors.semantic.primary,
+    marginBottom: 4,
   },
   toggleButton: {
     flexDirection: 'row',
@@ -1379,6 +1444,22 @@ const styles = StyleSheet.create({
   bookNowButton: {
     marginTop: designTokens.spacing.scale.lg,
     borderRadius: designTokens.borderRadius.components.button,
+  },
+  selectItineraryButton: {
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: designTokens.spacing.scale.lg,
+    borderWidth: 1,
+    borderColor: designTokens.colors.semantic.primary,
+    borderRadius: designTokens.borderRadius.components.button,
+  },
+  selectItineraryButtonText: {
+    color: designTokens.colors.semantic.primary,
+    fontSize: 15,
+    fontWeight: '700',
   },
   reportOverlay: {
     flex: 1,

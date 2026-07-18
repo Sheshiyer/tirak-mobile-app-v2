@@ -56,7 +56,7 @@ export const mockApi = {
           role: 'customer' as const,
           verified: true,
           profileImage: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=1000&auto=format&fit=crop',
-          bio: 'Travel enthusiast exploring Thailand. Looking for authentic local experiences and cultural connections.',
+          bio: 'Travel enthusiast exploring Thailand. Looking for authentic local experiences and cultural activities.',
           location: 'Bangkok, Thailand',
           phone: '+66 81 234 5678',
           dateOfBirth: '1988-07-22',

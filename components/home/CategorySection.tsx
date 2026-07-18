@@ -73,7 +73,7 @@ const categoryColors = [
   '#FFF5E5', // Holiday - Light orange
   '#E5FFF5', // Wellness - Light mint
   '#F5E5FF', // Explorer - Light lavender
-  '#F0E5FF', // Private - Light violet
+  '#F0E5FF', // Arts & crafts - Light violet
   '#FFF0E5', // Events - Light peach
   '#E5F5FF', // Sports - Light blue
 ];

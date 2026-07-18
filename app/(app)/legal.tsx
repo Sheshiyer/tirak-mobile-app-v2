@@ -76,10 +76,10 @@ You must not use Tirak to:
 - Solicit personal contact information to bypass the platform
 
 **5. Guide Verification**
-Guides complete Tirak verification before being listed. We review identity and profile details, but travelers should still read each profile, ask questions in chat, and confirm meeting details before booking.
+Guides complete Tirak verification before being listed. We review identity and profile details. Travelers should review the named itinerary before requesting it; booking chat opens after guide confirmation for meeting-point and itinerary logistics.
 
 **6. Bookings and Payment**
-Bookings are confirmed once accepted by the guide. Guide rates and cash-payment details are shown in the booking flow when available. Tirak is not responsible for payment disputes between parties.
+Booking requests remain pending until accepted by the guide. PromptPay is offered only on a confirmed booking, and the amount comes from that backend booking record. If a charge fails, expires, or appears incorrect, keep the booking and contact Tirak support.
 
 **7. Cancellations**
 Cancellation policies are set by individual guides. Review the guide's policy before booking.
@@ -87,8 +87,8 @@ Cancellation policies are set by individual guides. Review the guide's policy be
 **8. Safety**
 Keep planning and booking details inside Tirak when possible, meet in public places, and share your itinerary with someone you trust. If something feels wrong, use Report in the app or contact us immediately at safety@tirak.app.
 
-**9. Limitation of Liability**
-Tirak provides a marketplace platform and is not liable for the actions of guides or travellers, or for any direct, indirect, or consequential damages arising from use of the platform.
+**9. Problems During an Experience**
+Contact Tirak support if a booking, payment, safety concern, or guide interaction needs review. Nothing in these terms removes rights or remedies that cannot lawfully be excluded under applicable law.
 
 **10. Governing Law**
 These terms are governed by the laws of Thailand.

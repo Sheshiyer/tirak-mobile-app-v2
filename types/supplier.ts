@@ -85,9 +85,4 @@ export interface SupplierSignupData {
   services: Service[];
   regions: string[];
   availability: Availability;
-  subscription: {
-    plan: 'basic' | 'premium' | 'pro';
-    paymentMethod: 'promptpay' | 'credit_card' | 'bank_transfer';
-    paymentComplete: boolean;
-  };
 }

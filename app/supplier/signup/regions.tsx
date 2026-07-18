@@ -112,7 +112,7 @@ export default function RegionsScreen() {
           <View style={styles.infoContainer}>
             <Text style={styles.infoTitle}>Why regions matter:</Text>
             <Text style={styles.infoText}>
-              Selecting regions helps customers find companions in their area. You can select multiple regions if you're willing to travel or provide services in different locations.
+              Selecting regions helps travelers find your guided experiences. Choose every region where you can deliver the listed itineraries.
             </Text>
           </View>
         </View>

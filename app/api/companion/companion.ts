@@ -351,11 +351,11 @@ export const fetchCompanions = async (params: CompanionSearchParams = {}): Promi
         data: error.response?.data,
         url,
       });
-      const errorMessage = error.response?.data?.message || "Failed to fetch companions";
+      const errorMessage = error.response?.data?.message || "Failed to fetch guided experiences";
       throw new Error(errorMessage);
     }
     
-    throw new Error("Network error occurred while fetching companions");
+    throw new Error("Network error occurred while fetching guided experiences");
   }
 };
 
@@ -572,11 +572,11 @@ export const fetchCompanionById = async (id: string): Promise<CompanionDetailsRe
     
     // Handle different error types
     if (axios.isAxiosError(error)) {
-      const errorMessage = error.response?.data?.message || "Failed to fetch companion details";
+      const errorMessage = error.response?.data?.message || "Failed to fetch guide details";
       throw new Error(errorMessage);
     }
     
-    throw new Error("Network error occurred while fetching companion details");
+    throw new Error("Network error occurred while fetching guide details");
   }
 };
 
@@ -651,12 +651,12 @@ export const fetchCompanionAvailability = async (id: string, params: Availabilit
       }
 
       console.error("Error fetching companion availability:", error);
-      const errorMessage = error.response?.data?.message || "Failed to fetch companion availability";
+      const errorMessage = error.response?.data?.message || "Failed to fetch itinerary availability";
       throw new Error(errorMessage);
     }
     
     console.error("Error fetching companion availability:", error);
-    throw new Error("Network error occurred while fetching companion availability");
+    throw new Error("Network error occurred while fetching itinerary availability");
   }
 };
 

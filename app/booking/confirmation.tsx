@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { LottiePlayer } from '@/components/ui/LottiePlayer';
 import { SoundManager } from '@/utils/sound-manager';
 import { designTokens } from '@/constants/design-tokens';
-import { Calendar, MessageCircle, Home } from 'lucide-react-native';
+import { Calendar, Home } from 'lucide-react-native';
 
 export default function BookingConfirmationScreen() {
   useEffect(() => {
@@ -23,7 +23,6 @@ export default function BookingConfirmationScreen() {
   }, []);
 
   const handleViewBooking = () => router.push('/bookings');
-  const handleMessageCompanion = () => router.push('/messages');
   const handleBackToHome = () => router.push('/(app)');
 
   return (
@@ -43,52 +42,25 @@ export default function BookingConfirmationScreen() {
         
         <Text style={styles.title}>Guide Request Sent</Text>
         <Text style={styles.subtitle}>
-          Your Tirak guide has the details. Keep chat open for meeting-point updates.
+          Open Bookings to see the live request. It is not confirmed or paid yet.
         </Text>
         
         <Card style={styles.bookingCard} padding={20}>
-          <Text style={styles.bookingTitle}>Request Details</Text>
+          <Text style={styles.bookingTitle}>Booking states</Text>
           
           <View style={styles.bookingDetail}>
-            <Text style={styles.detailLabel}>Booking ID</Text>
-            <Text style={styles.detailValue}>TRK-12345678</Text>
+            <Text style={styles.detailLabel}>Requested</Text>
+            <Text style={styles.detailValue}>Guide review</Text>
           </View>
           
           <View style={styles.bookingDetail}>
-            <Text style={styles.detailLabel}>Local Guide</Text>
-            <Text style={styles.detailValue}>Nisa Thanakit</Text>
+            <Text style={styles.detailLabel}>Confirmed</Text>
+            <Text style={styles.detailValue}>Chat and payment open</Text>
           </View>
           
           <View style={styles.bookingDetail}>
-            <Text style={styles.detailLabel}>Date</Text>
-            <Text style={styles.detailValue}>Monday, June 15, 2024</Text>
-          </View>
-          
-          <View style={styles.bookingDetail}>
-            <Text style={styles.detailLabel}>Time</Text>
-            <Text style={styles.detailValue}>09:00 AM</Text>
-          </View>
-          
-          <View style={styles.bookingDetail}>
-            <Text style={styles.detailLabel}>Duration</Text>
-            <Text style={styles.detailValue}>Full Day (8 hours)</Text>
-          </View>
-          
-          <View style={styles.bookingDetail}>
-            <Text style={styles.detailLabel}>Location</Text>
-            <Text style={styles.detailValue}>Bangkok</Text>
-          </View>
-          
-          <View style={styles.divider} />
-          
-          <View style={styles.bookingDetail}>
-            <Text style={styles.detailLabel}>Guide Rate</Text>
-            <Text style={styles.totalValue}>฿2,750</Text>
-          </View>
-          
-          <View style={styles.bookingDetail}>
-            <Text style={styles.detailLabel}>Payment</Text>
-            <Text style={styles.detailValue}>Paid in cash directly to the guide</Text>
+            <Text style={styles.detailLabel}>Paid</Text>
+            <Text style={styles.detailValue}>PromptPay complete</Text>
           </View>
         </Card>
         
@@ -100,21 +72,9 @@ export default function BookingConfirmationScreen() {
               <Calendar size={24} color={designTokens.colors.semantic.primary} />
             </View>
             <View style={styles.stepContent}>
-              <Text style={styles.stepTitle}>Add to Calendar</Text>
+              <Text style={styles.stepTitle}>Watch the request</Text>
               <Text style={styles.stepDescription}>
-                Save the time so your Tirak day is easy to find later.
-              </Text>
-            </View>
-          </View>
-          
-          <View style={styles.stepItem}>
-            <View style={styles.stepIcon}>
-              <MessageCircle size={24} color={designTokens.colors.semantic.primary} />
-            </View>
-            <View style={styles.stepContent}>
-              <Text style={styles.stepTitle}>Message your guide</Text>
-              <Text style={styles.stepDescription}>
-                Confirm the meeting point, pace, food needs, and anything your guide should know.
+                The Bookings screen reads current status from the backend.
               </Text>
             </View>
           </View>
@@ -128,15 +88,6 @@ export default function BookingConfirmationScreen() {
             fullWidth
             style={styles.actionButton}
             icon={<Calendar size={18} color={designTokens.colors.semantic.primary} />}
-          />
-
-          <Button
-            title="Message Guide"
-            variant="white"
-            onPress={handleMessageCompanion}
-            fullWidth
-            style={styles.actionButton}
-            icon={<MessageCircle size={18} color={designTokens.colors.semantic.primary} />}
           />
 
           <Button

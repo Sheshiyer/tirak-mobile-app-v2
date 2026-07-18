@@ -139,7 +139,7 @@ const AcceptConfirmationModal: React.FC<AcceptConfirmationModalProps> = ({
                   {formatCurrency(request.totalAmount)}
                 </Heading>
                 <Caption style={styles.sectionSubtext}>
-                  Paid in cash directly to you unless another arrangement is shown.
+                  Traveler PromptPay becomes available after you approve this booking.
                 </Caption>
               </View>
 

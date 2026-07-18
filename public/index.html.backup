@@ -17,7 +17,7 @@
     <link rel="icon" href="/favicon.png" type="image/png" />
     <link rel="apple-touch-icon" href="/icon.png" />
     
-    <title>Tirak - Companion Marketplace</title>
+    <title>Tirak - Local Experiences</title>
     
     <!-- Import meta polyfill - must be loaded before bundle -->
     <script src="/import-meta-polyfill.js"></script>
