@@ -5,11 +5,11 @@ project: Tirak
 effort: comprehensive
 effort_source: auto
 phase: execute
-progress: 104/204
+progress: 111/204
 mode: interactive
 iteration: 3
 started: 2026-07-18T10:31:32Z
-updated: 2026-07-18T21:10:52Z
+updated: 2026-07-18T21:13:19Z
 ---
 
 ## Problem
@@ -219,13 +219,13 @@ For the execution iteration, complete `T-001` through `T-080` in dependency orde
 
 ### Production plan execution
 
-- [ ] ISC-124: `T-001` mobile integration diff inventory passes its frozen acceptance and validation fields.
-- [ ] ISC-125: `T-002` mobile baseline proof passes its frozen acceptance and validation fields.
-- [ ] ISC-126: `T-003` mobile baseline commit passes its frozen acceptance and validation fields.
-- [ ] ISC-127: `T-004` backend integration diff inventory passes its frozen acceptance and validation fields.
-- [ ] ISC-128: `T-005` backend and migration baseline proof passes its frozen acceptance and validation fields.
-- [ ] ISC-129: `T-006` backend baseline commit passes its frozen acceptance and validation fields.
-- [ ] ISC-130: `T-007` canonical wiki baseline passes its frozen acceptance and validation fields.
+- [x] ISC-124: `T-001` mobile integration diff inventory passes its frozen acceptance and validation fields.
+- [x] ISC-125: `T-002` mobile baseline proof passes its frozen acceptance and validation fields.
+- [x] ISC-126: `T-003` mobile baseline commit passes its frozen acceptance and validation fields.
+- [x] ISC-127: `T-004` backend integration diff inventory passes its frozen acceptance and validation fields.
+- [x] ISC-128: `T-005` backend and migration baseline proof passes its frozen acceptance and validation fields.
+- [x] ISC-129: `T-006` backend baseline commit passes its frozen acceptance and validation fields.
+- [x] ISC-130: `T-007` canonical wiki baseline passes its frozen acceptance and validation fields.
 - [ ] ISC-131: `T-008` cross-repository baseline manifest passes its frozen acceptance and validation fields.
 - [ ] ISC-132: `T-009` payment HTTP and route contract passes its frozen acceptance and validation fields.
 - [ ] ISC-133: `T-010` payment and cancellation state mapping passes its frozen acceptance and validation fields.
@@ -462,3 +462,6 @@ For the execution iteration, complete `T-001` through `T-080` in dependency orde
 - Release evidence (ISC-110–116): production unpaid/legitimately-paid fixtures, live-surface audits, exact-build iPhone/iPad validation, deploy/abort/rollback criteria, non-mutating GitHub mapping, worker packets, and risk fallbacks are task-gated.
 - Scope and authority (ISC-117–120): bounded guided experiences remain the only commerce surface; private/adult/companionship, payouts, saved cards, subscriptions, Apple Pay, and Google Pay remain excluded; primary Apple, Omise, and Cloudflare guidance is cited.
 - Independent validation (ISC-121–123): two advisor gates and two SystemsThinking audits challenged the plan; four migration/fixture/archive/restitution defects were corrected; final re-audit returned PASS and ReReadCheck matched the requested filesystem skill, detailed plan, and Omise/App Store integration scope.
+- Phase 1 baseline inventory and proof (ISC-124–125, ISC-127–128): mobile Jest 7/7 and TypeScript pass; backend Vitest 9/9 and TypeScript pass; both staged secret scans and diff checks pass; the backend evidence preserves the seven-error historical migration replay plus red seed, tooling, and restitution probes.
+- Phase 1 immutable recovery points (ISC-126, ISC-129–130): mobile `3c0ecbf4218992857bc4de180311d8d892205436`, backend `ffadf78200b54d0bc986b5d711184705dc68269c`, and wiki `7b5baee7a7f24f032b12ee6a7bf62a68a97c672e` are local no-deploy commits with verified parent, tree, and binary-diff hashes.
+- Phase 1 manifest gate (ISC-131 pending): `docs/execution/phase-1/t-008-cross-repository-baseline-manifest.md` binds all repository identities, evidence/control hashes, fifteen mobile exclusions, deterministic wiki output, and six blocker classes. Human approval is still required and grants no fanout, publication, staging, or deployment authority.
