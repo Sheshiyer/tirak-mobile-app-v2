@@ -1,0 +1,43 @@
+{
+  "contractVersion": "tirak-payments-v1",
+  "status": "PENDING_HUMAN_T016_APPROVAL",
+  "authorizedBoundary": "local contract work only; no fanout, GitHub publication, staging, or deployment",
+  "repositories": {
+    "mobile": {
+      "commit": "6f71cb29e973c61348cfaa42b63a45290760ccca",
+      "tree": "1834635c3fd043d40e65a9933c756c5e97b298c3",
+      "parent": "e469132f2cb43925c13f03d1fbe0d2efa5b9b7ce",
+      "binaryDiffSha256": "981e7d702a41a1dd7bd6965d2fcd3ffd15bc950e2e47f78ec3cf864889b8491c"
+    },
+    "backend": {
+      "commit": "b6a418568088e5cb85cf5ba97240ff83b49382ad",
+      "tree": "b76398276cbe4a2bfc71a27d8ccbcf21efeb248f",
+      "parent": "ffadf78200b54d0bc986b5d711184705dc68269c",
+      "binaryDiffSha256": "7246751d264b26c5873e3b4fcc8d47df3ba6d90697188e76dcf942b09a5dd3f8"
+    }
+  },
+  "artifacts": [
+    { "repository": "backend", "path": "contracts/tirak-payments-v1/environment-matrix.json", "sha256": "233f1e0e759af6b6aae56b1990e8a64e71d810706dbf4c2c35c5223ab37408f5" },
+    { "repository": "backend", "path": "contracts/tirak-payments-v1/payment-api.json", "sha256": "3762535dd3f5781f0b80efc72a71a306fc320e2bc66270b1a7cbc990fe2c0c11" },
+    { "repository": "backend", "path": "contracts/tirak-payments-v1/state-matrix.json", "sha256": "4b0b605fd1941cdbfa476686323dc457d36692c0682bd032decc837444e53e8b" },
+    { "repository": "backend", "path": "contracts/tirak-payments-v1/target-schema.sql", "sha256": "08acab5dd1f9b8d308d4944349129d9d032dc2a081517db0a2e33235f698b9c9" },
+    { "repository": "backend", "path": "docs/contracts/tirak-payments-v1/README.md", "sha256": "498a4fc32987a4fdc35587034c44bf38cd0a07294d21c5e8470a8ea981f58bf5" },
+    { "repository": "backend", "path": "docs/contracts/tirak-payments-v1/migration-strategy.md", "sha256": "4a2a83741b57be83d0baace69aea2c47ccc053f10a1b904c05be0d736ed147cf" },
+    { "repository": "backend", "path": "docs/contracts/tirak-payments-v1/permission-matrix.md", "sha256": "d8ab4fb102732df41277e5ed7340b42953c6681004eb6e8da3f99f97e38494a0" },
+    { "repository": "backend", "path": "src/contracts/payment.ts", "sha256": "efd0d5a1fe45f6b1e977842faf7fd21f12432b5cf367a1035c61075ed050fdc0" },
+    { "repository": "backend", "path": "tests/contracts/payment-contract.test.ts", "sha256": "1f8d60a69f81e49e4698bf83d35e66dd20b8a477420c63e0adcbd2504398a816" },
+    { "repository": "mobile", "path": "__tests__/release-provenance.test.ts", "sha256": "d376d560c674cf420c97c14056f53462843e6db60e8afa0c26bb6073b691f66e" },
+    { "repository": "mobile", "path": "app/api/payments/payments.ts", "sha256": "c98f87f94aae9974f06390ccdd40334c95bb2773750f57e202c9e7d0d0c7615d" },
+    { "repository": "mobile", "path": "docs/contracts/tirak-payments-v1/mobile-boundary.md", "sha256": "15b567216c212c75a60ea2c4072d563377e42f60d84696388d066572967201bd" },
+    { "repository": "mobile", "path": "docs/contracts/tirak-payments-v1/reviewer-fixture-provenance.json", "sha256": "059e72ee0c903d12ddaf65a616db5151a86a6d82a15699314c6254ea95181633" },
+    { "repository": "mobile", "path": "utils/booking-contract.ts", "sha256": "9529b26c77aeeb28148947cc19bcecd1a39b9950a3a193cbb67fb1415087fc13" },
+    { "repository": "mobile", "path": "utils/booking-state.ts", "sha256": "c70b9ce19bb8c4a0e539031ddef33f7de818097db6054650e5281e789dc7b9b6" }
+  ],
+  "validation": {
+    "backendTypecheck": "PASS",
+    "backendTests": "10/10 files; 186/186 tests",
+    "mobileTypecheck": "PASS",
+    "mobileTests": "8/8 suites; 47/47 tests",
+    "t008Verifier": "PASS with humanApproval APPROVED"
+  }
+}

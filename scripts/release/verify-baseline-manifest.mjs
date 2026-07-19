@@ -241,7 +241,7 @@ try {
   verifyExclusions();
   console.log(JSON.stringify({
     status: 'PASS',
-    gate: 'T-008 pre-approval recovery baseline',
+    gate: 'T-008 recovery baseline and approval',
     repositories: repositories.map(({ name, baseline, tree }) => ({ name, baseline, tree })),
     evidenceFiles: evidence.length,
     exclusions: exclusions.length,

@@ -29,6 +29,7 @@
     "copy:pwa": "cp -r public/* dist/ 2>/dev/null || cp -r public/* .output/ 2>/dev/null || true",
     "test": "jest",
     "release:verify-baseline": "node scripts/release/verify-baseline-manifest.mjs",
+    "release:verify-contracts": "node scripts/release/verify-contract-packet.mjs",
     "deploy:netlify": "netlify deploy --dir=dist --prod",
     "deploy:vercel": "vercel --prod",
     "deploy:firebase": "firebase deploy --only hosting",

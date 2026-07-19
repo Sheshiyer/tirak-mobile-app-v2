@@ -5,11 +5,11 @@ project: Tirak
 effort: comprehensive
 effort_source: auto
 phase: execute
-progress: 112/204
+progress: 119/204
 mode: interactive
 iteration: 3
 started: 2026-07-18T10:31:32Z
-updated: 2026-07-19T02:57:19Z
+updated: 2026-07-19T03:14:47Z
 ---
 
 ## Problem
@@ -227,13 +227,13 @@ For the execution iteration, complete `T-001` through `T-080` in dependency orde
 - [x] ISC-129: `T-006` backend baseline commit passes its frozen acceptance and validation fields.
 - [x] ISC-130: `T-007` canonical wiki baseline passes its frozen acceptance and validation fields.
 - [x] ISC-131: `T-008` cross-repository baseline manifest passes its frozen acceptance and validation fields.
-- [ ] ISC-132: `T-009` payment HTTP and route contract passes its frozen acceptance and validation fields.
-- [ ] ISC-133: `T-010` payment and cancellation state mapping passes its frozen acceptance and validation fields.
-- [ ] ISC-134: `T-011` target D1 schema contract passes its frozen acceptance and validation fields.
-- [ ] ISC-135: `T-012` legacy migration strategy passes its frozen acceptance and validation fields.
-- [ ] ISC-136: `T-013` environment and rollout-mode contract passes its frozen acceptance and validation fields.
-- [ ] ISC-137: `T-014` mobile checkout boundary passes its frozen acceptance and validation fields.
-- [ ] ISC-138: `T-015` reviewer fixture and clean-seed provenance passes its frozen acceptance and validation fields.
+- [x] ISC-132: `T-009` payment HTTP and route contract passes its frozen acceptance and validation fields.
+- [x] ISC-133: `T-010` payment and cancellation state mapping passes its frozen acceptance and validation fields.
+- [x] ISC-134: `T-011` target D1 schema contract passes its frozen acceptance and validation fields.
+- [x] ISC-135: `T-012` legacy migration strategy passes its frozen acceptance and validation fields.
+- [x] ISC-136: `T-013` environment and rollout-mode contract passes its frozen acceptance and validation fields.
+- [x] ISC-137: `T-014` mobile checkout boundary passes its frozen acceptance and validation fields.
+- [x] ISC-138: `T-015` reviewer fixture and clean-seed provenance passes its frozen acceptance and validation fields.
 - [ ] ISC-139: `T-016` shared contract packet approval passes its frozen acceptance and validation fields.
 - [ ] ISC-140: `T-017` GitHub milestone and issue map passes its frozen acceptance and validation fields.
 - [ ] ISC-141: `T-018` branch and worktree manifest passes its frozen acceptance and validation fields.
@@ -473,3 +473,6 @@ For the execution iteration, complete `T-001` through `T-080` in dependency orde
 - T-008 pre-approval verification: manifest commit `c1a059f5d7c1c2e804deb3ef38c794b09efae47c`, tree `294f04d989ac1bfef876ccdab11f6c9fcca64076`, and manifest SHA-256 `bb73332e21f4d45493eae89906b895c5e34654293994cb19979203f882251db7` were derived after commit; backend and wiki are clean, and mobile has only the fifteen declared untracked exclusions. ReReadCheck confirms the full rollout remains active while T-008 approval is the current authorized boundary.
 - T-008 executable integrity proof: verifier commit `5a4bf9fef3679cb90218fed2b253879be05488b3` adds `npm run release:verify-baseline`; the committed-tree run passes three repository identities and binary diffs, seven evidence/control hashes, the immutable manifest artifact, the 80-task/145-edge graph, fifteen exclusion hashes, and exact repository status. Human approval remains pending.
 - T-008 human approval (ISC-131): at `2026-07-19T02:57:19Z`, the human owner explicitly approved the three recovery baselines and immutable manifest while acknowledging that approval does not authorize fanout, staging, or deployment. Local T-009–T-023 work is now authorized; T-024 retains the separate fanout and external-mutation gate.
+- T-009–T-013 backend contracts (ISC-132–136): backend commit `b6a418568088e5cb85cf5ba97240ff83b49382ad` freezes four allowed payment routes, explicit satang/THB responses, state/cancellation truth, a disposable-introspected target schema, permission boundaries, target-ledger migration selection, additive booking chat, and fail-closed environment modes. Typecheck and 10/10 files with 186/186 tests pass.
+- T-014–T-015 mobile and provenance contracts (ISC-137–138): mobile commit `6f71cb29e973c61348cfaa42b63a45290760ccca` requires `tirak-payments-v1`, rejects ambiguous responses, keeps cancellation distinct from restitution, allows payment/chat only at valid booking states, and scans seven fixture-ingestion surfaces. Typecheck and 8/8 suites with 47/47 tests pass.
+- T-016 pre-approval packet (ISC-139 pending): `npm run release:verify-contracts` passes two immutable contract commits, fifteen artifact hashes, eight blocker-to-ingestion controls, and all recorded validation counts. Planner, backend, mobile, and automated validator signoffs pass; explicit human contract acceptance remains required.
