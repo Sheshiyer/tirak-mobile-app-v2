@@ -1,0 +1,53 @@
+{
+  "contractVersion": "tirak-payments-v1",
+  "generatedAt": "2026-07-19T02:57:19Z",
+  "reviewAccount": {
+    "identity": "created by the human release owner in the target environment",
+    "credentials": "App Store Connect review notes only; never committed",
+    "roles": ["traveler"]
+  },
+  "guide": {
+    "required": ["verified active guide", "travel-specific biography", "supported languages", "public safety profile"],
+    "forbidden": ["dating availability", "adult services", "companionship pricing", "gifts", "direct cash"]
+  },
+  "experience": {
+    "required": ["stable service id", "named cultural itinerary", "future availability", "meeting point", "duration", "THB price"],
+    "forbidden": ["person-only booking", "private category", "unbounded time", "romantic framing"]
+  },
+  "bookings": {
+    "confirmedUnpaid": "created through the ordinary traveler request and guide confirmation flow",
+    "paid": "created through one real small Omise PromptPay charge and independently retrieved successful provider status"
+  },
+  "paidEvidence": [
+    "provider charge id and livemode",
+    "provider receipt or dashboard record",
+    "payment_attempts row",
+    "booking and service ids",
+    "amountSatang and THB currency",
+    "webhook/reconciliation evidence",
+    "mobile paid-state screenshot from the exact archive"
+  ],
+  "prohibitedBypasses": [
+    "manual booking payment_status update",
+    "mock successful provider response",
+    "seeded successful charge id",
+    "test-only paid toggle",
+    "serializer-only paid value"
+  ],
+  "ingestionSurfaces": [
+    "SQL seed and migration files",
+    "admin and import APIs",
+    "remote CMS/listings",
+    "mobile mocks and bundled JSON",
+    "canonical wiki and RAG corpus",
+    "push, email, support, and App Store copy",
+    "generated and cached build artifacts"
+  ],
+  "cacheInvalidation": [
+    "purge Worker/KV response caches after clean import",
+    "rebuild mobile and wiki from clean source",
+    "scan generated Expo and Astro outputs",
+    "capture source and artifact hashes",
+    "verify legacy routes and prohibited records return absent"
+  ]
+}

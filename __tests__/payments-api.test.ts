@@ -35,12 +35,15 @@ describe('PromptPay payment API', () => {
       data: {
         success: true,
         data: {
+          contractVersion: 'tirak-payments-v1',
           chargeId: 'charge-1',
-          status: 'pending',
-          amount: 180000,
+          paymentStatus: 'pending',
+          attemptStatus: 'pending',
+          amountSatang: 180000,
+          displayTotalThb: 1800,
           currency: 'THB',
           expiresAt: '2026-07-18T12:30:00.000Z',
-          qrCode: 'https://cdn.omise.co/qr/charge-1.png',
+          qrCodeUrl: 'https://cdn.omise.co/qr/charge-1.png',
         },
       },
     });
@@ -72,9 +75,14 @@ describe('PromptPay payment API', () => {
       data: {
         success: true,
         data: {
+          contractVersion: 'tirak-payments-v1',
           chargeId: 'charge-1',
-          status: 'successful',
-          qrCode: 'https://cdn.omise.co/qr/charge-1.png',
+          paymentStatus: 'paid',
+          attemptStatus: 'successful',
+          amountSatang: 180000,
+          displayTotalThb: 1800,
+          currency: 'THB',
+          qrCodeUrl: 'https://cdn.omise.co/qr/charge-1.png',
         },
       },
     });
@@ -97,6 +105,24 @@ describe('PromptPay payment API', () => {
       'Please log in again to pay for this booking.',
     );
     expect(mockPost).not.toHaveBeenCalled();
+  });
+
+  test('rejects an ambiguous or unversioned payment response', async () => {
+    mockPost.mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: {
+          chargeId: 'charge-legacy',
+          status: 'pending',
+          amount: 180000,
+          currency: 'THB',
+        },
+      },
+    });
+
+    await expect(createPromptPayCharge('booking-1')).rejects.toThrow(
+      'contract is incompatible',
+    );
   });
 
   test('maps API failures without losing the confirmed booking', async () => {

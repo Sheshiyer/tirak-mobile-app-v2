@@ -162,7 +162,7 @@ const getServiceBackedExperiences = async (companionId: string): Promise<Experie
       updatedAt: new Date().toISOString(),
     }));
   } catch (error) {
-    logger.warn('Failed to load companion services as booking experiences:', error);
+    logger.warn('Failed to load guide offerings as booking experiences:', error);
     return [];
   }
 };

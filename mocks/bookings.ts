@@ -15,7 +15,7 @@ export interface MockBooking {
   price: number;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'in-progress';
   paymentMethod: 'promptpay';
-  paymentStatus: 'pending' | 'paid' | 'refunded';
+  paymentStatus: 'pending' | 'processing' | 'paid' | 'restitution_pending' | 'restituted' | 'restitution_failed';
   specialRequests?: string;
   createdAt: string;
   updatedAt: string;
@@ -155,7 +155,7 @@ export const mockBookings: MockBooking[] = [
     price: 2500,
     status: 'cancelled',
     paymentMethod: 'promptpay',
-    paymentStatus: 'refunded',
+    paymentStatus: 'restituted',
     cancellationReason: 'Customer had to cancel due to flight delay',
     createdAt: '2024-01-14T20:30:00Z',
     updatedAt: '2024-01-16T10:15:00Z',

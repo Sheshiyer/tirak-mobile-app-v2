@@ -2,7 +2,10 @@ export type NormalizedBookingPaymentStatus =
   | 'pending'
   | 'processing'
   | 'paid'
-  | 'refunded';
+  | 'failed'
+  | 'restitution_pending'
+  | 'restituted'
+  | 'restitution_failed';
 
 export interface BookingRequestContract {
   companionId?: string;
@@ -22,13 +25,15 @@ export function normalizeBookingPaymentStatus(
     return 'paid';
   }
 
-  if (status === 'refunded') {
-    return 'refunded';
-  }
+  if (status === 'restituted') return 'restituted';
+  if (status === 'restitution_failed') return 'restitution_failed';
+  if (status === 'restitution_pending' || status === 'refunded') return 'restitution_pending';
 
   if (['processing', 'creating', 'indeterminate'].includes(status)) {
     return 'processing';
   }
+
+  if (['failed', 'expired'].includes(status)) return 'failed';
 
   return 'pending';
 }

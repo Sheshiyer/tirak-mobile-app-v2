@@ -5,8 +5,13 @@ describe('booking experience state gates', () => {
     ['pending', 'pending', 'requested', false, false],
     ['confirmed', 'pending', 'confirmed', true, true],
     ['confirmed', 'paid', 'paid', false, true],
+    ['confirmed', 'processing', 'payment_processing', false, true],
+    ['confirmed', 'failed', 'confirmed', true, true],
     ['completed', 'paid', 'paid', false, false],
     ['cancelled', 'pending', 'cancelled', false, false],
+    ['cancelled', 'restitution_pending', 'restitution_pending', false, false],
+    ['cancelled', 'restituted', 'restituted', false, false],
+    ['cancelled', 'restitution_failed', 'restitution_failed', false, false],
   ] as const)(
     '%s / %s resolves to %s',
     (bookingStatus, paymentStatus, label, canPay, canChat) => {

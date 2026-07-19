@@ -8,6 +8,8 @@ describe('booking API boundary', () => {
     expect(normalizeBookingPaymentStatus('completed')).toBe('paid');
     expect(normalizeBookingPaymentStatus('successful')).toBe('paid');
     expect(normalizeBookingPaymentStatus('processing')).toBe('processing');
+    expect(normalizeBookingPaymentStatus('refunded')).toBe('restitution_pending');
+    expect(normalizeBookingPaymentStatus('restituted')).toBe('restituted');
   });
 
   test('requires a concrete experience identifier before submission or demo fallback', () => {

@@ -122,6 +122,11 @@ const BookingDetailsScreen = () => {
 
   const getPaymentStatusCopy = () => {
     if (booking.paymentStatus === 'paid') return 'Paid';
+    if (booking.paymentStatus === 'restitution_pending') return 'Resolution transfer pending';
+    if (booking.paymentStatus === 'restituted') return 'Resolution transfer completed';
+    if (booking.paymentStatus === 'restitution_failed') return 'Resolution transfer needs support';
+    if (booking.paymentStatus === 'processing') return 'Payment processing';
+    if (booking.paymentStatus === 'failed') return 'Payment failed · retry available after confirmation';
     if (booking.status === 'pending') return 'Unavailable until guide confirmation';
     if (isCompanion) return 'Awaiting traveler PromptPay';
     return getBookingExperienceLabel(experienceState);

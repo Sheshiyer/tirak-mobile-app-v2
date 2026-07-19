@@ -4,6 +4,10 @@ export type BookingExperienceLabel =
   | 'requested'
   | 'confirmed'
   | 'paid'
+  | 'payment_processing'
+  | 'restitution_pending'
+  | 'restituted'
+  | 'restitution_failed'
   | 'in_progress'
   | 'completed'
   | 'cancelled';
@@ -23,7 +27,23 @@ export function getBookingExperienceState(
   paymentStatus: PaymentStatus,
 ): BookingExperienceState {
   const canChat = ['confirmed', 'in_progress'].includes(bookingStatus);
-  const canPay = bookingStatus === 'confirmed' && paymentStatus === 'pending';
+  const canPay = bookingStatus === 'confirmed' && ['pending', 'failed'].includes(paymentStatus);
+
+  if (paymentStatus === 'restitution_pending') {
+    return { label: 'restitution_pending', canPay: false, canChat: false };
+  }
+
+  if (paymentStatus === 'restituted') {
+    return { label: 'restituted', canPay: false, canChat: false };
+  }
+
+  if (paymentStatus === 'restitution_failed') {
+    return { label: 'restitution_failed', canPay: false, canChat: false };
+  }
+
+  if (paymentStatus === 'processing') {
+    return { label: 'payment_processing', canPay: false, canChat };
+  }
 
   if (bookingStatus === 'cancelled') {
     return { label: 'cancelled', canPay: false, canChat: false };
@@ -52,6 +72,14 @@ export function getBookingExperienceLabel(state: BookingExperienceState): string
       return 'Confirmed · payment available';
     case 'paid':
       return 'Paid';
+    case 'payment_processing':
+      return 'Payment processing';
+    case 'restitution_pending':
+      return 'Resolution transfer pending';
+    case 'restituted':
+      return 'Resolution transfer completed';
+    case 'restitution_failed':
+      return 'Resolution transfer needs support';
     case 'in_progress':
       return 'In progress';
     case 'completed':

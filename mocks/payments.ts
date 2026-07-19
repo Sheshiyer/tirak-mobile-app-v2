@@ -8,7 +8,7 @@ export interface MockPayment {
   amount: number;
   currency: 'THB';
   method: 'promptpay';
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded' | 'cancelled';
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'restitution_pending' | 'restituted' | 'restitution_failed' | 'cancelled';
   description: string;
   transactionId?: string;
   promptPayQR?: string;
@@ -24,8 +24,8 @@ export interface MockPayment {
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
-  refundedAt?: string;
-  refundReason?: string;
+  restitutedAt?: string;
+  restitutionReason?: string;
   receipt?: {
     url: string;
     number: string;
@@ -128,7 +128,7 @@ export const mockPayments: MockPayment[] = [
     amount: 2500,
     currency: 'THB',
     method: 'promptpay',
-    status: 'refunded',
+    status: 'restituted',
     description: 'Chao Phraya Evening Food Route - Jan 22, 2024 (Cancelled)',
     transactionId: 'txn_promptpay_003',
     promptPayQR: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
@@ -143,11 +143,11 @@ export const mockPayments: MockPayment[] = [
     },
     createdAt: '2024-01-14T20:30:00Z',
     updatedAt: '2024-01-16T10:15:00Z',
-    refundedAt: '2024-01-16T10:15:00Z',
-    refundReason: 'Customer cancellation due to flight delay',
+    restitutedAt: '2024-01-16T10:15:00Z',
+    restitutionReason: 'External resolution transfer recorded with operator evidence',
     receipt: {
-      url: '/receipts/pay_004_refund.pdf',
-      number: 'RFD-2024-001',
+      url: '/receipts/pay_004_restitution.pdf',
+      number: 'RST-2024-001',
     },
   },
 ];
@@ -203,8 +203,8 @@ export const getPaymentStats = (userId: string, role: 'payer' | 'payee' = 'payee
     pendingAmount: userPayments
       .filter(p => p.status === 'pending')
       .reduce((sum, p) => sum + p.amount, 0),
-    refundedAmount: userPayments
-      .filter(p => p.status === 'refunded')
+    restitutedAmount: userPayments
+      .filter(p => p.status === 'restituted')
       .reduce((sum, p) => sum + p.amount, 0),
   };
 };
@@ -235,8 +235,8 @@ export const updatePaymentStatus = (paymentId: string, status: MockPayment['stat
 
     if (status === 'completed') {
       payment.completedAt = new Date().toISOString();
-    } else if (status === 'refunded') {
-      payment.refundedAt = new Date().toISOString();
+    } else if (status === 'restituted') {
+      payment.restitutedAt = new Date().toISOString();
     }
 
     if (data) {

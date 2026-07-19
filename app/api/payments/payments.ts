@@ -3,15 +3,16 @@ import axios from 'axios';
 import { apiUrl } from '@/constants/api';
 import { secureStorage } from '@/utils/secure-storage';
 
-export type PromptPayChargeStatus = 'pending' | 'paid' | 'failed' | 'expired';
+export type PromptPayChargeStatus = 'pending' | 'processing' | 'paid' | 'failed' | 'expired';
 
 export interface PromptPayCharge {
   id: string;
   status: PromptPayChargeStatus;
   qrCodeUrl: string | null;
   expiresAt: string | null;
-  amount: number | null;
-  currency: string | null;
+  amountSatang: number;
+  displayTotalThb: number;
+  currency: 'THB';
 }
 
 const getAuthHeaders = async () => {
@@ -39,6 +40,7 @@ const readNested = (value: any, ...paths: string[][]): unknown => {
 const normalizeStatus = (status: unknown): PromptPayChargeStatus => {
   const normalized = String(status || '').toLowerCase();
   if (['paid', 'successful', 'succeeded', 'complete', 'completed'].includes(normalized)) return 'paid';
+  if (['processing', 'creating', 'indeterminate'].includes(normalized)) return 'processing';
   if (['expired', 'cancelled', 'canceled'].includes(normalized)) return 'expired';
   if (['failed', 'failure', 'reversed'].includes(normalized)) return 'failed';
   return 'pending';
@@ -52,6 +54,9 @@ export const normalizePromptPayCharge = (response: any): PromptPayCharge => {
   const id = readNested(payload, ['id'], ['chargeId'], ['charge_id']);
 
   if (!id) throw new Error('The payment service returned an invalid charge.');
+  if (readNested(payload, ['contractVersion']) !== 'tirak-payments-v1') {
+    throw new Error('The payment service contract is incompatible with this app build.');
+  }
 
   const qrCodeUrl = readNested(
     payload,
@@ -65,16 +70,24 @@ export const normalizePromptPayCharge = (response: any): PromptPayCharge => {
     ['qr', 'image_uri'],
   );
   const expiresAt = readNested(payload, ['expiresAt'], ['expires_at']);
-  const amount = readNested(payload, ['amount']);
+  const amountSatang = readNested(payload, ['amountSatang']);
+  const displayTotalThb = readNested(payload, ['displayTotalThb']);
   const currency = readNested(payload, ['currency']);
+  if (!Number.isSafeInteger(amountSatang) || Number(amountSatang) <= 0) {
+    throw new Error('The payment service returned an invalid amount.');
+  }
+  if (typeof displayTotalThb !== 'number' || displayTotalThb <= 0 || currency !== 'THB') {
+    throw new Error('The payment service returned an invalid display total.');
+  }
 
   return {
     id: String(id),
-    status: normalizeStatus(readNested(payload, ['status'])),
+    status: normalizeStatus(readNested(payload, ['paymentStatus'], ['attemptStatus'])),
     qrCodeUrl: qrCodeUrl ? String(qrCodeUrl) : null,
     expiresAt: expiresAt ? String(expiresAt) : null,
-    amount: typeof amount === 'number' ? amount : null,
-    currency: currency ? String(currency) : null,
+    amountSatang: Number(amountSatang),
+    displayTotalThb,
+    currency: 'THB',
   };
 };
 
