@@ -102,6 +102,12 @@ const manifest = {
   exclusionsSha256: '547a40b8d899108d8ae7f19c749fd63124e9913058a277c2782dd17c613c75b0',
 };
 
+const approval = {
+  commit: '3a1fa2b05fa25b1559f896df2577b6ea207ef453',
+  tree: '319aceb3338fe7c7021e35e57f190939c48eea14',
+  manifestSha256: '5b29b001b87789110d351eb213a4d9fee3c7934c12708d8534453c2b893237c3',
+};
+
 const gitOptions = (root) => ({
   cwd: root,
   encoding: 'buffer',
@@ -188,6 +194,12 @@ function verifyManifestCommit() {
   assertAncestor(mobileRoot, manifest.commit);
 }
 
+function verifyApprovalCommit() {
+  assertEqual(gitText(mobileRoot, ['rev-parse', `${approval.commit}^{tree}`]), approval.tree, 'approval tree');
+  assertEqual(hashGitPath(repositories[0], approval.commit, manifest.path), approval.manifestSha256, 'approved manifest artifact');
+  assertAncestor(mobileRoot, approval.commit);
+}
+
 function verifyPlanGraph() {
   const planPath = evidence.find((item) => item.path.includes('/plans/'));
   const plan = git(repositories[0].root, ['show', `${repositories[0].baseline}:${planPath.path}`]).toString('utf8');
@@ -222,6 +234,7 @@ try {
   repositories.forEach(verifyRepository);
   verifyEvidence();
   verifyManifestCommit();
+  verifyApprovalCommit();
   verifyPlanGraph();
   verifyCleanRepository(repositories[1]);
   verifyCleanRepository(repositories[2]);
@@ -234,7 +247,9 @@ try {
     exclusions: exclusions.length,
     planTasks: 80,
     dependencyEdges: 145,
-    humanApproval: 'PENDING',
+    humanApproval: 'APPROVED',
+    approvalCommit: approval.commit,
+    authorizedBoundary: 'local T-009 through T-023 only',
   }, null, 2));
 } catch (error) {
   console.error(`T-008 baseline verification: FAIL\n${error.message}`);
