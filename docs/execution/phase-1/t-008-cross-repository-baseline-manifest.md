@@ -1,6 +1,6 @@
 # T-008 Cross-Repository Recovery Baseline Manifest
 
-Status: **PENDING HUMAN APPROVAL**
+Status: **APPROVED AS A RECOVERY BASELINE**
 
 Generated: `2026-07-18T21:10:52Z`
 
@@ -72,7 +72,14 @@ The following user-owned, untracked paths are deliberately absent from the recov
 
 ## Approval record
 
-- [ ] Human owner verifies and approves the three baseline commit SHAs and this manifest commit as recovery points.
-- [ ] Human owner acknowledges approval does **not** authorize fanout, GitHub publication, staging, deployment, production mutation, or App Store submission.
+- [x] Human owner verifies and approves the three baseline commit SHAs and immutable manifest commit `c1a059f5d7c1c2e804deb3ef38c794b09efae47c` as recovery points.
+- [x] Human owner acknowledges approval does **not** authorize fanout, staging, or deployment.
+- [ ] GitHub publication, production mutation, and App Store submission remain unapproved and outside the T-008 boundary.
 
-Until both boxes are explicitly approved, `T-008` remains open and `T-009`–`T-080` remain gated.
+Approval received: `2026-07-19T02:57:19Z`
+
+Human statement:
+
+> I approve the T‑008 recovery baseline and acknowledge this does not authorize fanout, staging, or deployment.
+
+`T-008` is closed. Local work in the existing repositories may proceed through `T-023`; `T-024` remains the separate fanout, GitHub/worktree, staging, and deployment readiness gate.

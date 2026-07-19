@@ -4,12 +4,12 @@ slug: 20260718-160132_tirak-apple-omise-realignment
 project: Tirak
 effort: comprehensive
 effort_source: auto
-phase: verify
-progress: 111/204
+phase: execute
+progress: 112/204
 mode: interactive
 iteration: 3
 started: 2026-07-18T10:31:32Z
-updated: 2026-07-18T21:19:38Z
+updated: 2026-07-19T02:57:19Z
 ---
 
 ## Problem
@@ -226,7 +226,7 @@ For the execution iteration, complete `T-001` through `T-080` in dependency orde
 - [x] ISC-128: `T-005` backend and migration baseline proof passes its frozen acceptance and validation fields.
 - [x] ISC-129: `T-006` backend baseline commit passes its frozen acceptance and validation fields.
 - [x] ISC-130: `T-007` canonical wiki baseline passes its frozen acceptance and validation fields.
-- [ ] ISC-131: `T-008` cross-repository baseline manifest passes its frozen acceptance and validation fields.
+- [x] ISC-131: `T-008` cross-repository baseline manifest passes its frozen acceptance and validation fields.
 - [ ] ISC-132: `T-009` payment HTTP and route contract passes its frozen acceptance and validation fields.
 - [ ] ISC-133: `T-010` payment and cancellation state mapping passes its frozen acceptance and validation fields.
 - [ ] ISC-134: `T-011` target D1 schema contract passes its frozen acceptance and validation fields.
@@ -472,3 +472,4 @@ For the execution iteration, complete `T-001` through `T-080` in dependency orde
 - Phase 1 manifest gate (ISC-131 pending): `docs/execution/phase-1/t-008-cross-repository-baseline-manifest.md` binds all repository identities, evidence/control hashes, fifteen mobile exclusions, deterministic wiki output, and six blocker classes. Human approval is still required and grants no fanout, publication, staging, or deployment authority.
 - T-008 pre-approval verification: manifest commit `c1a059f5d7c1c2e804deb3ef38c794b09efae47c`, tree `294f04d989ac1bfef876ccdab11f6c9fcca64076`, and manifest SHA-256 `bb73332e21f4d45493eae89906b895c5e34654293994cb19979203f882251db7` were derived after commit; backend and wiki are clean, and mobile has only the fifteen declared untracked exclusions. ReReadCheck confirms the full rollout remains active while T-008 approval is the current authorized boundary.
 - T-008 executable integrity proof: verifier commit `5a4bf9fef3679cb90218fed2b253879be05488b3` adds `npm run release:verify-baseline`; the committed-tree run passes three repository identities and binary diffs, seven evidence/control hashes, the immutable manifest artifact, the 80-task/145-edge graph, fifteen exclusion hashes, and exact repository status. Human approval remains pending.
+- T-008 human approval (ISC-131): at `2026-07-19T02:57:19Z`, the human owner explicitly approved the three recovery baselines and immutable manifest while acknowledging that approval does not authorize fanout, staging, or deployment. Local T-009–T-023 work is now authorized; T-024 retains the separate fanout and external-mutation gate.
