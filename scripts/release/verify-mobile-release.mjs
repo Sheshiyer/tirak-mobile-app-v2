@@ -195,7 +195,7 @@ function runFullGate() {
 function writeHashManifest() {
   const manifest = {
     schemaVersion: 1,
-    generatedAt: '2026-07-20T13:03:25Z',
+    generatedAt: new Date().toISOString(),
     purpose: 'T-020 mobile release gate inputs; update only through reviewed release integration.',
     files: currentHashes(),
   };
