@@ -9,7 +9,7 @@ progress: 128/204
 mode: interactive
 iteration: 3
 started: 2026-07-18T10:31:32Z
-updated: 2026-07-20T13:58:48Z
+updated: 2026-07-20T14:02:43Z
 ---
 
 ## Problem
@@ -481,4 +481,5 @@ For the execution iteration, complete `T-001` through `T-080` in dependency orde
 - T-024 pre-approval packet (ISC-147 pending): `docs/execution/phase-1/t-024-phase1-readiness.md` and its JSON manifest freeze fifteen critical artifacts across the three repositories. The machine verifier confirms all upstream gates and unlaunched state; independent human review and explicit authority expansion remain required.
 - T-024 human approval (ISC-147): at `2026-07-20T13:39:45Z`, the human release owner accepted the frozen Phase 1 readiness packet and authorized planned GitHub issue publication, isolated branches/worktrees, and evidence-gated staging-only Phase 2 work beginning at T-025. Production mutation, live Omise charging, App Store submission, and bypassing later human gates remain explicitly prohibited.
 - T-024 bounded publication (ISC-147): at `2026-07-20T13:58:48.769Z`, the gated publisher created 58 planned labels, five planned milestones, and 80 task issues in `Sheshiyer/tirak-mobile-app-v2`. Remote read-back found issues `#1` through `#80`; an immediate idempotent rerun reused all 143 objects with zero creations or updates. No push, deployment, production, live Omise, or App Store mutation occurred.
+- T-025 staging identity discovery (ISC-148 pending): backend branch `codex/tirak-omise/w2.1/t-025-resolve-staging-resource-identities-and-ledger` at commit `04b4d15ceb18b1b92290195b9ad708e4791c89f8` adds a fail-closed read-only collector, evidence ledger, and ten negative fixtures. Authenticated Wrangler membership does not include pinned account `2c0c96c68f0ee73b6d980054557bca5b`, so discovery halted after one redacted `whoami` query with zero resource, SQL, production, mutation, deployment, secret, or Omise commands. T-025 remains pending human-correct account authentication and fingerprint confirmation; T-026 stays blocked.
 - T-024 GitHub publisher proof (ISC-147): the default dry-run reports 58 labels, five milestones, 80 issues, zero API calls, and zero mutations. A stateful fake-GitHub run creates all 143 objects, then reuses every object with zero POST/PATCH operations while preserving an unrelated human label; seven negative fixtures fail closed. No real GitHub mutation was executed by this implementation task.
