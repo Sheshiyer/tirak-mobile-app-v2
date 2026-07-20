@@ -2,7 +2,7 @@
 
 Contract: `tirak-payments-v1`
 
-Status: T-009–T-015 pass; T-016 awaits explicit human contract acceptance
+Status: T-009–T-016 pass; the shared contract is approved for local T-017–T-023 work only
 
 ## Immutable implementation points
 
@@ -24,7 +24,7 @@ Exact artifact hashes are in `docs/contracts/tirak-payments-v1/contract-manifest
 | T-013 | PASS | test/staging/production resource-mode matrix; default-disabled Wrangler vars; key/mode and environment crossover tests; in-flight settlement remains enabled when creation is disabled |
 | T-014 | PASS | mobile requires `tirak-payments-v1`, explicit units and THB; pending cannot pay/chat; confirmed failed can retry; processing blocks retry; restitution copy never says Omise refund |
 | T-015 | PASS | reviewer fixture provenance covers seven ingestion surfaces, cache invalidation, source hashes, provider receipt, and paid-bypass denial; mobile/backend source tests pass |
-| T-016 | PENDING HUMAN | manifest and blocker-ingestion crosswalk are complete; executor and automated validation acceptance pass; human contract acceptance remains required |
+| T-016 | PASS | manifest and blocker-ingestion crosswalk are complete; executor and automated validation acceptance pass; human owner accepted `tirak-payments-v1` for local T-017–T-023 work |
 
 ## Validation
 
@@ -41,6 +41,12 @@ Exact artifact hashes are in `docs/contracts/tirak-payments-v1/contract-manifest
 - [x] Backend executor: payment, state, schema, migration, environment, and ingestion contracts implemented locally.
 - [x] Mobile executor: checkout, booking state, restitution copy, and fixture provenance implemented locally.
 - [x] Automated validator: all type, test, schema, route, state, config, provenance, secret, and whitespace checks pass.
-- [ ] Human owner: accepts `tirak-payments-v1` as the shared implementation boundary for T-017–T-023.
+- [x] Human owner: accepts `tirak-payments-v1` as the shared implementation boundary for T-017–T-023.
 
-This packet authorizes nothing by itself. T-016 remains open until the human owner accepts it; T-024 separately controls fanout, GitHub/worktrees, staging, and deployment.
+Approval received: `2026-07-20T13:03:25Z`
+
+Human statement:
+
+> I accept tirak-payments-v1 as the shared implementation boundary for T‑017–T‑023. This does not authorize fanout, GitHub publication, staging, or deployment.
+
+`T-016` is closed. This approval authorizes only local work in the existing repositories for `T-017` through `T-023`; `T-024` separately controls fanout, GitHub/worktrees, staging, and deployment.

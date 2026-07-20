@@ -5,11 +5,11 @@ project: Tirak
 effort: comprehensive
 effort_source: auto
 phase: execute
-progress: 119/204
+progress: 120/204
 mode: interactive
 iteration: 3
 started: 2026-07-18T10:31:32Z
-updated: 2026-07-19T03:14:47Z
+updated: 2026-07-20T13:03:25Z
 ---
 
 ## Problem
@@ -234,7 +234,7 @@ For the execution iteration, complete `T-001` through `T-080` in dependency orde
 - [x] ISC-136: `T-013` environment and rollout-mode contract passes its frozen acceptance and validation fields.
 - [x] ISC-137: `T-014` mobile checkout boundary passes its frozen acceptance and validation fields.
 - [x] ISC-138: `T-015` reviewer fixture and clean-seed provenance passes its frozen acceptance and validation fields.
-- [ ] ISC-139: `T-016` shared contract packet approval passes its frozen acceptance and validation fields.
+- [x] ISC-139: `T-016` shared contract packet approval passes its frozen acceptance and validation fields.
 - [ ] ISC-140: `T-017` GitHub milestone and issue map passes its frozen acceptance and validation fields.
 - [ ] ISC-141: `T-018` branch and worktree manifest passes its frozen acceptance and validation fields.
 - [ ] ISC-142: `T-019` lock-zone ownership ledger passes its frozen acceptance and validation fields.
@@ -476,3 +476,4 @@ For the execution iteration, complete `T-001` through `T-080` in dependency orde
 - T-009–T-013 backend contracts (ISC-132–136): backend commit `b6a418568088e5cb85cf5ba97240ff83b49382ad` freezes four allowed payment routes, explicit satang/THB responses, state/cancellation truth, a disposable-introspected target schema, permission boundaries, target-ledger migration selection, additive booking chat, and fail-closed environment modes. Typecheck and 10/10 files with 186/186 tests pass.
 - T-014–T-015 mobile and provenance contracts (ISC-137–138): mobile commit `6f71cb29e973c61348cfaa42b63a45290760ccca` requires `tirak-payments-v1`, rejects ambiguous responses, keeps cancellation distinct from restitution, allows payment/chat only at valid booking states, and scans seven fixture-ingestion surfaces. Typecheck and 8/8 suites with 47/47 tests pass.
 - T-016 pre-approval packet (ISC-139 pending): `npm run release:verify-contracts` passes two immutable contract commits, fifteen artifact hashes, eight blocker-to-ingestion controls, and all recorded validation counts. Planner, backend, mobile, and automated validator signoffs pass; explicit human contract acceptance remains required.
+- T-016 human approval (ISC-139): at `2026-07-20T13:03:25Z`, the human owner accepted `tirak-payments-v1` as the shared implementation boundary for local T-017–T-023 work and explicitly withheld fanout, GitHub publication, staging, and deployment authority. T-024 remains the separate external-mutation gate.

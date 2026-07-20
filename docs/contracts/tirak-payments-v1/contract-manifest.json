@@ -1,7 +1,12 @@
 {
   "contractVersion": "tirak-payments-v1",
-  "status": "PENDING_HUMAN_T016_APPROVAL",
-  "authorizedBoundary": "local contract work only; no fanout, GitHub publication, staging, or deployment",
+  "status": "APPROVED_HUMAN_T016",
+  "authorizedBoundary": "local T-017 through T-023 only; no fanout, GitHub publication, staging, or deployment",
+  "approval": {
+    "task": "T-016",
+    "receivedAt": "2026-07-20T13:03:25Z",
+    "statement": "I accept tirak-payments-v1 as the shared implementation boundary for T-017–T-023. This does not authorize fanout, GitHub publication, staging, or deployment."
+  },
   "repositories": {
     "mobile": {
       "commit": "6f71cb29e973c61348cfaa42b63a45290760ccca",

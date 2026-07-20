@@ -65,15 +65,28 @@ function verifyArtifacts() {
 function verifyPacketShape() {
   assertEqual(manifest.contractVersion, 'tirak-payments-v1', 'contract version');
   assertEqual(String(manifest.artifacts.length), '15', 'artifact count');
-  assertEqual(manifest.status, 'PENDING_HUMAN_T016_APPROVAL', 'T-016 status');
+  assertEqual(manifest.status, 'APPROVED_HUMAN_T016', 'T-016 status');
+  assertEqual(manifest.approval?.task, 'T-016', 'T-016 approval task');
+  assertEqual(manifest.approval?.receivedAt, '2026-07-20T13:03:25Z', 'T-016 approval timestamp');
+  if (!manifest.approval?.statement.includes('I accept tirak-payments-v1')) {
+    throw new Error('T-016 approval statement is missing');
+  }
+  assertEqual(
+    manifest.authorizedBoundary,
+    'local T-017 through T-023 only; no fanout, GitHub publication, staging, or deployment',
+    'T-016 authorized boundary',
+  );
 
   const evidence = readFileSync(resolve(mobileRoot, evidencePath), 'utf8');
   for (let task = 9; task <= 16; task += 1) {
     const identifier = `T-${String(task).padStart(3, '0')}`;
     if (!evidence.includes(`| ${identifier} |`)) throw new Error(`missing ${identifier} evidence row`);
   }
-  if (!evidence.includes('Human owner: accepts') || !evidence.includes('- [ ] Human owner')) {
-    throw new Error('T-016 human approval is not visibly pending');
+  if (!evidence.includes('Human owner: accepts') || !evidence.includes('- [x] Human owner')) {
+    throw new Error('T-016 human approval is not visibly recorded');
+  }
+  if (!evidence.includes('This does not authorize fanout, GitHub publication, staging, or deployment.')) {
+    throw new Error('T-016 approval boundary is not visibly recorded');
   }
 
   const crosswalk = readFileSync(resolve(mobileRoot, crosswalkPath), 'utf8');
@@ -98,7 +111,7 @@ try {
     blockerControls: 8,
     backendValidation: manifest.validation.backendTests,
     mobileValidation: manifest.validation.mobileTests,
-    humanT016Approval: 'PENDING',
+    humanT016Approval: 'APPROVED',
     authorizedBoundary: manifest.authorizedBoundary,
   }, null, 2));
 } catch (error) {
