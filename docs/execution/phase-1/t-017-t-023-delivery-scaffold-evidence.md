@@ -1,10 +1,15 @@
 # T-017–T-023 Local Delivery Scaffold Evidence
 
-Status: **IMPLEMENTED LOCALLY; FINAL CROSS-REPOSITORY RE-VERIFY PENDING**
+Status: **PASS — COMMITTED AND READY FOR T-024 REVIEW**
 
 Generated: `2026-07-20`
 
 Authority: local T-017–T-023 implementation under the accepted `tirak-payments-v1` boundary. No fanout, GitHub publication, branch/worktree creation, staging access, or deployment occurred.
+
+Immutable implementation commits:
+
+- mobile/orchestration: `de61658c4f80df62ebc2eac7aa98a7e1df51ee18`
+- backend delivery gate: `ac2ae8ea3b16de3ff3573d996e3ec67f1cef0aa6`
 
 ## Task results
 

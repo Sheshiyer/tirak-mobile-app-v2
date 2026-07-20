@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "status": "PENDING_HUMAN_T024_APPROVAL",
+  "generatedAt": "2026-07-20T13:30:41Z",
+  "contractVersion": "tirak-payments-v1",
+  "currentAuthority": "read-only/local readiness verification only; no fanout, GitHub publication, branch/worktree creation, staging, or deployment",
+  "requestedNextAuthority": "planned GitHub issue publication, isolated branches/worktrees, and evidence-gated staging-only Phase 2 work after explicit T-024 approval",
+  "repositories": {
+    "mobile": {
+      "commit": "de61658c4f80df62ebc2eac7aa98a7e1df51ee18",
+      "tree": "56952d865a6cb4a32862cade8ef9238f9fa225ae"
+    },
+    "backend": {
+      "commit": "ac2ae8ea3b16de3ff3573d996e3ec67f1cef0aa6",
+      "tree": "d674b08e5cd96f5a65c77c9f6200db4089c75bf5"
+    },
+    "wiki": {
+      "commit": "7b5baee7a7f24f032b12ee6a7bf62a68a97c672e",
+      "tree": "a0dbdb57cffc1a929e6c2a013dc24ad32d64192f"
+    }
+  },
+  "artifacts": [
+    { "repository": "mobile", "path": "docs/orchestration/phase-1/github-issue-map.json", "sha256": "3aaa3cad069e86941fa2ef03ac100b4f8d9334a441f79e743697177da387b142" },
+    { "repository": "mobile", "path": "docs/orchestration/phase-1/branch-worktree-manifest.json", "sha256": "13dd6ba28a1e82a439479d25339304b15fcdee956db66e259b018737a5122839" },
+    { "repository": "mobile", "path": "docs/orchestration/phase-1/lock-zone-ownership.json", "sha256": "b52478e2c7005f92ef308de3de7af6fb2ba907300d347dc4961692d64db25429" },
+    { "repository": "mobile", "path": "docs/orchestration/phase-1/wave-evidence-matrix.json", "sha256": "09d980891377423314828b413cf5cbd71172a873f92ac7178bd4ab5f6dfb0d47" },
+    { "repository": "mobile", "path": "docs/execution/phase-1/mobile-release-hashes.json", "sha256": "e27d997bc901c28ff11fc89def2908070d92a7acf42160eb3cd809ef5b388de0" },
+    { "repository": "mobile", "path": "scripts/release/verify-mobile-release.mjs", "sha256": "cc4ddfbe60061c8269ba5948bcf551ecdc37d04cc01113e2d7db26840b192098" },
+    { "repository": "mobile", "path": "scripts/release/verify-phase1-scaffolds.mjs", "sha256": "6760e684eaec41774385fd9a724a1427f65c3d31d1f6eed64f273feb60e14ca8" },
+    { "repository": "mobile", "path": ".github/workflows/release-gate.yml", "sha256": "a40cd3d97ad156d49b0dd4391f1f89dea9671b654856280fbdab01a47918b0d4" },
+    { "repository": "backend", "path": "scripts/deploy.sh", "sha256": "a27165e834ce9b338802ab8d672d94145b40beb62c142568abf5ec42f3d62d21" },
+    { "repository": "backend", "path": "scripts/backup.sh", "sha256": "bb3c1cd6ebd9b710e6b27a329d1b4cd64cbef3399a23d647e17be50fd888da2a" },
+    { "repository": "backend", "path": "scripts/validate-target.mjs", "sha256": "d9155c71e7682f5437d996e2ad77fabd7718f3e4c2ddba78eac0c487a15d8b23" },
+    { "repository": "backend", "path": "scripts/verify-local-recovery.sh", "sha256": "e2be650048a5d2b8cca92542ca379cf663c47df43292cbd510e382277138fce1" },
+    { "repository": "backend", "path": "scripts/verify-release-gate.mjs", "sha256": "914d303f23f1b21b9405a7d2abd98e9bfc4e7636898ebd99f94b391666bfdc39" },
+    { "repository": "backend", "path": "docs/execution/phase-1/t-021-backend-delivery-gate-evidence.md", "sha256": "b90f74cb23be595e981657acb7bdbecac8409b0946897254fbcea9ba320b377e" },
+    { "repository": "backend", "path": ".github/workflows/release-gate.yml", "sha256": "0b9244dc0cba328fbdf25b62f2300d907dbc43fceb59f8b599f3686a6796a386" }
+  ],
+  "validation": {
+    "baselineGate": "PASS",
+    "contractGate": "PASS with human T-016 approval",
+    "scaffoldGate": "80 tasks; 5 phases; 13 waves; 80 unique branches; 0 worktrees; 0 GitHub mutations; 114 lock assignments; 80 evidence rows; 6 worker packet files",
+    "mobileGate": "47 tests; TypeScript; Expo config/export; 85 routes; built-copy/PWA scan; 13 hashes; 10 negative fixtures",
+    "backendGate": "186 tests; TypeScript; disposable restore; 8 negative fixtures; placeholder refusal; zero external commands",
+    "wikiGate": "immutable approved baseline"
+  },
+  "humanApproval": null
+}

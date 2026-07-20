@@ -5,11 +5,11 @@ project: Tirak
 effort: comprehensive
 effort_source: auto
 phase: execute
-progress: 120/204
+progress: 127/204
 mode: interactive
 iteration: 3
 started: 2026-07-18T10:31:32Z
-updated: 2026-07-20T13:03:25Z
+updated: 2026-07-20T13:30:41Z
 ---
 
 ## Problem
@@ -235,13 +235,13 @@ For the execution iteration, complete `T-001` through `T-080` in dependency orde
 - [x] ISC-137: `T-014` mobile checkout boundary passes its frozen acceptance and validation fields.
 - [x] ISC-138: `T-015` reviewer fixture and clean-seed provenance passes its frozen acceptance and validation fields.
 - [x] ISC-139: `T-016` shared contract packet approval passes its frozen acceptance and validation fields.
-- [ ] ISC-140: `T-017` GitHub milestone and issue map passes its frozen acceptance and validation fields.
-- [ ] ISC-141: `T-018` branch and worktree manifest passes its frozen acceptance and validation fields.
-- [ ] ISC-142: `T-019` lock-zone ownership ledger passes its frozen acceptance and validation fields.
-- [ ] ISC-143: `T-020` mobile CI release gate passes its frozen acceptance and validation fields.
-- [ ] ISC-144: `T-021` fail-closed backend delivery gate passes its frozen acceptance and validation fields.
-- [ ] ISC-145: `T-022` wave evidence matrix passes its frozen acceptance and validation fields.
-- [ ] ISC-146: `T-023` worker bootstrap packets pass their frozen acceptance and validation fields.
+- [x] ISC-140: `T-017` GitHub milestone and issue map passes its frozen acceptance and validation fields.
+- [x] ISC-141: `T-018` branch and worktree manifest passes its frozen acceptance and validation fields.
+- [x] ISC-142: `T-019` lock-zone ownership ledger passes its frozen acceptance and validation fields.
+- [x] ISC-143: `T-020` mobile CI release gate passes its frozen acceptance and validation fields.
+- [x] ISC-144: `T-021` fail-closed backend delivery gate passes its frozen acceptance and validation fields.
+- [x] ISC-145: `T-022` wave evidence matrix passes its frozen acceptance and validation fields.
+- [x] ISC-146: `T-023` worker bootstrap packets pass their frozen acceptance and validation fields.
 - [ ] ISC-147: `T-024` Phase 1 readiness gate passes its frozen acceptance and validation fields.
 - [ ] ISC-148: `T-025` staging D1 identity ledger passes its frozen acceptance and validation fields.
 - [ ] ISC-149: `T-026` staging recovery point passes its frozen acceptance and validation fields.
@@ -477,3 +477,5 @@ For the execution iteration, complete `T-001` through `T-080` in dependency orde
 - T-014–T-015 mobile and provenance contracts (ISC-137–138): mobile commit `6f71cb29e973c61348cfaa42b63a45290760ccca` requires `tirak-payments-v1`, rejects ambiguous responses, keeps cancellation distinct from restitution, allows payment/chat only at valid booking states, and scans seven fixture-ingestion surfaces. Typecheck and 8/8 suites with 47/47 tests pass.
 - T-016 pre-approval packet (ISC-139 pending): `npm run release:verify-contracts` passes two immutable contract commits, fifteen artifact hashes, eight blocker-to-ingestion controls, and all recorded validation counts. Planner, backend, mobile, and automated validator signoffs pass; explicit human contract acceptance remains required.
 - T-016 human approval (ISC-139): at `2026-07-20T13:03:25Z`, the human owner accepted `tirak-payments-v1` as the shared implementation boundary for local T-017–T-023 work and explicitly withheld fanout, GitHub publication, staging, and deployment authority. T-024 remains the separate external-mutation gate.
+- T-017–T-023 local delivery scaffolds (ISC-140–146): mobile commit `de61658c4f80df62ebc2eac7aa98a7e1df51ee18` and backend commit `ac2ae8ea3b16de3ff3573d996e3ec67f1cef0aa6` provide the deterministic 80-task issue/VCS map, 114 serialized lock assignments, 80-row evidence matrix, six worker packets, a full Expo release gate with ten deliberate failures, and a backend delivery gate with eight deliberate failures plus disposable recovery. Mobile 47/47 and backend 186/186 tests pass; zero GitHub, worktree, staging, deployment, or external-worker actions occurred.
+- T-024 pre-approval packet (ISC-147 pending): `docs/execution/phase-1/t-024-phase1-readiness.md` and its JSON manifest freeze fifteen critical artifacts across the three repositories. The machine verifier confirms all upstream gates and unlaunched state; independent human review and explicit authority expansion remain required.
