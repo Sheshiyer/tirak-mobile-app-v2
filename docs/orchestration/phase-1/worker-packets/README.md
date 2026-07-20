@@ -1,6 +1,6 @@
 # Tirak Worker Bootstrap Packets
 
-Status: locally prepared; dispatch is blocked until `T-024 human approval`.
+Status: active for bounded dispatch under the recorded `T-024 human approval`.
 
 These templates turn the frozen eighty-task plan into deterministic execution packets without creating GitHub issues, branches, worktrees, deployments, or staging mutations. A worker receives only the packet for its task plus the shared contract and current evidence references.
 
@@ -14,7 +14,7 @@ These templates turn the frozen eighty-task plan into deterministic execution pa
 
 ## Dispatch boundary
 
-No worker is launched from these files. Branch/worktree creation, GitHub publication, external fanout, staging access, or deployment requires the separate `T-024 human approval`. Production and App Store submission require later gates, including `T-072`.
+Every launch must prove the exact T-024 approval recorded in `docs/execution/phase-1/t-024-human-approval.md`, use its assigned isolated branch/worktree, honor dependency and lock-zone gates, and remain staging-only. Production mutation, live Omise charging, App Store submission, and bypassing later gates remain prohibited, including the separate `T-072` production boundary.
 
 ## Completeness rule
 

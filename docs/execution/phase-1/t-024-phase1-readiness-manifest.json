@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "status": "PENDING_HUMAN_T024_APPROVAL",
+  "status": "APPROVED_HUMAN_T024",
   "generatedAt": "2026-07-20T13:30:41Z",
   "contractVersion": "tirak-payments-v1",
-  "currentAuthority": "read-only/local readiness verification only; no fanout, GitHub publication, branch/worktree creation, staging, or deployment",
+  "currentAuthority": "planned GitHub issue publication, isolated branches/worktrees, and evidence-gated staging-only Phase 2 work beginning at T-025; no production mutation, live Omise charging, App Store submission, or bypassing later human gates",
   "requestedNextAuthority": "planned GitHub issue publication, isolated branches/worktrees, and evidence-gated staging-only Phase 2 work after explicit T-024 approval",
   "repositories": {
     "mobile": {
@@ -44,5 +44,22 @@
     "backendGate": "186 tests; TypeScript; disposable restore; 8 negative fixtures; placeholder refusal; zero external commands",
     "wikiGate": "immutable approved baseline"
   },
-  "humanApproval": null
+  "humanApproval": {
+    "taskId": "T-024",
+    "approvedAt": "2026-07-20T13:39:45Z",
+    "approvedBy": "human release owner",
+    "source": "direct user message in the active Codex task",
+    "statement": "I approve the T-024 Phase 1 readiness gate and authorize the planned GitHub issue publication, isolated branches/worktrees, and evidence-gated staging-only Phase 2 work beginning at T-025. This does not authorize production mutation, live Omise charging, App Store submission, or bypassing later human gates.",
+    "authorizes": [
+      "planned GitHub issue publication",
+      "isolated branches and worktrees",
+      "evidence-gated staging-only Phase 2 work beginning at T-025"
+    ],
+    "withholds": [
+      "production mutation",
+      "live Omise charging",
+      "App Store submission",
+      "bypassing later human gates"
+    ]
+  }
 }

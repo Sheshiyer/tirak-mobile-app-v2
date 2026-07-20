@@ -12,6 +12,7 @@ const roots = {
 };
 const manifest = JSON.parse(readFileSync(resolve(mobileRoot, 'docs/execution/phase-1/t-024-phase1-readiness-manifest.json'), 'utf8'));
 const full = process.argv.includes('--full');
+const approvalStatement = 'I approve the T-024 Phase 1 readiness gate and authorize the planned GitHub issue publication, isolated branches/worktrees, and evidence-gated staging-only Phase 2 work beginning at T-025. This does not authorize production mutation, live Omise charging, App Store submission, or bypassing later human gates.';
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -77,15 +78,26 @@ function runGates() {
 }
 
 try {
-  assert(manifest.status === 'PENDING_HUMAN_T024_APPROVAL', 'T-024 status drift');
+  assert(['PENDING_HUMAN_T024_APPROVAL', 'APPROVED_HUMAN_T024'].includes(manifest.status), 'T-024 status drift');
   assert(manifest.contractVersion === 'tirak-payments-v1', 'contract version drift');
-  assert(manifest.humanApproval === null, 'T-024 approval was recorded unexpectedly');
+  const approved = manifest.status === 'APPROVED_HUMAN_T024';
+  if (approved) {
+    assert(manifest.humanApproval?.taskId === 'T-024', 'T-024 approval task identity drift');
+    assert(manifest.humanApproval?.statement === approvalStatement, 'T-024 approval statement drift');
+    assert(typeof manifest.humanApproval?.approvedAt === 'string' && manifest.humanApproval.approvedAt.length > 0, 'T-024 approval timestamp missing');
+    assert(manifest.humanApproval?.withholds?.includes('production mutation'), 'production exclusion missing');
+    assert(manifest.humanApproval?.withholds?.includes('live Omise charging'), 'live Omise exclusion missing');
+    assert(manifest.humanApproval?.withholds?.includes('App Store submission'), 'App Store exclusion missing');
+    assert(manifest.humanApproval?.withholds?.includes('bypassing later human gates'), 'later-gate exclusion missing');
+  } else {
+    assert(manifest.humanApproval === null, 'T-024 approval was recorded unexpectedly');
+  }
   verifyRepositories();
   verifyArtifacts();
   verifyUnlaunchedState();
   runGates();
   console.log(JSON.stringify({
-    status: 'READY_FOR_HUMAN_T024_APPROVAL',
+    status: approved ? 'APPROVED_HUMAN_T024' : 'READY_FOR_HUMAN_T024_APPROVAL',
     repositories: manifest.repositories,
     artifacts: manifest.artifacts.length,
     mode: full ? 'full' : 'standard',
@@ -94,7 +106,7 @@ try {
     plannedWorktreesCreated: 0,
     stagingCommandsExecuted: 0,
     deploymentsExecuted: 0,
-    humanT024Approval: 'PENDING',
+    humanT024Approval: approved ? 'APPROVED' : 'PENDING',
   }, null, 2));
 } catch (error) {
   console.error(`T-024 readiness verification: FAIL\n${error.message}`);
