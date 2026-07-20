@@ -36,7 +36,7 @@ import {
   useCompanionQuery, 
   useCompanionWeeklyAvailability,
   CompanionDetails 
-} from '@/app/api/companion/companion';
+} from '@/services/api/companion/companion';
 
 import { 
   ArrowLeft, 

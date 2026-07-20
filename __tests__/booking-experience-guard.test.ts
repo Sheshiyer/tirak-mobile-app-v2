@@ -23,7 +23,7 @@ describe('experience-first traveler surfaces', () => {
       'app/(app)/booking/[id].tsx',
       'app/(app)/bookings.tsx',
       'app/booking/confirmation.tsx',
-      'app/companion/[id].tsx',
+      'app/experiences/[id].tsx',
       'components/booking/steps/BookingSummaryStep.tsx',
       'components/booking/steps/BookingConfirmationStep.tsx',
       'components/home/FeaturedCompanionsSection.tsx',
@@ -68,7 +68,7 @@ describe('experience-first traveler surfaces', () => {
   test('does not expose a pre-booking chat CTA from discovery or profiles', () => {
     const sources = [
       'app/(app)/search.tsx',
-      'app/companion/[id].tsx',
+      'app/experiences/[id].tsx',
       'components/home/FeaturedCompanionsSection.tsx',
       'components/ui/CompanionCard.tsx',
     ].map(read).join('\n');
@@ -98,9 +98,9 @@ describe('experience-first traveler surfaces', () => {
     const sources = [
       'app/supplier/signup/regions.tsx',
       'app/supplier/profile/edit.tsx',
-      'app/api/companion/profile.ts',
-      'app/api/companion/stats.ts',
-      'app/api/booking/booking.ts',
+      'services/api/companion/profile.ts',
+      'services/api/companion/stats.ts',
+      'services/api/booking/booking.ts',
       'mocks/notifications.ts',
       'mocks/supplier-data.ts',
     ].map(read).join('\n');
@@ -128,7 +128,7 @@ describe('experience-first traveler surfaces', () => {
     const card = read('components/ui/CompanionCard.tsx');
     const favorites = read('app/(app)/favorites.tsx');
     const search = read('app/(app)/search.tsx');
-    const profile = read('app/companion/[id].tsx');
+    const profile = read('app/experiences/[id].tsx');
     const english = read('locales/en.json');
 
     expect(featured).toContain('companion.services[0]');

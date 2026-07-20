@@ -157,12 +157,6 @@ export default function SupplierLayout() {
         }}
       />
       
-      <Stack.Screen
-        name="subscription/index"
-        options={{
-          headerShown: false,
-        }}
-      />
     </Stack>
   );
 }

@@ -13,7 +13,7 @@ import { ArrowLeft } from 'lucide-react-native';
 import { useAuthStore } from '@/stores/auth-store';
 import { SimpleInput } from '@/components/ui/SimpleInput';
 import { useTranslation } from 'react-i18next';
-import { resetPassword, PasswordResetError } from '@/app/api/auth/password-reset';
+import { resetPassword, PasswordResetError } from '@/services/api/auth/password-reset';
 
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 

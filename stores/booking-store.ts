@@ -2,7 +2,7 @@ import { logger } from '@/utils/logger';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { CreateBookingRequest, type Booking } from '../app/api/booking/booking';
+import { CreateBookingRequest, type Booking } from '../services/api/booking/booking';
 import { apiUrl } from '@/constants/api';
 import { convertCurrency } from '@/utils/currency';
 import axios from 'axios';

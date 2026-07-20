@@ -199,7 +199,7 @@ export const FeaturedCompanionsSection: React.FC<FeaturedCompanionsSectionProps>
 
 
   const handleCompanionPress = (companionId: string) => {
-    router.push(`/companion/${companionId}?experienceIndex=0`);
+    router.push(`/experiences/${companionId}?experienceIndex=0`);
   };
 
   const handleFavorite = (companion: Companion) => {

@@ -21,7 +21,7 @@ import { useTranslation } from 'react-i18next';
 
 // Import Lucide icons with error handling
 import { Calendar, Settings, TrendingUp, Plus, Clock, CheckCircle, XCircle } from 'lucide-react-native';
-import { useSupplierStats } from '@/app/api/companion/stats';
+import { useSupplierStats } from '@/services/api/companion/stats';
 
 // Safe color utilities to prevent ViewManager crashes
 const safeColor = (color: string | undefined, fallback: string = '#666666'): string => {
@@ -67,7 +67,7 @@ import {
   useUpdateBookingStatus,
   BookingListItem,
   BookingStatus 
-} from '@/app/api/booking/booking';
+} from '@/services/api/booking/booking';
 import { useAuthStore } from '@/stores/auth-store';
 
 interface CompanionDashboardProps {

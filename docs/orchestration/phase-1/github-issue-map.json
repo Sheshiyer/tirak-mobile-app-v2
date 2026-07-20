@@ -1,0 +1,2891 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-20T13:03:25Z",
+  "source": {
+    "path": "docs/plans/2026-07-18-tirak-omise-production-swarm-plan.md",
+    "sha256": "90250e2538419b5016b8309e0b906c1e39e5b04288ff64ec7a0a7a2538be1668"
+  },
+  "publication": {
+    "state": "planned_not_created",
+    "authorizationGate": "T-024 human approval",
+    "githubMutated": false
+  },
+  "milestones": [
+    {
+      "id": "P1",
+      "title": "Phase 1 — Baseline and contract freeze",
+      "state": "planned_not_created"
+    },
+    {
+      "id": "P2",
+      "title": "Phase 2 — Staging backend, data, and Omise",
+      "state": "planned_not_created"
+    },
+    {
+      "id": "P3",
+      "title": "Phase 3 — Mobile and reviewer experience",
+      "state": "planned_not_created"
+    },
+    {
+      "id": "P4",
+      "title": "Phase 4 — Release hardening",
+      "state": "planned_not_created"
+    },
+    {
+      "id": "P5",
+      "title": "Phase 5 — Production and submission",
+      "state": "planned_not_created"
+    }
+  ],
+  "labels": [
+    {
+      "name": "area:backend",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "area:data",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "area:frontend",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "area:infra",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "area:product",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "area:qa",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "lock:exclusive",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "phase:p1",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "phase:p2",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "phase:p3",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "phase:p4",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "phase:p5",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "status:planned-not-created",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "swarm:backend-wiki-baseline",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "swarm:cloud-config",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "swarm:content-review",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "swarm:data-cutover",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "swarm:data-migration",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "swarm:device-matrix",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "swarm:financial-integrity",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "swarm:financial-operations",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "swarm:integration-contracts",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "swarm:integration-gate",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "swarm:migration-validation",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "swarm:mobile-baseline",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "swarm:mobile-config",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "swarm:mobile-workflows",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "swarm:monitoring",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "swarm:orchestration",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "swarm:orchestration-scaffold",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "swarm:payment-data-contracts",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "swarm:payment-e2e",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "swarm:product-release-contracts",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "swarm:release-gate",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "swarm:resilience",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "swarm:review-data",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "swarm:security",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "swarm:store-assets",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "swarm:submission",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "swarm:telemetry",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "swarm:validation-scaffold",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "swarm:worker-cutover",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "tirak-omise",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "vcs:baseline",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "vcs:standard",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "wave:w1.1",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "wave:w1.2",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "wave:w1.3",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "wave:w2.1",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "wave:w2.2",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "wave:w2.3",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "wave:w3.1",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "wave:w3.2",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "wave:w3.3",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "wave:w4.1",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "wave:w4.2",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "wave:w5.1",
+      "state": "planned_not_created"
+    },
+    {
+      "name": "wave:w5.2",
+      "state": "planned_not_created"
+    }
+  ],
+  "waveSummaries": [
+    {
+      "id": "W1.1",
+      "phase": "P1",
+      "taskIds": [
+        "T-001",
+        "T-002",
+        "T-003",
+        "T-004",
+        "T-005",
+        "T-006",
+        "T-007",
+        "T-008"
+      ],
+      "taskCount": 8,
+      "estimatedHours": 16,
+      "state": "planned_not_created"
+    },
+    {
+      "id": "W1.2",
+      "phase": "P1",
+      "taskIds": [
+        "T-009",
+        "T-010",
+        "T-011",
+        "T-012",
+        "T-013",
+        "T-014",
+        "T-015",
+        "T-016"
+      ],
+      "taskCount": 8,
+      "estimatedHours": 24,
+      "state": "planned_not_created"
+    },
+    {
+      "id": "W1.3",
+      "phase": "P1",
+      "taskIds": [
+        "T-017",
+        "T-018",
+        "T-019",
+        "T-020",
+        "T-021",
+        "T-022",
+        "T-023",
+        "T-024"
+      ],
+      "taskCount": 8,
+      "estimatedHours": 25,
+      "state": "planned_not_created"
+    },
+    {
+      "id": "W2.1",
+      "phase": "P2",
+      "taskIds": [
+        "T-025",
+        "T-026",
+        "T-027",
+        "T-028",
+        "T-029",
+        "T-030",
+        "T-031",
+        "T-032"
+      ],
+      "taskCount": 8,
+      "estimatedHours": 27,
+      "state": "planned_not_created"
+    },
+    {
+      "id": "W2.2",
+      "phase": "P2",
+      "taskIds": [
+        "T-033",
+        "T-034",
+        "T-035",
+        "T-036",
+        "T-037",
+        "T-038"
+      ],
+      "taskCount": 6,
+      "estimatedHours": 18,
+      "state": "planned_not_created"
+    },
+    {
+      "id": "W2.3",
+      "phase": "P2",
+      "taskIds": [
+        "T-039",
+        "T-040",
+        "T-041",
+        "T-042",
+        "T-043",
+        "T-044"
+      ],
+      "taskCount": 6,
+      "estimatedHours": 26,
+      "state": "planned_not_created"
+    },
+    {
+      "id": "W3.1",
+      "phase": "P3",
+      "taskIds": [
+        "T-045",
+        "T-046",
+        "T-047",
+        "T-048",
+        "T-049",
+        "T-050"
+      ],
+      "taskCount": 6,
+      "estimatedHours": 21,
+      "state": "planned_not_created"
+    },
+    {
+      "id": "W3.2",
+      "phase": "P3",
+      "taskIds": [
+        "T-051",
+        "T-052",
+        "T-053",
+        "T-054",
+        "T-055"
+      ],
+      "taskCount": 5,
+      "estimatedHours": 16,
+      "state": "planned_not_created"
+    },
+    {
+      "id": "W3.3",
+      "phase": "P3",
+      "taskIds": [
+        "T-056",
+        "T-057",
+        "T-058",
+        "T-059",
+        "T-060"
+      ],
+      "taskCount": 5,
+      "estimatedHours": 20,
+      "state": "planned_not_created"
+    },
+    {
+      "id": "W4.1",
+      "phase": "P4",
+      "taskIds": [
+        "T-061",
+        "T-062",
+        "T-063",
+        "T-064",
+        "T-065",
+        "T-066"
+      ],
+      "taskCount": 6,
+      "estimatedHours": 23,
+      "state": "planned_not_created"
+    },
+    {
+      "id": "W4.2",
+      "phase": "P4",
+      "taskIds": [
+        "T-067",
+        "T-068",
+        "T-069",
+        "T-070",
+        "T-071",
+        "T-072"
+      ],
+      "taskCount": 6,
+      "estimatedHours": 20,
+      "state": "planned_not_created"
+    },
+    {
+      "id": "W5.1",
+      "phase": "P5",
+      "taskIds": [
+        "T-073",
+        "T-074",
+        "T-075",
+        "T-076"
+      ],
+      "taskCount": 4,
+      "estimatedHours": 10,
+      "state": "planned_not_created"
+    },
+    {
+      "id": "W5.2",
+      "phase": "P5",
+      "taskIds": [
+        "T-077",
+        "T-078",
+        "T-079",
+        "T-080"
+      ],
+      "taskCount": 4,
+      "estimatedHours": 15,
+      "state": "planned_not_created"
+    }
+  ],
+  "issues": [
+    {
+      "id": "T-001",
+      "issueNumber": null,
+      "title": "[T-001] Inventory mobile integration diff",
+      "milestone": "P1",
+      "wave": "W1.1",
+      "swarm": "mobile-baseline",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p1",
+        "wave:w1.1",
+        "swarm:mobile-baseline",
+        "area:product",
+        "vcs:baseline",
+        "lock:exclusive"
+      ],
+      "dependencies": [],
+      "owner": "Planner / noesisX",
+      "estimatedHours": 2,
+      "body": {
+        "deliverable": "Classified mobile release-input inventory with branch, parent SHA, source, derived output, blocker, and user-owned exclusions",
+        "acceptance": "Every modified and untracked path is classified; plan/ISA/config/assets/mocks/telemetry are explicit; no file is reverted",
+        "validation": "`git status`, diff stats, scope review, and inventory hash",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-002",
+      "issueNumber": null,
+      "title": "[T-002] Re-prove mobile baseline",
+      "milestone": "P1",
+      "wave": "W1.1",
+      "swarm": "mobile-baseline",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p1",
+        "wave:w1.1",
+        "swarm:mobile-baseline",
+        "area:qa",
+        "vcs:baseline"
+      ],
+      "dependencies": [
+        "T-001"
+      ],
+      "owner": "Validation reviewer / QATester",
+      "estimatedHours": 2,
+      "body": {
+        "deliverable": "Mobile baseline evidence bundle",
+        "acceptance": "Jest, TypeScript, copy guard, and whitespace checks pass from one tree state",
+        "validation": "Command logs and test counts",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-003",
+      "issueNumber": null,
+      "title": "[T-003] Preserve mobile baseline commit",
+      "milestone": "P1",
+      "wave": "W1.1",
+      "swarm": "mobile-baseline",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p1",
+        "wave:w1.1",
+        "swarm:mobile-baseline",
+        "area:frontend",
+        "vcs:baseline",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-002"
+      ],
+      "owner": "Release integrator / noesisX",
+      "estimatedHours": 1,
+      "body": {
+        "deliverable": "Scoped no-deploy mobile recovery-baseline commit and SHA",
+        "acceptance": "Staged diff matches inventory, secret scan passes, `.agents` and Playwright state are excluded, and blocker ledger is referenced",
+        "validation": "Staged secret scan, commit diff audit, tree hash, and SHA record",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-004",
+      "issueNumber": null,
+      "title": "[T-004] Inventory backend integration diff",
+      "milestone": "P1",
+      "wave": "W1.1",
+      "swarm": "backend-wiki-baseline",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p1",
+        "wave:w1.1",
+        "swarm:backend-wiki-baseline",
+        "area:product",
+        "vcs:baseline",
+        "lock:exclusive"
+      ],
+      "dependencies": [],
+      "owner": "Planner / noesisX",
+      "estimatedHours": 2,
+      "body": {
+        "deliverable": "Classified Worker, seed/public-ingestion, migration, deploy/backup, Wrangler, package-command, notification, test, and documentation inventory",
+        "acceptance": "Every backend release input is assigned to integration, derived output, blocker, or explicit exclusion",
+        "validation": "`git status`, route/seed/config/script/migration audit, diff stats, and inventory hash",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-005",
+      "issueNumber": null,
+      "title": "[T-005] Re-prove backend and migration baseline",
+      "milestone": "P1",
+      "wave": "W1.1",
+      "swarm": "backend-wiki-baseline",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p1",
+        "wave:w1.1",
+        "swarm:backend-wiki-baseline",
+        "area:qa",
+        "vcs:baseline"
+      ],
+      "dependencies": [
+        "T-004"
+      ],
+      "owner": "Validation reviewer / isolated reviewer",
+      "estimatedHours": 3,
+      "body": {
+        "deliverable": "Backend evidence bundle with exact-tree tests, seven-error historical replay, focused-probe limitation, schema comparison, and destructive-`009` warning",
+        "acceptance": "Typecheck and all tests pass; full `004` failure is reproduced; focused migration is labeled non-production evidence; red seed/cancellation/tooling probes are recorded",
+        "validation": "Vitest, TypeScript, SQLite probes, secret scan, script audit, and diff check",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-006",
+      "issueNumber": null,
+      "title": "[T-006] Preserve backend baseline commit",
+      "milestone": "P1",
+      "wave": "W1.1",
+      "swarm": "backend-wiki-baseline",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p1",
+        "wave:w1.1",
+        "swarm:backend-wiki-baseline",
+        "area:backend",
+        "vcs:baseline",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-005"
+      ],
+      "owner": "Release integrator / noesisX",
+      "estimatedHours": 1,
+      "body": {
+        "deliverable": "Scoped no-deploy backend recovery-baseline commit and SHA",
+        "acceptance": "Commit contains only reviewed backend inputs; secret scan passes; destructive `009` and other known blockers are explicitly quarantined by ledger",
+        "validation": "Staged secret scan, commit diff audit, tree hash, and SHA record",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-007",
+      "issueNumber": null,
+      "title": "[T-007] Preserve canonical wiki baseline",
+      "milestone": "P1",
+      "wave": "W1.1",
+      "swarm": "backend-wiki-baseline",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p1",
+        "wave:w1.1",
+        "swarm:backend-wiki-baseline",
+        "area:product",
+        "vcs:baseline",
+        "lock:exclusive"
+      ],
+      "dependencies": [],
+      "owner": "Content reviewer / Codex worker",
+      "estimatedHours": 3,
+      "body": {
+        "deliverable": "No-deploy wiki recovery-baseline commit, four-document corpus manifest, deterministic build hashes, and route evidence",
+        "acceptance": "Source allowlist yields exactly four documents; repeated builds match; legacy routes are absent; tracked `node_modules/.astro` cache is removed from version control",
+        "validation": "Node tests, two-build hashes, corpus hashes/count, Astro build, route probes, staged secret scan, and SHA record",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-008",
+      "issueNumber": null,
+      "title": "[T-008] Publish cross-repository baseline manifest",
+      "milestone": "P1",
+      "wave": "W1.1",
+      "swarm": "orchestration",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p1",
+        "wave:w1.1",
+        "swarm:orchestration",
+        "area:product",
+        "vcs:baseline",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-003",
+        "T-006",
+        "T-007"
+      ],
+      "owner": "Planner / noesisX",
+      "estimatedHours": 2,
+      "body": {
+        "deliverable": "Manifest of parent and baseline SHAs/tree hashes, branches, included/excluded hashes, evidence producers, plan/ISA hashes, and blocker ledger",
+        "acceptance": "Human owner approves the manifest as a recovery baseline only; approval does not authorize fan-out, staging, or deployment",
+        "validation": "SHA/tree/diff-hash verification, clean-or-declared repository snapshots, and human approval",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-009",
+      "issueNumber": null,
+      "title": "[T-009] Freeze payment HTTP and route-surface contract",
+      "milestone": "P1",
+      "wave": "W1.2",
+      "swarm": "payment-data-contracts",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p1",
+        "wave:w1.2",
+        "swarm:payment-data-contracts",
+        "area:backend",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-008"
+      ],
+      "owner": "Backend executor / Copilot or Engineer",
+      "estimatedHours": 3,
+      "body": {
+        "deliverable": "Versioned endpoint, explicit-unit request/response, error, auth, and release-route contract",
+        "acceptance": "Safe PromptPay endpoints are explicit; ambiguous amount units and legacy payment/card/contact routes are removed or blocked",
+        "validation": "Contract tests and mounted-route audit",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-010",
+      "issueNumber": null,
+      "title": "[T-010] Freeze payment and cancellation state mapping",
+      "milestone": "P1",
+      "wave": "W1.2",
+      "swarm": "payment-data-contracts",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p1",
+        "wave:w1.2",
+        "swarm:payment-data-contracts",
+        "area:data",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-009"
+      ],
+      "owner": "Backend executor / Copilot or Engineer",
+      "estimatedHours": 2,
+      "body": {
+        "deliverable": "Provider, attempt, booking, cancellation, restitution, and mobile state table",
+        "acceptance": "Every provider and cancellation race has one non-false outcome; cancellation never implies refund",
+        "validation": "Table-driven invariant tests cover every combination",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-011",
+      "issueNumber": null,
+      "title": "[T-011] Freeze target D1 schema contract",
+      "milestone": "P1",
+      "wave": "W1.2",
+      "swarm": "payment-data-contracts",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p1",
+        "wave:w1.2",
+        "swarm:payment-data-contracts",
+        "area:data",
+        "vcs:standard",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-008"
+      ],
+      "owner": "Data owner / backend executor",
+      "estimatedHours": 4,
+      "body": {
+        "deliverable": "Required columns, tables, constraints, indexes, and authoritative ledger contract",
+        "acceptance": "Contract covers bookings, attempts, webhook events, booking chat, and `payment_restitutions` identifiers, amount/currency, reason, approver, evidence, lifecycle, permissions, and duplicate prevention",
+        "validation": "Schema introspection fixture, permission matrix, and SQL invariant assertions",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-012",
+      "issueNumber": null,
+      "title": "[T-012] Decide legacy 004 and additive chat 009 strategy",
+      "milestone": "P1",
+      "wave": "W1.2",
+      "swarm": "payment-data-contracts",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p1",
+        "wave:w1.2",
+        "swarm:payment-data-contracts",
+        "area:data",
+        "vcs:standard",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-011"
+      ],
+      "owner": "Planner plus data owner",
+      "estimatedHours": 4,
+      "body": {
+        "deliverable": "Approved baseline-ledger/repair strategy plus mandatory expand-contract chat design",
+        "acceptance": "Fresh and existing targets are unambiguous; old and new Workers remain compatible; destructive legacy-table retirement is outside this release",
+        "validation": "Rehearsal design review and SQL/Worker dependency graph",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-013",
+      "issueNumber": null,
+      "title": "[T-013] Freeze environment, resource identity, and rollout modes",
+      "milestone": "P1",
+      "wave": "W1.2",
+      "swarm": "product-release-contracts",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p1",
+        "wave:w1.2",
+        "swarm:product-release-contracts",
+        "area:infra",
+        "vcs:standard",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-008"
+      ],
+      "owner": "Backend executor / Copilot or Engineer",
+      "estimatedHours": 3,
+      "body": {
+        "deliverable": "Test/staging/production Worker, D1, KV, queue, DO, API URL, secret, payment-kill-switch, and authorized-operator matrix",
+        "acceptance": "Placeholder/stale resource names cannot deploy; test/live secrets cannot cross; config errors close charge creation; in-flight settlement stays online",
+        "validation": "Config tests, binding-name audit, wrong-target refusal, and target confirmation",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-014",
+      "issueNumber": null,
+      "title": "[T-014] Freeze mobile booking and checkout boundary",
+      "milestone": "P1",
+      "wave": "W1.2",
+      "swarm": "product-release-contracts",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p1",
+        "wave:w1.2",
+        "swarm:product-release-contracts",
+        "area:frontend",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-009",
+        "T-010"
+      ],
+      "owner": "Mobile executor / Codex",
+      "estimatedHours": 3,
+      "body": {
+        "deliverable": "Mobile state, CTA, navigation, chat, QR, and retry contract",
+        "acceptance": "Pending cannot pay/chat; confirmed can pay; only verified paid renders paid",
+        "validation": "Cross-layer contract tests",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-015",
+      "issueNumber": null,
+      "title": "[T-015] Freeze reviewer fixture and clean-seed provenance",
+      "milestone": "P1",
+      "wave": "W1.2",
+      "swarm": "product-release-contracts",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p1",
+        "wave:w1.2",
+        "swarm:product-release-contracts",
+        "area:product",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-009",
+        "T-011"
+      ],
+      "owner": "Planner plus human release owner",
+      "estimatedHours": 3,
+      "body": {
+        "deliverable": "Review-account, guide, experience, unpaid, paid, SQL seed, migration, import, CMS, mock, wiki/RAG, notification, source hash, cache-invalidation, and generation-date specification",
+        "acceptance": "Paid fixture requires a real verified provider charge; no bypass exists; adult or companionship data is cleansed at ingestion and persisted caches, never hidden only in UI",
+        "validation": "End-to-end provenance checklist, prohibited-source/data assertion, cache purge proof design, and provider-receipt requirement",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-016",
+      "issueNumber": null,
+      "title": "[T-016] Approve shared contract packet",
+      "milestone": "P1",
+      "wave": "W1.2",
+      "swarm": "integration-contracts",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p1",
+        "wave:w1.2",
+        "swarm:integration-contracts",
+        "area:product",
+        "vcs:standard",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-010",
+        "T-012",
+        "T-013",
+        "T-014",
+        "T-015"
+      ],
+      "owner": "Planner / noesisX",
+      "estimatedHours": 2,
+      "body": {
+        "deliverable": "Signed-off contract packet `tirak-payments-v1` plus blocker-to-ingestion-control crosswalk",
+        "acceptance": "Every blocker has an earliest enforcement point, owner, negative test, and evidence artifact; planner, executors, validator, and human owner accept the boundary",
+        "validation": "Contract and causal-control checklist with zero unknown enforcement locations or drift",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-017",
+      "issueNumber": null,
+      "title": "[T-017] Design GitHub milestone and issue map",
+      "milestone": "P1",
+      "wave": "W1.3",
+      "swarm": "orchestration-scaffold",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p1",
+        "wave:w1.3",
+        "swarm:orchestration-scaffold",
+        "area:product",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-016"
+      ],
+      "owner": "Planner / noesisX",
+      "estimatedHours": 2,
+      "body": {
+        "deliverable": "Milestones, labels, issue bodies, dependencies, and wave summaries",
+        "acceptance": "All 80 tasks map deterministically without creating issues yet",
+        "validation": "Mapping-schema validation",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-018",
+      "issueNumber": null,
+      "title": "[T-018] Generate branch and worktree manifest",
+      "milestone": "P1",
+      "wave": "W1.3",
+      "swarm": "orchestration-scaffold",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p1",
+        "wave:w1.3",
+        "swarm:orchestration-scaffold",
+        "area:infra",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-016"
+      ],
+      "owner": "Planner / noesisX",
+      "estimatedHours": 2,
+      "body": {
+        "deliverable": "Unique VCS mapping for every implementation task",
+        "acceptance": "No two tasks share a branch or worktree",
+        "validation": "Duplicate and path-collision probe",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-019",
+      "issueNumber": null,
+      "title": "[T-019] Publish lock-zone ownership ledger",
+      "milestone": "P1",
+      "wave": "W1.3",
+      "swarm": "orchestration-scaffold",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p1",
+        "wave:w1.3",
+        "swarm:orchestration-scaffold",
+        "area:product",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-016"
+      ],
+      "owner": "Planner / noesisX",
+      "estimatedHours": 2,
+      "body": {
+        "deliverable": "Serialized owners and handoff order for shared files",
+        "acceptance": "Every lock-zone edit has one active owner per wave",
+        "validation": "Ownership matrix inspection",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-020",
+      "issueNumber": null,
+      "title": "[T-020] Establish mobile CI release gate",
+      "milestone": "P1",
+      "wave": "W1.3",
+      "swarm": "validation-scaffold",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p1",
+        "wave:w1.3",
+        "swarm:validation-scaffold",
+        "area:qa",
+        "vcs:standard",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-003",
+        "T-014",
+        "T-016"
+      ],
+      "owner": "Validation reviewer / Gemini or reviewer",
+      "estimatedHours": 4,
+      "body": {
+        "deliverable": "Reproducible mobile test, type, prohibited-source/output copy, route/deep-link, Expo export/config, dependency, and build-hash checks",
+        "acceptance": "Gate fails on unsafe source or built copy, contract drift, route exposure, environment mismatch, type errors, tests, or artifact-hash drift",
+        "validation": "CI dry run on baseline SHA with negative fixtures and built-artifact scan",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-021",
+      "issueNumber": null,
+      "title": "[T-021] Establish fail-closed backend CI, deploy, backup, and migration gate",
+      "milestone": "P1",
+      "wave": "W1.3",
+      "swarm": "validation-scaffold",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p1",
+        "wave:w1.3",
+        "swarm:validation-scaffold",
+        "area:qa",
+        "vcs:standard",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-006",
+        "T-012",
+        "T-013",
+        "T-016"
+      ],
+      "owner": "Validation reviewer / Gemini or reviewer",
+      "estimatedHours": 6,
+      "body": {
+        "deliverable": "Correct script names, explicit environment/database targets, hard failure propagation, local restorable-backup proof, and target-aware migration checks",
+        "acceptance": "Injected command, test, health, target, migration, and restore failures exit nonzero; no raw directory replay or stale target remains",
+        "validation": "CI dry run, deliberate failure matrix, shell audit, SQLite/D1 disposable fixture, and local restore rehearsal",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-022",
+      "issueNumber": null,
+      "title": "[T-022] Publish wave evidence matrix",
+      "milestone": "P1",
+      "wave": "W1.3",
+      "swarm": "validation-scaffold",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p1",
+        "wave:w1.3",
+        "swarm:validation-scaffold",
+        "area:qa",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-016",
+        "T-021"
+      ],
+      "owner": "Validation reviewer / Gemini or reviewer",
+      "estimatedHours": 3,
+      "body": {
+        "deliverable": "Required automated, log, screenshot, metric, rollback proof, and verified producer per wave",
+        "acceptance": "Every task and wave names evidence and its trusted producing command or tool before launch",
+        "validation": "Matrix coverage and tool-provenance audit against T-001–T-080",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-023",
+      "issueNumber": null,
+      "title": "[T-023] Generate worker bootstrap packet templates",
+      "milestone": "P1",
+      "wave": "W1.3",
+      "swarm": "orchestration-scaffold",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p1",
+        "wave:w1.3",
+        "swarm:orchestration-scaffold",
+        "area:product",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-017",
+        "T-018",
+        "T-019",
+        "T-022"
+      ],
+      "owner": "Planner / noesisX",
+      "estimatedHours": 4,
+      "body": {
+        "deliverable": "Shared contract packet, executor packets, validation brief, forbidden-fix list, and handoff template",
+        "acceptance": "Packets prohibit raw `004` replay, destructive `009`, legacy fail-open scripts, UI-only seed hiding, serializer-only refund fixes, and edits outside owned zones",
+        "validation": "Packet completeness and prohibited-pattern checklist",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-024",
+      "issueNumber": null,
+      "title": "[T-024] Close Phase 1 readiness gate",
+      "milestone": "P1",
+      "wave": "W1.3",
+      "swarm": "integration-gate",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p1",
+        "wave:w1.3",
+        "swarm:integration-gate",
+        "area:qa",
+        "vcs:standard",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-020",
+        "T-021",
+        "T-023"
+      ],
+      "owner": "Release integrator / noesisX",
+      "estimatedHours": 2,
+      "body": {
+        "deliverable": "Phase 2 fan-out verdict and approved no-deploy integration baseline",
+        "acceptance": "Immutable baselines, blocker ledger, ingestion controls, contracts, negative CI gates, ownership, packets, and human approval all pass; only then may GitHub/worktrees/staging begin",
+        "validation": "Wave-close checklist, independent review, and human approval",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-025",
+      "issueNumber": null,
+      "title": "[T-025] Resolve staging resource identities and ledger",
+      "milestone": "P2",
+      "wave": "W2.1",
+      "swarm": "data-migration",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p2",
+        "wave:w2.1",
+        "swarm:data-migration",
+        "area:data",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-024"
+      ],
+      "owner": "Data owner / backend executor",
+      "estimatedHours": 2,
+      "body": {
+        "deliverable": "Human-confirmed Worker, D1, KV, R2, queue/DLQ, Durable Object, account, storage version, migration ledger, and row-count manifest with corrected `wrangler.toml`",
+        "acceptance": "Placeholder or mismatched resource identity refuses execution; operator proves every command targets staging, never production",
+        "validation": "Wrangler metadata, config read-back, wrong-target refusal, and signed manifest",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-026",
+      "issueNumber": null,
+      "title": "[T-026] Capture and restore staging recovery point",
+      "milestone": "P2",
+      "wave": "W2.1",
+      "swarm": "data-migration",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p2",
+        "wave:w2.1",
+        "swarm:data-migration",
+        "area:data",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-025"
+      ],
+      "owner": "Human release owner plus data owner",
+      "estimatedHours": 2,
+      "body": {
+        "deliverable": "Time Travel bookmark or complete export with corrected target and executable restore instructions",
+        "acceptance": "Recovery artifact is timestamped and restoration is proven on a disposable rehearsal database or approved empty staging clone; active staging is never overwritten for proof",
+        "validation": "`d1 info`, Time Travel/export, disposable restore, checksums, and row-count evidence",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-027",
+      "issueNumber": null,
+      "title": "[T-027] Inspect staging booking, payment, and chat schema",
+      "milestone": "P2",
+      "wave": "W2.1",
+      "swarm": "data-migration",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p2",
+        "wave:w2.1",
+        "swarm:data-migration",
+        "area:data",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-025"
+      ],
+      "owner": "Data owner / backend executor",
+      "estimatedHours": 3,
+      "body": {
+        "deliverable": "Actual `table_info`, indexes, foreign keys, and migration ledger comparison",
+        "acceptance": "Every precondition for `008` and `009` is classified pass/fail",
+        "validation": "Read-only SQL output checked against T-011",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-028",
+      "issueNumber": null,
+      "title": "[T-028] Implement approved migration lineage and additive chat expansion",
+      "milestone": "P2",
+      "wave": "W2.1",
+      "swarm": "data-migration",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p2",
+        "wave:w2.1",
+        "swarm:data-migration",
+        "area:data",
+        "vcs:standard",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-012",
+        "T-027"
+      ],
+      "owner": "Data owner / backend executor",
+      "estimatedHours": 6,
+      "body": {
+        "deliverable": "Target-aware `004` baseline or repair plus safe additive `009` and restitution-ledger artifact",
+        "acceptance": "`004` lineage is deterministic and rehearsal-reversible; existing data remains intact; old and new Workers remain compatible; restitution uniqueness and permissions enforce the frozen contract",
+        "validation": "Fresh/existing schema, restored-backup replay, idempotency, permission, and dual-Worker compatibility tests",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-029",
+      "issueNumber": null,
+      "title": "[T-029] Rehearse migration 008",
+      "milestone": "P2",
+      "wave": "W2.1",
+      "swarm": "data-migration",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p2",
+        "wave:w2.1",
+        "swarm:data-migration",
+        "area:data",
+        "vcs:standard",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-026",
+        "T-028"
+      ],
+      "owner": "Data owner / backend executor",
+      "estimatedHours": 4,
+      "body": {
+        "deliverable": "Payment attempt and webhook event tables on rehearsal target",
+        "acceptance": "Tables, indexes, constraints, and ledger entry match contract",
+        "validation": "Schema assertions and foreign-key check",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-030",
+      "issueNumber": null,
+      "title": "[T-030] Rehearse additive migration 009",
+      "milestone": "P2",
+      "wave": "W2.1",
+      "swarm": "data-migration",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p2",
+        "wave:w2.1",
+        "swarm:data-migration",
+        "area:data",
+        "vcs:standard",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-029"
+      ],
+      "owner": "Data owner / backend executor",
+      "estimatedHours": 4,
+      "body": {
+        "deliverable": "Booking-scoped chat tables beside intact legacy pair tables",
+        "acceptance": "No ambiguous legacy history is copied; eligible bookings create one room; old Worker reads and writes remain safe during compatibility window",
+        "validation": "Schema, legacy-preservation, dual-Worker, uniqueness, and row-count probes",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-031",
+      "issueNumber": null,
+      "title": "[T-031] Validate migration integrity and recovery",
+      "milestone": "P2",
+      "wave": "W2.1",
+      "swarm": "migration-validation",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p2",
+        "wave:w2.1",
+        "swarm:migration-validation",
+        "area:qa",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-030"
+      ],
+      "owner": "Validation reviewer / isolated reviewer",
+      "estimatedHours": 4,
+      "body": {
+        "deliverable": "Independent migration and restore report",
+        "acceptance": "Foreign keys, indexes, row counts, ledger, and restore procedure pass",
+        "validation": "Independent SQL probes and restore rehearsal",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-032",
+      "issueNumber": null,
+      "title": "[T-032] Approve staging migration go/no-go",
+      "milestone": "P2",
+      "wave": "W2.1",
+      "swarm": "integration-gate",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p2",
+        "wave:w2.1",
+        "swarm:integration-gate",
+        "area:qa",
+        "vcs:standard",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-031"
+      ],
+      "owner": "Release integrator / noesisX",
+      "estimatedHours": 2,
+      "body": {
+        "deliverable": "Signed migration decision with abort triggers",
+        "acceptance": "Zero unexplained schema drift or unrecoverable operation remains",
+        "validation": "Wave-close evidence review",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-033",
+      "issueNumber": null,
+      "title": "[T-033] Implement payment environment-mode and kill-switch guard",
+      "milestone": "P2",
+      "wave": "W2.2",
+      "swarm": "cloud-config",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p2",
+        "wave:w2.2",
+        "swarm:cloud-config",
+        "area:backend",
+        "vcs:standard",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-013",
+        "T-024"
+      ],
+      "owner": "Backend executor / Copilot or Engineer",
+      "estimatedHours": 4,
+      "body": {
+        "deliverable": "Fail-closed disabled/test/live handling, audited operator toggle, and in-flight settlement behavior",
+        "acceptance": "Missing or mismatched mode cannot create a charge; disabling creation preserves webhook, status, reconciliation, and stale-attempt ownership",
+        "validation": "Unit, route, config, concurrent-request, and operator-toggle tests",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-034",
+      "issueNumber": null,
+      "title": "[T-034] Provision staging Omise test secrets",
+      "milestone": "P2",
+      "wave": "W2.2",
+      "swarm": "cloud-config",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p2",
+        "wave:w2.2",
+        "swarm:cloud-config",
+        "area:infra",
+        "vcs:standard",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-033",
+        "T-032"
+      ],
+      "owner": "Human release owner",
+      "estimatedHours": 1,
+      "body": {
+        "deliverable": "Cloudflare staging secrets and secret inventory without values",
+        "acceptance": "Test keys and webhook secret exist only in staging secret storage",
+        "validation": "Secret listing metadata and repository secret scan",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-035",
+      "issueNumber": null,
+      "title": "[T-035] Register staging webhook endpoint",
+      "milestone": "P2",
+      "wave": "W2.2",
+      "swarm": "cloud-config",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p2",
+        "wave:w2.2",
+        "swarm:cloud-config",
+        "area:infra",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-034"
+      ],
+      "owner": "Human release owner plus backend executor",
+      "estimatedHours": 1,
+      "body": {
+        "deliverable": "HTTPS staging webhook registered in Omise test mode",
+        "acceptance": "Endpoint and webhook secret environment match",
+        "validation": "Dashboard screenshot and signed delivery log",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-036",
+      "issueNumber": null,
+      "title": "[T-036] Deploy baseline Worker to staging",
+      "milestone": "P2",
+      "wave": "W2.2",
+      "swarm": "cloud-config",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p2",
+        "wave:w2.2",
+        "swarm:cloud-config",
+        "area:infra",
+        "vcs:standard",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-032",
+        "T-033",
+        "T-034"
+      ],
+      "owner": "Backend executor / Copilot or Engineer",
+      "estimatedHours": 3,
+      "body": {
+        "deliverable": "Versioned staging Worker deployment and bindings manifest",
+        "acceptance": "Health, auth, booking, chat, and payment routes answer from expected version",
+        "validation": "Deployment ID, health probes, route smoke logs",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-037",
+      "issueNumber": null,
+      "title": "[T-037] Execute staging PromptPay happy path",
+      "milestone": "P2",
+      "wave": "W2.2",
+      "swarm": "payment-e2e",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p2",
+        "wave:w2.2",
+        "swarm:payment-e2e",
+        "area:qa",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-035",
+        "T-036"
+      ],
+      "owner": "Validation reviewer plus human payer",
+      "estimatedHours": 4,
+      "body": {
+        "deliverable": "Confirmed booking, charge, QR, webhook, retrieved success, and paid booking evidence",
+        "acceptance": "One provider charge maps to one attempt and one paid booking",
+        "validation": "API logs, provider charge, D1 rows, screenshots",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-038",
+      "issueNumber": null,
+      "title": "[T-038] Execute failure, cancellation, kill-switch, and recovery matrix",
+      "milestone": "P2",
+      "wave": "W2.2",
+      "swarm": "payment-e2e",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p2",
+        "wave:w2.2",
+        "swarm:payment-e2e",
+        "area:qa",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-037"
+      ],
+      "owner": "Validation reviewer / Gemini or reviewer",
+      "estimatedHours": 5,
+      "body": {
+        "deliverable": "Failed, expired, duplicate, tampered, replayed, delayed, stranded-creating, cancelled-active-QR, indeterminate, and under-load kill-switch scenarios",
+        "acceptance": "No false paid/refunded state, orphan, or duplicate charge; new creation stops while in-flight settlement continues; exact recovery requires metadata/source/livemode match",
+        "validation": "Adversarial logs, concurrent-request probe, and cross-table state snapshots",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-039",
+      "issueNumber": null,
+      "title": "[T-039] Add structured payment and webhook telemetry",
+      "milestone": "P2",
+      "wave": "W2.3",
+      "swarm": "telemetry",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p2",
+        "wave:w2.3",
+        "swarm:telemetry",
+        "area:backend",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-036"
+      ],
+      "owner": "Backend executor / Copilot or Engineer",
+      "estimatedHours": 5,
+      "body": {
+        "deliverable": "Redacted events for charge create/reuse, webhook verify/process, reconcile, mismatch, and recovery",
+        "acceptance": "Events contain correlation IDs and no secrets or sensitive payment data",
+        "validation": "Unit tests, log sample, redaction scan",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-040",
+      "issueNumber": null,
+      "title": "[T-040] Define dashboards and alert thresholds",
+      "milestone": "P2",
+      "wave": "W2.3",
+      "swarm": "telemetry",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p2",
+        "wave:w2.3",
+        "swarm:telemetry",
+        "area:infra",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-039"
+      ],
+      "owner": "Backend executor plus validation reviewer",
+      "estimatedHours": 4,
+      "body": {
+        "deliverable": "Dashboards and alerts for failure rate, webhook lag, indeterminate age, mismatch, and D1 errors",
+        "acceptance": "Each severe condition has owner, threshold, and response link",
+        "validation": "Synthetic alert tests and dashboard screenshots",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-041",
+      "issueNumber": null,
+      "title": "[T-041] Implement scheduled reconciliation and stale-attempt leasing",
+      "milestone": "P2",
+      "wave": "W2.3",
+      "swarm": "financial-operations",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p2",
+        "wave:w2.3",
+        "swarm:financial-operations",
+        "area:backend",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-038",
+        "T-039"
+      ],
+      "owner": "Backend executor / Copilot or Engineer",
+      "estimatedHours": 5,
+      "body": {
+        "deliverable": "Idempotent job/report for provider/local mismatch, failed webhooks, aged pending/indeterminate, and stale `creating` attempts",
+        "acceptance": "Job cannot create charges; stale work becomes recoverable and every comparison includes metadata/source/livemode",
+        "validation": "Fixture tests, scheduled-run log, and sample report",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-042",
+      "issueNumber": null,
+      "title": "[T-042] Write indeterminate recovery runbook",
+      "milestone": "P2",
+      "wave": "W2.3",
+      "swarm": "financial-operations",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p2",
+        "wave:w2.3",
+        "swarm:financial-operations",
+        "area:product",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-038",
+        "T-041"
+      ],
+      "owner": "Operations owner / planner",
+      "estimatedHours": 4,
+      "body": {
+        "deliverable": "Detection, provider lookup, authenticated recovery, escalation, and closure steps",
+        "acceptance": "Runbook never creates a new charge before exact outcome resolution",
+        "validation": "Tabletop exercise with evidence checklist",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-043",
+      "issueNumber": null,
+      "title": "[T-043] Implement cancellation interlock and restitution operations",
+      "milestone": "P2",
+      "wave": "W2.3",
+      "swarm": "financial-operations",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p2",
+        "wave:w2.3",
+        "swarm:financial-operations",
+        "area:backend",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-037",
+        "T-041"
+      ],
+      "owner": "Backend executor plus product owner",
+      "estimatedHours": 6,
+      "body": {
+        "deliverable": "Active-QR cancellation guard, exceptional-success handling, authoritative restitution-ledger workflow, and manual off-Omise procedure",
+        "acceptance": "Reconciliation cannot silently pay a cancelled booking; cancellation never claims refund; role permissions and uniqueness prevent duplicate restitution; customers receive an owned resolution path",
+        "validation": "State-race, permission, duplicate-restitution, and tabletop restitution tests",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-044",
+      "issueNumber": null,
+      "title": "[T-044] Close staging backend and operations gate",
+      "milestone": "P2",
+      "wave": "W2.3",
+      "swarm": "integration-gate",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p2",
+        "wave:w2.3",
+        "swarm:integration-gate",
+        "area:qa",
+        "vcs:standard",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-032",
+        "T-038",
+        "T-040",
+        "T-042",
+        "T-043"
+      ],
+      "owner": "Release integrator / noesisX",
+      "estimatedHours": 2,
+      "body": {
+        "deliverable": "Phase 3 readiness verdict",
+        "acceptance": "Migration, payment, telemetry, support, and rollback evidence pass",
+        "validation": "Wave-close checklist and independent review",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-045",
+      "issueNumber": null,
+      "title": "[T-045] Configure EAS staging environment",
+      "milestone": "P3",
+      "wave": "W3.1",
+      "swarm": "mobile-config",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p3",
+        "wave:w3.1",
+        "swarm:mobile-config",
+        "area:frontend",
+        "vcs:standard",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-024",
+        "T-044"
+      ],
+      "owner": "Mobile executor / Codex",
+      "estimatedHours": 2,
+      "body": {
+        "deliverable": "Internal-build profile using staging API URL and non-secret config",
+        "acceptance": "Build points to exact staging Worker and exposes no secret",
+        "validation": "Config inspection and runtime endpoint proof",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-046",
+      "issueNumber": null,
+      "title": "[T-046] Verify mobile payment API contract",
+      "milestone": "P3",
+      "wave": "W3.1",
+      "swarm": "mobile-workflows",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p3",
+        "wave:w3.1",
+        "swarm:mobile-workflows",
+        "area:frontend",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-014",
+        "T-045"
+      ],
+      "owner": "Mobile executor / Codex",
+      "estimatedHours": 4,
+      "body": {
+        "deliverable": "Client integration tests against staging response and error shapes",
+        "acceptance": "Request sends only booking ID/method and handles every frozen state",
+        "validation": "Jest contract tests and staging API capture",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-047",
+      "issueNumber": null,
+      "title": "[T-047] Harden checkout lifecycle UI",
+      "milestone": "P3",
+      "wave": "W3.1",
+      "swarm": "mobile-workflows",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p3",
+        "wave:w3.1",
+        "swarm:mobile-workflows",
+        "area:frontend",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-010",
+        "T-046"
+      ],
+      "owner": "Mobile executor / Codex",
+      "estimatedHours": 4,
+      "body": {
+        "deliverable": "Pending, processing, paid, failed, expired, retry, and recovery-safe screens",
+        "acceptance": "UI never self-declares success and prevents duplicate actions",
+        "validation": "Component tests and screen recordings",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-048",
+      "issueNumber": null,
+      "title": "[T-048] Validate booking-scoped iOS WebSocket chat",
+      "milestone": "P3",
+      "wave": "W3.1",
+      "swarm": "mobile-workflows",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p3",
+        "wave:w3.1",
+        "swarm:mobile-workflows",
+        "area:frontend",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-014",
+        "T-036"
+      ],
+      "owner": "Mobile executor / Codex",
+      "estimatedHours": 4,
+      "body": {
+        "deliverable": "Authenticated real-time logistics chat on a confirmed booking",
+        "acceptance": "Bearer authentication, event mapping, echo suppression, and booking access pass",
+        "validation": "Device logs and backend event trace",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-049",
+      "issueNumber": null,
+      "title": "[T-049] Harden accessibility, localization, privacy, and failure copy",
+      "milestone": "P3",
+      "wave": "W3.1",
+      "swarm": "mobile-workflows",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p3",
+        "wave:w3.1",
+        "swarm:mobile-workflows",
+        "area:frontend",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-047"
+      ],
+      "owner": "Mobile executor / Codex",
+      "estimatedHours": 4,
+      "body": {
+        "deliverable": "English/Thai accessible payment states plus checkout telemetry exclusions",
+        "acceptance": "VoiceOver, contrast, dynamic type, travel-only wording pass; Sentry replay/default PII and PostHog do not capture payment screens",
+        "validation": "Accessibility/locale tests, tracker instrumentation probe, screenshots",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-050",
+      "issueNumber": null,
+      "title": "[T-050] Produce signed internal EAS build",
+      "milestone": "P3",
+      "wave": "W3.1",
+      "swarm": "mobile-config",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p3",
+        "wave:w3.1",
+        "swarm:mobile-config",
+        "area:infra",
+        "vcs:standard",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-045",
+        "T-046",
+        "T-047",
+        "T-048",
+        "T-049"
+      ],
+      "owner": "Mobile executor plus human release owner",
+      "estimatedHours": 3,
+      "body": {
+        "deliverable": "Versioned iOS internal-distribution build and artifact manifest",
+        "acceptance": "Build SHA, API environment, bundle ID, version, and evidence are traceable",
+        "validation": "EAS build logs and artifact metadata",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-051",
+      "issueNumber": null,
+      "title": "[T-051] Run iPhone reviewer journey",
+      "milestone": "P3",
+      "wave": "W3.2",
+      "swarm": "device-matrix",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p3",
+        "wave:w3.2",
+        "swarm:device-matrix",
+        "area:qa",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-050"
+      ],
+      "owner": "Validation reviewer / QATester",
+      "estimatedHours": 3,
+      "body": {
+        "deliverable": "iPhone screenshots and step-by-step result",
+        "acceptance": "Explore through booking, confirmation, QR, paid state, chat, report/support all pass",
+        "validation": "Device video, screenshots, network logs",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-052",
+      "issueNumber": null,
+      "title": "[T-052] Run iPad Air reviewer journey",
+      "milestone": "P3",
+      "wave": "W3.2",
+      "swarm": "device-matrix",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p3",
+        "wave:w3.2",
+        "swarm:device-matrix",
+        "area:qa",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-050"
+      ],
+      "owner": "Validation reviewer / QATester",
+      "estimatedHours": 3,
+      "body": {
+        "deliverable": "iPad Air 11-inch presentation evidence",
+        "acceptance": "No clipped, stretched, empty, or misleading screen across reviewer flow",
+        "validation": "Device/simulator screenshots and assertions",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-053",
+      "issueNumber": null,
+      "title": "[T-053] Validate PromptPay banking handoff workflow",
+      "milestone": "P3",
+      "wave": "W3.2",
+      "swarm": "device-matrix",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p3",
+        "wave:w3.2",
+        "swarm:device-matrix",
+        "area:qa",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-050",
+        "T-037"
+      ],
+      "owner": "Validation reviewer plus human payer",
+      "estimatedHours": 4,
+      "body": {
+        "deliverable": "Same-device screenshot/import and second-device scan instructions/evidence",
+        "acceptance": "QR is readable, expiry is clear, and return/refresh reaches verified status",
+        "validation": "Banking-app test notes, QR image proof, provider receipt",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-054",
+      "issueNumber": null,
+      "title": "[T-054] Test mobile interruption and abuse cases",
+      "milestone": "P3",
+      "wave": "W3.2",
+      "swarm": "resilience",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p3",
+        "wave:w3.2",
+        "swarm:resilience",
+        "area:qa",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-050"
+      ],
+      "owner": "Validation reviewer / Gemini or reviewer",
+      "estimatedHours": 4,
+      "body": {
+        "deliverable": "Backgrounding, offline, timeout, duplicate tap, token expiry, and stale QR report",
+        "acceptance": "Booking remains safe, retry is explicit, and no duplicate charge appears",
+        "validation": "Device automation, API logs, D1/provider comparison",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-055",
+      "issueNumber": null,
+      "title": "[T-055] Close signed-device validation gate",
+      "milestone": "P3",
+      "wave": "W3.2",
+      "swarm": "integration-gate",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p3",
+        "wave:w3.2",
+        "swarm:integration-gate",
+        "area:qa",
+        "vcs:standard",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-051",
+        "T-052",
+        "T-053",
+        "T-054"
+      ],
+      "owner": "Release integrator / noesisX",
+      "estimatedHours": 2,
+      "body": {
+        "deliverable": "Device gate verdict and defect ledger",
+        "acceptance": "All critical flows pass or block Phase 4",
+        "validation": "Evidence index and zero-critical-finding review",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-056",
+      "issueNumber": null,
+      "title": "[T-056] Create stable review guide and experiences",
+      "milestone": "P3",
+      "wave": "W3.3",
+      "swarm": "review-data",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p3",
+        "wave:w3.3",
+        "swarm:review-data",
+        "area:data",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-015",
+        "T-044"
+      ],
+      "owner": "Product data owner / human plus backend executor",
+      "estimatedHours": 4,
+      "body": {
+        "deliverable": "Review account, guide profile, and named itinerary listings",
+        "acceptance": "Listings include route, meeting point, duration, inclusions, exclusions, total, cancellation, and credentials",
+        "validation": "Read-only API snapshots and copy scan",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-057",
+      "issueNumber": null,
+      "title": "[T-057] Create confirmed-unpaid reviewer booking",
+      "milestone": "P3",
+      "wave": "W3.3",
+      "swarm": "review-data",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p3",
+        "wave:w3.3",
+        "swarm:review-data",
+        "area:data",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-056"
+      ],
+      "owner": "Product data owner / human",
+      "estimatedHours": 2,
+      "body": {
+        "deliverable": "Future-dated guide-confirmed unpaid booking",
+        "acceptance": "Payment CTA is available; booking has no paid status or chat ambiguity",
+        "validation": "API response, D1 record, mobile screenshot",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-058",
+      "issueNumber": null,
+      "title": "[T-058] Create legitimately paid reviewer booking",
+      "milestone": "P3",
+      "wave": "W3.3",
+      "swarm": "review-data",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p3",
+        "wave:w3.3",
+        "swarm:review-data",
+        "area:data",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-056",
+        "T-037"
+      ],
+      "owner": "Human release owner plus validation reviewer",
+      "estimatedHours": 3,
+      "body": {
+        "deliverable": "Small-value booking paid through Omise and independently verified",
+        "acceptance": "Provider receipt, local attempt, and booking paid state all match; no manual status edit",
+        "validation": "Omise charge, webhook/retrieval logs, D1/mobile proof",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-059",
+      "issueNumber": null,
+      "title": "[T-059] Audit and harden every live distribution surface",
+      "milestone": "P3",
+      "wave": "W3.3",
+      "swarm": "content-review",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p3",
+        "wave:w3.3",
+        "swarm:content-review",
+        "area:product",
+        "vcs:standard",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-055",
+        "T-056"
+      ],
+      "owner": "Content reviewer / planner plus human",
+      "estimatedHours": 8,
+      "body": {
+        "deliverable": "Audit/fixes for app copy, i18n, `seed-data.sql`, public categories, supplier routes, deep links, CMS, email, push, async booking-state rechecks, support, ADRs, legal, privacy, wiki, and screenshots",
+        "acceptance": "Zero reachable retired/private/companionship signal remains; main Tirak runtime/content/data isolation is explicit",
+        "validation": "Automated scans, role/deep-link crawl, live screenshots, endpoint and seed captures",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-060",
+      "issueNumber": null,
+      "title": "[T-060] Assemble App Review evidence packet",
+      "milestone": "P3",
+      "wave": "W3.3",
+      "swarm": "content-review",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p3",
+        "wave:w3.3",
+        "swarm:content-review",
+        "area:product",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-057",
+        "T-058",
+        "T-059"
+      ],
+      "owner": "Planner / noesisX",
+      "estimatedHours": 3,
+      "body": {
+        "deliverable": "Credentials, booking IDs, reviewer script, navigation path, explanation, and support contact",
+        "acceptance": "Reviewer can inspect unpaid QR and verified paid states without a bypass",
+        "validation": "Dry-run by independent reviewer",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-061",
+      "issueNumber": null,
+      "title": "[T-061] Run secret, dependency, and checkout-tracking audit",
+      "milestone": "P4",
+      "wave": "W4.1",
+      "swarm": "security",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p4",
+        "wave:w4.1",
+        "swarm:security",
+        "area:qa",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-044",
+        "T-050"
+      ],
+      "owner": "Validation reviewer / security reviewer",
+      "estimatedHours": 5,
+      "body": {
+        "deliverable": "Secret scan, dependency findings, key-rotation readiness, and payment-screen tracker proof",
+        "acceptance": "No keys in code/artifacts/logs/source maps; critical advisories resolve; replay/default PII/analytics remain absent from checkout",
+        "validation": "Secret scanner, dependency audit, bundle and instrumentation inspection",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-062",
+      "issueNumber": null,
+      "title": "[T-062] Adversarially test auth, ownership, and rate limits",
+      "milestone": "P4",
+      "wave": "W4.1",
+      "swarm": "security",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p4",
+        "wave:w4.1",
+        "swarm:security",
+        "area:qa",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-044",
+        "T-050"
+      ],
+      "owner": "Validation reviewer / security reviewer",
+      "estimatedHours": 5,
+      "body": {
+        "deliverable": "Cross-user booking/payment/chat attack report",
+        "acceptance": "Unauthorized creation, retrieval, recovery, chat, and transitions fail safely",
+        "validation": "API adversarial suite and logs",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-063",
+      "issueNumber": null,
+      "title": "[T-063] Drill webhook tamper, replay, and rotation",
+      "milestone": "P4",
+      "wave": "W4.1",
+      "swarm": "security",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p4",
+        "wave:w4.1",
+        "swarm:security",
+        "area:qa",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-038"
+      ],
+      "owner": "Validation reviewer / security reviewer",
+      "estimatedHours": 4,
+      "body": {
+        "deliverable": "Live-like signature rotation and replay report",
+        "acceptance": "Mutated, malformed, stale, future, wrong-secret events fail; valid rotation succeeds",
+        "validation": "Raw-body signed fixtures and event ledger",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-064",
+      "issueNumber": null,
+      "title": "[T-064] Drill reconciliation and restitution operations",
+      "milestone": "P4",
+      "wave": "W4.1",
+      "swarm": "financial-integrity",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p4",
+        "wave:w4.1",
+        "swarm:financial-integrity",
+        "area:qa",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-041",
+        "T-042",
+        "T-043"
+      ],
+      "owner": "Validation reviewer plus operations owner",
+      "estimatedHours": 4,
+      "body": {
+        "deliverable": "Tabletop, consecutive scheduled shadow runs, and staging execution of mismatch, indeterminate, and off-Omise restitution-ledger cases",
+        "acceptance": "Multiple scheduled cycles reconcile provider, attempt, booking, and restitution ledgers; terminal restitution closes the alert without rewriting provider truth or allowing duplicates",
+        "validation": "Timed drill, scheduled-run reports, and provider/local/restitution before-after evidence",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-065",
+      "issueNumber": null,
+      "title": "[T-065] Verify privacy and log redaction",
+      "milestone": "P4",
+      "wave": "W4.1",
+      "swarm": "security",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p4",
+        "wave:w4.1",
+        "swarm:security",
+        "area:qa",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-039",
+        "T-059"
+      ],
+      "owner": "Validation reviewer / privacy reviewer",
+      "estimatedHours": 3,
+      "body": {
+        "deliverable": "Data-flow and log-redaction report",
+        "acceptance": "Secrets, raw card fields, auth tokens, sensitive chat, and unnecessary PII are absent",
+        "validation": "Log sampling, source scan, privacy checklist",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-066",
+      "issueNumber": null,
+      "title": "[T-066] Close security and financial signoff",
+      "milestone": "P4",
+      "wave": "W4.1",
+      "swarm": "integration-gate",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p4",
+        "wave:w4.1",
+        "swarm:integration-gate",
+        "area:qa",
+        "vcs:standard",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-061",
+        "T-062",
+        "T-063",
+        "T-064",
+        "T-065"
+      ],
+      "owner": "Release integrator plus human owner",
+      "estimatedHours": 2,
+      "body": {
+        "deliverable": "Signed security/financial go-no-go",
+        "acceptance": "No critical finding or unowned severe residual risk remains",
+        "validation": "Independent findings review",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-067",
+      "issueNumber": null,
+      "title": "[T-067] Freeze release version and commit manifest",
+      "milestone": "P4",
+      "wave": "W4.2",
+      "swarm": "release-gate",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p4",
+        "wave:w4.2",
+        "swarm:release-gate",
+        "area:product",
+        "vcs:standard",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-055",
+        "T-060",
+        "T-066"
+      ],
+      "owner": "Release integrator / noesisX",
+      "estimatedHours": 2,
+      "body": {
+        "deliverable": "Exact mobile, backend, wiki SHAs, build/version, environment, and evidence index",
+        "acceptance": "Every artifact derives from reviewed commits and environments",
+        "validation": "SHA, build metadata, deployment ID verification",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-068",
+      "issueNumber": null,
+      "title": "[T-068] Produce final App Store screenshots and metadata",
+      "milestone": "P4",
+      "wave": "W4.2",
+      "swarm": "store-assets",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p4",
+        "wave:w4.2",
+        "swarm:store-assets",
+        "area:product",
+        "vcs:standard",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-059",
+        "T-067"
+      ],
+      "owner": "Content reviewer plus designer/human",
+      "estimatedHours": 5,
+      "body": {
+        "deliverable": "iPhone/iPad screenshots, captions, description, subtitle, keywords, and review notes",
+        "acceptance": "Experience imagery dominates; all copy matches exact archive and live data",
+        "validation": "Screenshot comparison and prohibited-language scan",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-069",
+      "issueNumber": null,
+      "title": "[T-069] Finalize category, age, privacy, legal, and support fields",
+      "milestone": "P4",
+      "wave": "W4.2",
+      "swarm": "store-assets",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p4",
+        "wave:w4.2",
+        "swarm:store-assets",
+        "area:product",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-068"
+      ],
+      "owner": "Human release owner plus planner",
+      "estimatedHours": 3,
+      "body": {
+        "deliverable": "Completed App Store field matrix and reachable support/legal URLs",
+        "acceptance": "Travel category, privacy answers, age rating, and policies match runtime behavior",
+        "validation": "Field-by-field review and URL probes",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-070",
+      "issueNumber": null,
+      "title": "[T-070] Run exact release-candidate regression",
+      "milestone": "P4",
+      "wave": "W4.2",
+      "swarm": "release-gate",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p4",
+        "wave:w4.2",
+        "swarm:release-gate",
+        "area:qa",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-067"
+      ],
+      "owner": "Validation reviewer / QATester",
+      "estimatedHours": 5,
+      "body": {
+        "deliverable": "Full automated, iPhone, iPad, payment, chat, moderation, and interruption evidence",
+        "acceptance": "No critical regression and all reviewer-script steps pass on exact archive",
+        "validation": "CI, device recordings, API/provider/D1 logs",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-071",
+      "issueNumber": null,
+      "title": "[T-071] Finalize App Review reply and review notes",
+      "milestone": "P4",
+      "wave": "W4.2",
+      "swarm": "store-assets",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p4",
+        "wave:w4.2",
+        "swarm:store-assets",
+        "area:product",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-060",
+        "T-068",
+        "T-069",
+        "T-070"
+      ],
+      "owner": "Planner plus human release owner",
+      "estimatedHours": 3,
+      "body": {
+        "deliverable": "Concise acknowledgment, structural changes, credentials, and exact test path",
+        "acceptance": "Every claim is demonstrable in the submitted binary and backend",
+        "validation": "Independent claim-to-evidence audit",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-072",
+      "issueNumber": null,
+      "title": "[T-072] Hold production and submission go/no-go",
+      "milestone": "P4",
+      "wave": "W4.2",
+      "swarm": "integration-gate",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p4",
+        "wave:w4.2",
+        "swarm:integration-gate",
+        "area:product",
+        "vcs:standard",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-066",
+        "T-071"
+      ],
+      "owner": "Human release owner plus release integrator",
+      "estimatedHours": 2,
+      "body": {
+        "deliverable": "Signed decision, window, owners, abort thresholds, and communication plan",
+        "acceptance": "All Phase 4 gates pass and production authority is explicit",
+        "validation": "Go/no-go checklist and approvals",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-073",
+      "issueNumber": null,
+      "title": "[T-073] Open cutover bridge and capture production recovery point",
+      "milestone": "P5",
+      "wave": "W5.1",
+      "swarm": "data-cutover",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p5",
+        "wave:w5.1",
+        "swarm:data-cutover",
+        "area:infra",
+        "vcs:standard",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-072"
+      ],
+      "owner": "Human release owner plus data owner",
+      "estimatedHours": 2,
+      "body": {
+        "deliverable": "Incident channel, owner roster, D1 identity, Time Travel bookmark/export, active-attempt inventory, and baseline metrics",
+        "acceptance": "Correct target and restore command are recorded; no restore is authorized after new payment writes until reconciliation and forward-repair review",
+        "validation": "Read-only D1/Worker/payment evidence and approval",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-074",
+      "issueNumber": null,
+      "title": "[T-074] Apply approved production migration set",
+      "milestone": "P5",
+      "wave": "W5.1",
+      "swarm": "data-cutover",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p5",
+        "wave:w5.1",
+        "swarm:data-cutover",
+        "area:data",
+        "vcs:standard",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-073"
+      ],
+      "owner": "Data owner / backend executor",
+      "estimatedHours": 3,
+      "body": {
+        "deliverable": "Target-specific baseline or repair plus `008`, additive `009`, restitution ledger, and post-migration schema",
+        "acceptance": "Exact production preconditions match the rehearsed path; each approved step applies once; legacy chat tables remain intact; dual-Worker compatibility, foreign keys, indexes, permissions, and row counts pass",
+        "validation": "D1 migration output, checksums, legacy-write probe, and independent read-only SQL verification",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-075",
+      "issueNumber": null,
+      "title": "[T-075] Deploy production Worker disabled, then configure live webhook",
+      "milestone": "P5",
+      "wave": "W5.1",
+      "swarm": "worker-cutover",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p5",
+        "wave:w5.1",
+        "swarm:worker-cutover",
+        "area:infra",
+        "vcs:standard",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-074"
+      ],
+      "owner": "Backend executor plus human release owner",
+      "estimatedHours": 3,
+      "body": {
+        "deliverable": "Versioned Worker with new charges disabled, live secrets, live webhook, and config manifest",
+        "acceptance": "Health/auth/booking/chat/status/webhook/reconciliation work while charge creation remains closed",
+        "validation": "Deployment ID, dashboard evidence, signed webhook and disabled-create smoke",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-076",
+      "issueNumber": null,
+      "title": "[T-076] Enable controlled production charge and create review fixtures",
+      "milestone": "P5",
+      "wave": "W5.1",
+      "swarm": "worker-cutover",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p5",
+        "wave:w5.1",
+        "swarm:worker-cutover",
+        "area:qa",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-075"
+      ],
+      "owner": "Validation reviewer plus release integrator",
+      "estimatedHours": 2,
+      "body": {
+        "deliverable": "Controlled enablement, clean production review account and experience, separate confirmed-unpaid booking, and one small legitimately paid booking",
+        "acceptance": "Future dates, source hashes, provider receipt, local ledgers, and mobile states match; no telemetry spike, duplicate, auth/schema error, manual paid edit, or prohibited seed exists",
+        "validation": "Provider/local/restitution records, fixture provenance, content scan, logs, alerts, and mobile result",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-077",
+      "issueNumber": null,
+      "title": "[T-077] Build, device-validate, and submit exact production archive",
+      "milestone": "P5",
+      "wave": "W5.2",
+      "swarm": "submission",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p5",
+        "wave:w5.2",
+        "swarm:submission",
+        "area:infra",
+        "vcs:standard",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-076"
+      ],
+      "owner": "Human release owner plus mobile executor",
+      "estimatedHours": 6,
+      "body": {
+        "deliverable": "EAS production archive uploaded to TestFlight, exact-build iPhone/iPad reviewer evidence, then same build submitted in App Store Connect",
+        "acceptance": "Archive SHA, version, API environment, production fixture IDs, iPhone flow, and iPad Air presentation match T-067 and T-076; only that validated build enters review",
+        "validation": "EAS/TestFlight/App Store metadata, artifact hash, device recordings, and production API/provider/D1 traces",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-078",
+      "issueNumber": null,
+      "title": "[T-078] Monitor App Review and respond with evidence",
+      "milestone": "P5",
+      "wave": "W5.2",
+      "swarm": "submission",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p5",
+        "wave:w5.2",
+        "swarm:submission",
+        "area:product",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-077"
+      ],
+      "owner": "Human release owner plus planner",
+      "estimatedHours": 2,
+      "body": {
+        "deliverable": "Review-status log and evidence-backed responses",
+        "acceptance": "Any reviewer question is answered without changing product claims or bypassing flow",
+        "validation": "App Store correspondence record",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-079",
+      "issueNumber": null,
+      "title": "[T-079] Run 72-hour payment and platform watch",
+      "milestone": "P5",
+      "wave": "W5.2",
+      "swarm": "monitoring",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p5",
+        "wave:w5.2",
+        "swarm:monitoring",
+        "area:qa",
+        "vcs:standard"
+      ],
+      "dependencies": [
+        "T-076",
+        "T-077"
+      ],
+      "owner": "Operations owner plus validation reviewer",
+      "estimatedHours": 4,
+      "body": {
+        "deliverable": "Payment reconciliation, webhook lag, Worker/D1 errors, mobile crashes, and support report",
+        "acceptance": "Thresholds remain green or rollback/escalation triggers execute",
+        "validation": "Dashboards, alerts, reconciliation reports, crash data",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    },
+    {
+      "id": "T-080",
+      "issueNumber": null,
+      "title": "[T-080] Close rollout and preserve operational handoff",
+      "milestone": "P5",
+      "wave": "W5.2",
+      "swarm": "monitoring",
+      "labels": [
+        "tirak-omise",
+        "status:planned-not-created",
+        "phase:p5",
+        "wave:w5.2",
+        "swarm:monitoring",
+        "area:product",
+        "vcs:standard",
+        "lock:exclusive"
+      ],
+      "dependencies": [
+        "T-078",
+        "T-079"
+      ],
+      "owner": "Release integrator / noesisX",
+      "estimatedHours": 3,
+      "body": {
+        "deliverable": "Final manifest, issue/PR closure, residual risks, rollback references, runbooks, and retrospective",
+        "acceptance": "Every task has evidence and owner; unresolved work becomes explicit follow-up",
+        "validation": "Full graph audit and human signoff",
+        "authorityBoundary": "No GitHub mutation before T-024 human approval."
+      },
+      "publishState": "planned_not_created"
+    }
+  ]
+}

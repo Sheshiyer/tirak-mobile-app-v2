@@ -3,7 +3,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { CheckCircle, QrCode, RefreshCw } from 'lucide-react-native';
 
-import { createPromptPayCharge, fetchPromptPayCharge, type PromptPayCharge } from '@/app/api/payments/payments';
+import { createPromptPayCharge, fetchPromptPayCharge, type PromptPayCharge } from '@/services/api/payments/payments';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { designTokens } from '@/constants/design-tokens';

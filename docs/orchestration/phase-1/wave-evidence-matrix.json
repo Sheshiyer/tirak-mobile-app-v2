@@ -1,0 +1,1668 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-20T13:03:25Z",
+  "source": {
+    "path": "docs/plans/2026-07-18-tirak-omise-production-swarm-plan.md",
+    "sha256": "90250e2538419b5016b8309e0b906c1e39e5b04288ff64ec7a0a7a2538be1668"
+  },
+  "trustRule": "Evidence is accepted only from the named producer against the exact task commit, environment, or archive.",
+  "tasks": [
+    {
+      "taskId": "T-001",
+      "phase": "P1",
+      "wave": "W1.1",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "metric_or_alert",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "App Store Connect or TestFlight record",
+        "git read-only inspection",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "`git status`, diff stats, scope review, and inventory hash",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-002",
+      "phase": "P1",
+      "wave": "W1.1",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "npm run release:verify-mobile",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Command logs and test counts",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-003",
+      "phase": "P1",
+      "wave": "W1.1",
+      "requiredEvidence": [
+        "command_log",
+        "rollback_proof",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "git read-only inspection",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Staged secret scan, commit diff audit, tree hash, and SHA record",
+      "rollbackEvidenceRequired": true,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-004",
+      "phase": "P1",
+      "wave": "W1.1",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "rollback_proof",
+        "schema_or_data_output",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "Wrangler D1 or disposable SQLite probe",
+        "git read-only inspection",
+        "npm run release:verify-mobile",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "`git status`, route/seed/config/script/migration audit, diff stats, and inventory hash",
+      "rollbackEvidenceRequired": true,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-005",
+      "phase": "P1",
+      "wave": "W1.1",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "schema_or_data_output",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "Wrangler D1 or disposable SQLite probe",
+        "git read-only inspection",
+        "npm run release:verify-mobile",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Vitest, TypeScript, SQLite probes, secret scan, script audit, and diff check",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-006",
+      "phase": "P1",
+      "wave": "W1.1",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "rollback_proof",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "git read-only inspection",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Staged secret scan, commit diff audit, tree hash, and SHA record",
+      "rollbackEvidenceRequired": true,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-007",
+      "phase": "P1",
+      "wave": "W1.1",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "rollback_proof",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "git read-only inspection",
+        "npm run release:verify-mobile",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Node tests, two-build hashes, corpus hashes/count, Astro build, route probes, staged secret scan, and SHA record",
+      "rollbackEvidenceRequired": true,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-008",
+      "phase": "P1",
+      "wave": "W1.1",
+      "requiredEvidence": [
+        "command_log",
+        "human_approval",
+        "rollback_proof",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "git read-only inspection",
+        "human release-owner statement",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "SHA/tree/diff-hash verification, clean-or-declared repository snapshots, and human approval",
+      "rollbackEvidenceRequired": true,
+      "humanApprovalRequired": true
+    },
+    {
+      "taskId": "T-009",
+      "phase": "P1",
+      "wave": "W1.2",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "provider_record",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "npm run release:verify",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Contract tests and mounted-route audit",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-010",
+      "phase": "P1",
+      "wave": "W1.2",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "provider_record",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "Omise dashboard/API evidence plus server retrieval",
+        "npm run release:verify",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Table-driven invariant tests cover every combination",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-011",
+      "phase": "P1",
+      "wave": "W1.2",
+      "requiredEvidence": [
+        "command_log",
+        "provider_record",
+        "schema_or_data_output",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "Wrangler D1 or disposable SQLite probe",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Schema introspection fixture, permission matrix, and SQL invariant assertions",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-012",
+      "phase": "P1",
+      "wave": "W1.2",
+      "requiredEvidence": [
+        "command_log",
+        "schema_or_data_output",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "App Store Connect or TestFlight record",
+        "Wrangler D1 or disposable SQLite probe",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Rehearsal design review and SQL/Worker dependency graph",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-013",
+      "phase": "P1",
+      "wave": "W1.2",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "provider_record",
+        "schema_or_data_output",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "Wrangler D1 or disposable SQLite probe",
+        "npm run release:verify",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Config tests, binding-name audit, wrong-target refusal, and target confirmation",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-014",
+      "phase": "P1",
+      "wave": "W1.2",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "npm run release:verify-mobile",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Cross-layer contract tests",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-015",
+      "phase": "P1",
+      "wave": "W1.2",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "provider_record",
+        "schema_or_data_output",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "App Store Connect or TestFlight record",
+        "Omise dashboard/API evidence plus server retrieval",
+        "Wrangler D1 or disposable SQLite probe",
+        "npm run release:verify-mobile",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "End-to-end provenance checklist, prohibited-source/data assertion, cache purge proof design, and provider-receipt requirement",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-016",
+      "phase": "P1",
+      "wave": "W1.2",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "human_approval",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Contract and causal-control checklist with zero unknown enforcement locations or drift",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": true
+    },
+    {
+      "taskId": "T-017",
+      "phase": "P1",
+      "wave": "W1.3",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "schema_or_data_output",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "Wrangler D1 or disposable SQLite probe",
+        "npm run release:verify-mobile",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Mapping-schema validation",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-018",
+      "phase": "P1",
+      "wave": "W1.3",
+      "requiredEvidence": [
+        "command_log",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Duplicate and path-collision probe",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-019",
+      "phase": "P1",
+      "wave": "W1.3",
+      "requiredEvidence": [
+        "command_log",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "git read-only inspection",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Ownership matrix inspection",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-020",
+      "phase": "P1",
+      "wave": "W1.3",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "git read-only inspection",
+        "npm run release:verify-mobile",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "CI dry run on baseline SHA with negative fixtures and built-artifact scan",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-021",
+      "phase": "P1",
+      "wave": "W1.3",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "rollback_proof",
+        "schema_or_data_output",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "Wrangler D1 or disposable SQLite probe",
+        "npm run release:verify-mobile",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "CI dry run, deliberate failure matrix, shell audit, SQLite/D1 disposable fixture, and local restore rehearsal",
+      "rollbackEvidenceRequired": true,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-022",
+      "phase": "P1",
+      "wave": "W1.3",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "metric_or_alert",
+        "rollback_proof",
+        "task_artifact",
+        "visual_evidence"
+      ],
+      "trustedProducers": [
+        "configured observability platform export",
+        "exact-build signed-device capture",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Matrix coverage and tool-provenance audit against T-001–T-080",
+      "rollbackEvidenceRequired": true,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-023",
+      "phase": "P1",
+      "wave": "W1.3",
+      "requiredEvidence": [
+        "command_log",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "git read-only inspection",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Packet completeness and prohibited-pattern checklist",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-024",
+      "phase": "P1",
+      "wave": "W1.3",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "human_approval",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "App Store Connect or TestFlight record",
+        "human release-owner statement",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Wave-close checklist, independent review, and human approval",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": true
+    },
+    {
+      "taskId": "T-025",
+      "phase": "P2",
+      "wave": "W2.1",
+      "requiredEvidence": [
+        "command_log",
+        "human_approval",
+        "schema_or_data_output",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "Wrangler D1 or disposable SQLite probe",
+        "human release-owner statement",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Wrangler metadata, config read-back, wrong-target refusal, and signed manifest",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": true
+    },
+    {
+      "taskId": "T-026",
+      "phase": "P2",
+      "wave": "W2.1",
+      "requiredEvidence": [
+        "command_log",
+        "rollback_proof",
+        "schema_or_data_output",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "Wrangler D1 or disposable SQLite probe",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "`d1 info`, Time Travel/export, disposable restore, checksums, and row-count evidence",
+      "rollbackEvidenceRequired": true,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-027",
+      "phase": "P2",
+      "wave": "W2.1",
+      "requiredEvidence": [
+        "command_log",
+        "schema_or_data_output",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "Wrangler D1 or disposable SQLite probe",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Read-only SQL output checked against T-011",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-028",
+      "phase": "P2",
+      "wave": "W2.1",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "rollback_proof",
+        "schema_or_data_output",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "Wrangler D1 or disposable SQLite probe",
+        "npm run release:verify",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Fresh/existing schema, restored-backup replay, idempotency, permission, and dual-Worker compatibility tests",
+      "rollbackEvidenceRequired": true,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-029",
+      "phase": "P2",
+      "wave": "W2.1",
+      "requiredEvidence": [
+        "command_log",
+        "provider_record",
+        "schema_or_data_output",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "Omise dashboard/API evidence plus server retrieval",
+        "Wrangler D1 or disposable SQLite probe",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Schema assertions and foreign-key check",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-030",
+      "phase": "P2",
+      "wave": "W2.1",
+      "requiredEvidence": [
+        "command_log",
+        "schema_or_data_output",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "Wrangler D1 or disposable SQLite probe",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Schema, legacy-preservation, dual-Worker, uniqueness, and row-count probes",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-031",
+      "phase": "P2",
+      "wave": "W2.1",
+      "requiredEvidence": [
+        "command_log",
+        "rollback_proof",
+        "schema_or_data_output",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "Wrangler D1 or disposable SQLite probe",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Independent SQL probes and restore rehearsal",
+      "rollbackEvidenceRequired": true,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-032",
+      "phase": "P2",
+      "wave": "W2.1",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "schema_or_data_output",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "App Store Connect or TestFlight record",
+        "Wrangler D1 or disposable SQLite probe",
+        "npm run release:verify-mobile",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Wave-close evidence review",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-033",
+      "phase": "P2",
+      "wave": "W2.2",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "provider_record",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "npm run release:verify",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Unit, route, config, concurrent-request, and operator-toggle tests",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-034",
+      "phase": "P2",
+      "wave": "W2.2",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "provider_record",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Secret listing metadata and repository secret scan",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-035",
+      "phase": "P2",
+      "wave": "W2.2",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "metric_or_alert",
+        "provider_record",
+        "task_artifact",
+        "visual_evidence"
+      ],
+      "trustedProducers": [
+        "Omise dashboard/API evidence plus server retrieval",
+        "configured observability platform export",
+        "exact-build signed-device capture",
+        "npm run release:verify",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Dashboard screenshot and signed delivery log",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-036",
+      "phase": "P2",
+      "wave": "W2.2",
+      "requiredEvidence": [
+        "command_log",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Deployment ID, health probes, route smoke logs",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-037",
+      "phase": "P2",
+      "wave": "W2.2",
+      "requiredEvidence": [
+        "command_log",
+        "provider_record",
+        "schema_or_data_output",
+        "task_artifact",
+        "visual_evidence"
+      ],
+      "trustedProducers": [
+        "Omise dashboard/API evidence plus server retrieval",
+        "Wrangler D1 or disposable SQLite probe",
+        "exact-build signed-device capture",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "API logs, provider charge, D1 rows, screenshots",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-038",
+      "phase": "P2",
+      "wave": "W2.2",
+      "requiredEvidence": [
+        "command_log",
+        "provider_record",
+        "rollback_proof",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Adversarial logs, concurrent-request probe, and cross-table state snapshots",
+      "rollbackEvidenceRequired": true,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-039",
+      "phase": "P2",
+      "wave": "W2.3",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "provider_record",
+        "rollback_proof",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "Omise dashboard/API evidence plus server retrieval",
+        "npm run release:verify",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Unit tests, log sample, redaction scan",
+      "rollbackEvidenceRequired": true,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-040",
+      "phase": "P2",
+      "wave": "W2.3",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "metric_or_alert",
+        "provider_record",
+        "schema_or_data_output",
+        "task_artifact",
+        "visual_evidence"
+      ],
+      "trustedProducers": [
+        "Omise dashboard/API evidence plus server retrieval",
+        "Wrangler D1 or disposable SQLite probe",
+        "configured observability platform export",
+        "exact-build signed-device capture",
+        "npm run release:verify",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Synthetic alert tests and dashboard screenshots",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-041",
+      "phase": "P2",
+      "wave": "W2.3",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "provider_record",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "Omise dashboard/API evidence plus server retrieval",
+        "npm run release:verify",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Fixture tests, scheduled-run log, and sample report",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-042",
+      "phase": "P2",
+      "wave": "W2.3",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "provider_record",
+        "rollback_proof",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "Omise dashboard/API evidence plus server retrieval",
+        "npm run release:verify-mobile",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Tabletop exercise with evidence checklist",
+      "rollbackEvidenceRequired": true,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-043",
+      "phase": "P2",
+      "wave": "W2.3",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "provider_record",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "Omise dashboard/API evidence plus server retrieval",
+        "npm run release:verify",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "State-race, permission, duplicate-restitution, and tabletop restitution tests",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-044",
+      "phase": "P2",
+      "wave": "W2.3",
+      "requiredEvidence": [
+        "command_log",
+        "metric_or_alert",
+        "rollback_proof",
+        "schema_or_data_output",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "App Store Connect or TestFlight record",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Wave-close checklist and independent review",
+      "rollbackEvidenceRequired": true,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-045",
+      "phase": "P3",
+      "wave": "W3.1",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "npm run release:verify-mobile",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Config inspection and runtime endpoint proof",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-046",
+      "phase": "P3",
+      "wave": "W3.1",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "git read-only inspection",
+        "npm run release:verify-mobile",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Jest contract tests and staging API capture",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-047",
+      "phase": "P3",
+      "wave": "W3.1",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "rollback_proof",
+        "task_artifact",
+        "visual_evidence"
+      ],
+      "trustedProducers": [
+        "npm run release:verify-mobile",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Component tests and screen recordings",
+      "rollbackEvidenceRequired": true,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-048",
+      "phase": "P3",
+      "wave": "W3.1",
+      "requiredEvidence": [
+        "command_log",
+        "task_artifact",
+        "visual_evidence"
+      ],
+      "trustedProducers": [
+        "exact-build signed-device capture",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Device logs and backend event trace",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-049",
+      "phase": "P3",
+      "wave": "W3.1",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "metric_or_alert",
+        "task_artifact",
+        "visual_evidence"
+      ],
+      "trustedProducers": [
+        "configured observability platform export",
+        "exact-build signed-device capture",
+        "npm run release:verify-mobile",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Accessibility/locale tests, tracker instrumentation probe, screenshots",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-050",
+      "phase": "P3",
+      "wave": "W3.1",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "npm run release:verify",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "EAS build logs and artifact metadata",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-051",
+      "phase": "P3",
+      "wave": "W3.2",
+      "requiredEvidence": [
+        "command_log",
+        "task_artifact",
+        "visual_evidence"
+      ],
+      "trustedProducers": [
+        "exact-build signed-device capture",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Device video, screenshots, network logs",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-052",
+      "phase": "P3",
+      "wave": "W3.2",
+      "requiredEvidence": [
+        "command_log",
+        "task_artifact",
+        "visual_evidence"
+      ],
+      "trustedProducers": [
+        "exact-build signed-device capture",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Device/simulator screenshots and assertions",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-053",
+      "phase": "P3",
+      "wave": "W3.2",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "provider_record",
+        "task_artifact",
+        "visual_evidence"
+      ],
+      "trustedProducers": [
+        "Omise dashboard/API evidence plus server retrieval",
+        "exact-build signed-device capture",
+        "npm run release:verify-mobile",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Banking-app test notes, QR image proof, provider receipt",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-054",
+      "phase": "P3",
+      "wave": "W3.2",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "provider_record",
+        "schema_or_data_output",
+        "task_artifact",
+        "visual_evidence"
+      ],
+      "trustedProducers": [
+        "Omise dashboard/API evidence plus server retrieval",
+        "Wrangler D1 or disposable SQLite probe",
+        "exact-build signed-device capture",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Device automation, API logs, D1/provider comparison",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-055",
+      "phase": "P3",
+      "wave": "W3.2",
+      "requiredEvidence": [
+        "command_log",
+        "task_artifact",
+        "visual_evidence"
+      ],
+      "trustedProducers": [
+        "App Store Connect or TestFlight record",
+        "exact-build signed-device capture",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Evidence index and zero-critical-finding review",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-056",
+      "phase": "P3",
+      "wave": "W3.3",
+      "requiredEvidence": [
+        "command_log",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "App Store Connect or TestFlight record",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Read-only API snapshots and copy scan",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-057",
+      "phase": "P3",
+      "wave": "W3.3",
+      "requiredEvidence": [
+        "command_log",
+        "schema_or_data_output",
+        "task_artifact",
+        "visual_evidence"
+      ],
+      "trustedProducers": [
+        "Wrangler D1 or disposable SQLite probe",
+        "exact-build signed-device capture",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "API response, D1 record, mobile screenshot",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-058",
+      "phase": "P3",
+      "wave": "W3.3",
+      "requiredEvidence": [
+        "command_log",
+        "provider_record",
+        "schema_or_data_output",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "Omise dashboard/API evidence plus server retrieval",
+        "Wrangler D1 or disposable SQLite probe",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Omise charge, webhook/retrieval logs, D1/mobile proof",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-059",
+      "phase": "P3",
+      "wave": "W3.3",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "schema_or_data_output",
+        "task_artifact",
+        "visual_evidence"
+      ],
+      "trustedProducers": [
+        "Wrangler D1 or disposable SQLite probe",
+        "exact-build signed-device capture",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Automated scans, role/deep-link crawl, live screenshots, endpoint and seed captures",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-060",
+      "phase": "P3",
+      "wave": "W3.3",
+      "requiredEvidence": [
+        "command_log",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "App Store Connect or TestFlight record",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Dry-run by independent reviewer",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-061",
+      "phase": "P4",
+      "wave": "W4.1",
+      "requiredEvidence": [
+        "command_log",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Secret scanner, dependency audit, bundle and instrumentation inspection",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-062",
+      "phase": "P4",
+      "wave": "W4.1",
+      "requiredEvidence": [
+        "command_log",
+        "rollback_proof",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "API adversarial suite and logs",
+      "rollbackEvidenceRequired": true,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-063",
+      "phase": "P4",
+      "wave": "W4.1",
+      "requiredEvidence": [
+        "command_log",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Raw-body signed fixtures and event ledger",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-064",
+      "phase": "P4",
+      "wave": "W4.1",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "metric_or_alert",
+        "provider_record",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "Omise dashboard/API evidence plus server retrieval",
+        "git read-only inspection",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Timed drill, scheduled-run reports, and provider/local/restitution before-after evidence",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-065",
+      "phase": "P4",
+      "wave": "W4.1",
+      "requiredEvidence": [
+        "command_log",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Log sampling, source scan, privacy checklist",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-066",
+      "phase": "P4",
+      "wave": "W4.1",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "App Store Connect or TestFlight record",
+        "npm run release:verify-mobile",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Independent findings review",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-067",
+      "phase": "P4",
+      "wave": "W4.2",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "git read-only inspection",
+        "npm run release:verify-mobile",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "SHA, build metadata, deployment ID verification",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-068",
+      "phase": "P4",
+      "wave": "W4.2",
+      "requiredEvidence": [
+        "command_log",
+        "task_artifact",
+        "visual_evidence"
+      ],
+      "trustedProducers": [
+        "App Store Connect or TestFlight record",
+        "exact-build signed-device capture",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Screenshot comparison and prohibited-language scan",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-069",
+      "phase": "P4",
+      "wave": "W4.2",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "App Store Connect or TestFlight record",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Field-by-field review and URL probes",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-070",
+      "phase": "P4",
+      "wave": "W4.2",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "provider_record",
+        "schema_or_data_output",
+        "task_artifact",
+        "visual_evidence"
+      ],
+      "trustedProducers": [
+        "Omise dashboard/API evidence plus server retrieval",
+        "Wrangler D1 or disposable SQLite probe",
+        "exact-build signed-device capture",
+        "npm run release:verify-mobile",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "CI, device recordings, API/provider/D1 logs",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-071",
+      "phase": "P4",
+      "wave": "W4.2",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "npm run release:verify-mobile",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Independent claim-to-evidence audit",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-072",
+      "phase": "P4",
+      "wave": "W4.2",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "human_approval",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "human release-owner statement",
+        "npm run release:verify-mobile",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Go/no-go checklist and approvals",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": true
+    },
+    {
+      "taskId": "T-073",
+      "phase": "P5",
+      "wave": "W5.1",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "human_approval",
+        "metric_or_alert",
+        "rollback_proof",
+        "schema_or_data_output",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "Wrangler D1 or disposable SQLite probe",
+        "configured observability platform export",
+        "human release-owner statement",
+        "npm run release:verify",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Read-only D1/Worker/payment evidence and approval",
+      "rollbackEvidenceRequired": true,
+      "humanApprovalRequired": true
+    },
+    {
+      "taskId": "T-074",
+      "phase": "P5",
+      "wave": "W5.1",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "schema_or_data_output",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "Wrangler D1 or disposable SQLite probe",
+        "npm run release:verify",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "D1 migration output, checksums, legacy-write probe, and independent read-only SQL verification",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-075",
+      "phase": "P5",
+      "wave": "W5.1",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "metric_or_alert",
+        "provider_record",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "Omise dashboard/API evidence plus server retrieval",
+        "configured observability platform export",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Deployment ID, dashboard evidence, signed webhook and disabled-create smoke",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-076",
+      "phase": "P5",
+      "wave": "W5.1",
+      "requiredEvidence": [
+        "command_log",
+        "metric_or_alert",
+        "provider_record",
+        "schema_or_data_output",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "App Store Connect or TestFlight record",
+        "Omise dashboard/API evidence plus server retrieval",
+        "configured observability platform export",
+        "git read-only inspection",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Provider/local/restitution records, fixture provenance, content scan, logs, alerts, and mobile result",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-077",
+      "phase": "P5",
+      "wave": "W5.2",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "provider_record",
+        "schema_or_data_output",
+        "task_artifact",
+        "visual_evidence"
+      ],
+      "trustedProducers": [
+        "App Store Connect or TestFlight record",
+        "Omise dashboard/API evidence plus server retrieval",
+        "Wrangler D1 or disposable SQLite probe",
+        "exact-build signed-device capture",
+        "npm run release:verify",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "EAS/TestFlight/App Store metadata, artifact hash, device recordings, and production API/provider/D1 traces",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-078",
+      "phase": "P5",
+      "wave": "W5.2",
+      "requiredEvidence": [
+        "command_log",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "App Store Connect or TestFlight record",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "App Store correspondence record",
+      "rollbackEvidenceRequired": false,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-079",
+      "phase": "P5",
+      "wave": "W5.2",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "metric_or_alert",
+        "provider_record",
+        "rollback_proof",
+        "schema_or_data_output",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "Omise dashboard/API evidence plus server retrieval",
+        "Wrangler D1 or disposable SQLite probe",
+        "configured observability platform export",
+        "npm run release:verify-mobile",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Dashboards, alerts, reconciliation reports, crash data",
+      "rollbackEvidenceRequired": true,
+      "humanApprovalRequired": false
+    },
+    {
+      "taskId": "T-080",
+      "phase": "P5",
+      "wave": "W5.2",
+      "requiredEvidence": [
+        "automated_check",
+        "command_log",
+        "human_approval",
+        "rollback_proof",
+        "task_artifact"
+      ],
+      "trustedProducers": [
+        "human release-owner statement",
+        "release evidence recorder"
+      ],
+      "acceptanceProbe": "Full graph audit and human signoff",
+      "rollbackEvidenceRequired": true,
+      "humanApprovalRequired": true
+    }
+  ],
+  "waves": [
+    {
+      "wave": "W1.1",
+      "taskIds": [
+        "T-001",
+        "T-002",
+        "T-003",
+        "T-004",
+        "T-005",
+        "T-006",
+        "T-007",
+        "T-008"
+      ],
+      "closeProducer": "release integrator wave-close verifier plus human approval when declared"
+    },
+    {
+      "wave": "W1.2",
+      "taskIds": [
+        "T-009",
+        "T-010",
+        "T-011",
+        "T-012",
+        "T-013",
+        "T-014",
+        "T-015",
+        "T-016"
+      ],
+      "closeProducer": "release integrator wave-close verifier plus human approval when declared"
+    },
+    {
+      "wave": "W1.3",
+      "taskIds": [
+        "T-017",
+        "T-018",
+        "T-019",
+        "T-020",
+        "T-021",
+        "T-022",
+        "T-023",
+        "T-024"
+      ],
+      "closeProducer": "release integrator wave-close verifier plus human approval when declared"
+    },
+    {
+      "wave": "W2.1",
+      "taskIds": [
+        "T-025",
+        "T-026",
+        "T-027",
+        "T-028",
+        "T-029",
+        "T-030",
+        "T-031",
+        "T-032"
+      ],
+      "closeProducer": "release integrator wave-close verifier plus human approval when declared"
+    },
+    {
+      "wave": "W2.2",
+      "taskIds": [
+        "T-033",
+        "T-034",
+        "T-035",
+        "T-036",
+        "T-037",
+        "T-038"
+      ],
+      "closeProducer": "release integrator wave-close verifier plus human approval when declared"
+    },
+    {
+      "wave": "W2.3",
+      "taskIds": [
+        "T-039",
+        "T-040",
+        "T-041",
+        "T-042",
+        "T-043",
+        "T-044"
+      ],
+      "closeProducer": "release integrator wave-close verifier plus human approval when declared"
+    },
+    {
+      "wave": "W3.1",
+      "taskIds": [
+        "T-045",
+        "T-046",
+        "T-047",
+        "T-048",
+        "T-049",
+        "T-050"
+      ],
+      "closeProducer": "release integrator wave-close verifier plus human approval when declared"
+    },
+    {
+      "wave": "W3.2",
+      "taskIds": [
+        "T-051",
+        "T-052",
+        "T-053",
+        "T-054",
+        "T-055"
+      ],
+      "closeProducer": "release integrator wave-close verifier plus human approval when declared"
+    },
+    {
+      "wave": "W3.3",
+      "taskIds": [
+        "T-056",
+        "T-057",
+        "T-058",
+        "T-059",
+        "T-060"
+      ],
+      "closeProducer": "release integrator wave-close verifier plus human approval when declared"
+    },
+    {
+      "wave": "W4.1",
+      "taskIds": [
+        "T-061",
+        "T-062",
+        "T-063",
+        "T-064",
+        "T-065",
+        "T-066"
+      ],
+      "closeProducer": "release integrator wave-close verifier plus human approval when declared"
+    },
+    {
+      "wave": "W4.2",
+      "taskIds": [
+        "T-067",
+        "T-068",
+        "T-069",
+        "T-070",
+        "T-071",
+        "T-072"
+      ],
+      "closeProducer": "release integrator wave-close verifier plus human approval when declared"
+    },
+    {
+      "wave": "W5.1",
+      "taskIds": [
+        "T-073",
+        "T-074",
+        "T-075",
+        "T-076"
+      ],
+      "closeProducer": "release integrator wave-close verifier plus human approval when declared"
+    },
+    {
+      "wave": "W5.2",
+      "taskIds": [
+        "T-077",
+        "T-078",
+        "T-079",
+        "T-080"
+      ],
+      "closeProducer": "release integrator wave-close verifier plus human approval when declared"
+    }
+  ]
+}

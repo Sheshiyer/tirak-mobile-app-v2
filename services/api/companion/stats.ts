@@ -1,9 +1,9 @@
 import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
-import { getAuthToken } from '@/app/api/companion/companion';
+import { getAuthToken } from '@/services/api/companion/companion';
 import { logger } from '@/utils/logger';
-import { fetchBookings, BookingListItem } from '@/app/api/booking/booking';
-import { fetchCompanionProfile } from '@/app/api/companion/profile';
+import { fetchBookings, BookingListItem } from '@/services/api/booking/booking';
+import { fetchCompanionProfile } from '@/services/api/companion/profile';
 import { apiUrl } from '@/constants/api';
 
 export interface SupplierStatsResponse {

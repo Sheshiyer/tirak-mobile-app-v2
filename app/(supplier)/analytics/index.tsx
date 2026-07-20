@@ -32,7 +32,7 @@ import { RecentActivityFeed } from '@/components/supplier/RecentActivityFeed';
 import { EarningsChart } from '@/components/supplier/EarningsChart';
 import { PerformanceMetrics } from '@/components/supplier/PerformanceMetrics';
 import { NotificationCenter } from '@/components/supplier/NotificationCenter';
-import { useSupplierStats } from '@/app/api/companion/stats';
+import { useSupplierStats } from '@/services/api/companion/stats';
 import { useTranslation } from 'react-i18next';
 
 type SupplierRoute = '/(supplier)/settings';

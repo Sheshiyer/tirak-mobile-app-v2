@@ -1,4 +1,4 @@
-import { Booking, BookingListItem, BookingStatus } from '@/app/api/booking/booking';
+import { Booking, BookingListItem, BookingStatus } from '@/services/api/booking/booking';
 import { BookingRequest } from '@/types/supplier-request';
 
 type BookingLike = Booking | BookingListItem;

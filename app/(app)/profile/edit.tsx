@@ -12,7 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import { router } from 'expo-router';
-import { useCustomerProfile, useUpdateCustomerProfile } from '../../api/customer/customerProfile';
+import { useCustomerProfile, useUpdateCustomerProfile } from '@/services/api/customer/customerProfile';
 
 import { RadialGradient } from '@/components/ui/RadialGradient';
 import { ProfileImage } from '@/components/ui/ProfileImage';

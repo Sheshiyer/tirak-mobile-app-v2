@@ -20,12 +20,12 @@ import {
 import { colors } from '@/constants/colors';
 import { useSupplierStore } from '@/stores/supplier-store';
 import { designTokens } from '@/constants/design-tokens';
-import { useCompanionProfile } from '@/app/api/companion/profile';
+import { useCompanionProfile } from '@/services/api/companion/profile';
 import { useAuthStore } from '@/stores/auth-store';
 import Constants from 'expo-constants';
 import { useTranslation } from 'react-i18next';
 import { useAuthStoreHydrated } from '@/hooks/useAuthStoreHydrated';
-import { deleteCompanionAccount, deleteSupplierAccount, deleteUserAccount } from '@/app/api/auth/delete';
+import { deleteCompanionAccount, deleteSupplierAccount, deleteUserAccount } from '@/services/api/auth/delete';
 import {
   HELP_CENTER_EMAIL,
   HELP_CENTER_MAILTO,
@@ -36,7 +36,7 @@ import {
 import {
   useNotificationPreferences,
   useUpdateNotificationPreferences,
-} from '@/app/api/notifications/notifications';
+} from '@/services/api/notifications/notifications';
 import { Smartphone, Mail } from 'lucide-react-native';
 
 

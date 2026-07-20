@@ -9,7 +9,7 @@ import { FeaturedCompanionsSection } from '@/components/home/FeaturedCompanionsS
 // import { PopularExperiencesSection } from '@/components/home/PopularExperiencesSection';
 import { CompanionDashboard } from '@/components/home/CompanionDashboard';
 import { designTokens } from '@/constants/design-tokens';
-import { useFeaturedCompanions, Companion as APICompanion } from '@/app/api/companion/companion';
+import { useFeaturedCompanions, Companion as APICompanion } from '@/services/api/companion/companion';
 import { Companion } from '@/types/companion';
 import { useTranslation } from 'react-i18next';
 import { SoundManager } from '@/utils/sound-manager';

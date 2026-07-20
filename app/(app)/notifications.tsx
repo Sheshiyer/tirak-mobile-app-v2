@@ -15,7 +15,7 @@ import {
   AlertCircle,
   Info,
 } from 'lucide-react-native';
-import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead } from '@/app/api/notifications/notifications';
+import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead } from '@/services/api/notifications/notifications';
 import { useTranslation } from 'react-i18next';
 
 export const options = { headerShown: false };

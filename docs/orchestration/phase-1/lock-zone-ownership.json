@@ -1,0 +1,1107 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-20T13:03:25Z",
+  "source": {
+    "path": "docs/plans/2026-07-18-tirak-omise-production-swarm-plan.md",
+    "sha256": "90250e2538419b5016b8309e0b906c1e39e5b04288ff64ec7a0a7a2538be1668"
+  },
+  "rule": "One active owner per lock zone; assignments execute in wave sequence order.",
+  "zones": [
+    {
+      "id": "release-orchestration",
+      "ownerRole": "release integrator",
+      "paths": [
+        "docs/orchestration/**",
+        "docs/execution/**",
+        "ISA.md"
+      ]
+    },
+    {
+      "id": "mobile-release-config",
+      "ownerRole": "mobile integration owner",
+      "paths": [
+        "package.json",
+        "package-lock.json",
+        "app.json",
+        "app.config.js",
+        "eas.json",
+        "constants/api.ts"
+      ]
+    },
+    {
+      "id": "backend-runtime-config",
+      "ownerRole": "backend integration owner",
+      "paths": [
+        "package.json",
+        "package-lock.json",
+        "wrangler.toml",
+        "src/index.ts",
+        "scripts/**"
+      ]
+    },
+    {
+      "id": "d1-migration-ledger",
+      "ownerRole": "data migration owner",
+      "paths": [
+        "migrations/**",
+        "contracts/tirak-payments-v1/target-schema.sql"
+      ]
+    },
+    {
+      "id": "payment-shared-contracts",
+      "ownerRole": "payment contract owner",
+      "paths": [
+        "contracts/tirak-payments-v1/**",
+        "src/routes/payments.ts",
+        "services/api/payments/payments.ts",
+        "utils/booking-state.ts"
+      ]
+    },
+    {
+      "id": "wiki-corpus",
+      "ownerRole": "content review owner",
+      "paths": [
+        "src/content/docs/**",
+        "src/data/**",
+        "public/**"
+      ]
+    },
+    {
+      "id": "store-assets",
+      "ownerRole": "App Store asset owner",
+      "paths": [
+        "docs/app-store-*.md",
+        "App Store Connect metadata",
+        "review screenshots and notes"
+      ]
+    }
+  ],
+  "assignments": [
+    {
+      "zoneId": "backend-runtime-config",
+      "taskId": "T-009",
+      "wave": "W1.2",
+      "owner": "Backend executor / Copilot or Engineer",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "backend-runtime-config",
+      "taskId": "T-013",
+      "wave": "W1.2",
+      "owner": "Backend executor / Copilot or Engineer",
+      "sequence": 2,
+      "handoffFrom": "T-009",
+      "activationRule": "T-009 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "backend-runtime-config",
+      "taskId": "T-018",
+      "wave": "W1.3",
+      "owner": "Planner / noesisX",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "backend-runtime-config",
+      "taskId": "T-033",
+      "wave": "W2.2",
+      "owner": "Backend executor / Copilot or Engineer",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "backend-runtime-config",
+      "taskId": "T-034",
+      "wave": "W2.2",
+      "owner": "Human release owner",
+      "sequence": 2,
+      "handoffFrom": "T-033",
+      "activationRule": "T-033 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "backend-runtime-config",
+      "taskId": "T-035",
+      "wave": "W2.2",
+      "owner": "Human release owner plus backend executor",
+      "sequence": 3,
+      "handoffFrom": "T-034",
+      "activationRule": "T-034 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "backend-runtime-config",
+      "taskId": "T-036",
+      "wave": "W2.2",
+      "owner": "Backend executor / Copilot or Engineer",
+      "sequence": 4,
+      "handoffFrom": "T-035",
+      "activationRule": "T-035 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "backend-runtime-config",
+      "taskId": "T-039",
+      "wave": "W2.3",
+      "owner": "Backend executor / Copilot or Engineer",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "backend-runtime-config",
+      "taskId": "T-040",
+      "wave": "W2.3",
+      "owner": "Backend executor plus validation reviewer",
+      "sequence": 2,
+      "handoffFrom": "T-039",
+      "activationRule": "T-039 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "backend-runtime-config",
+      "taskId": "T-041",
+      "wave": "W2.3",
+      "owner": "Backend executor / Copilot or Engineer",
+      "sequence": 3,
+      "handoffFrom": "T-040",
+      "activationRule": "T-040 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "backend-runtime-config",
+      "taskId": "T-043",
+      "wave": "W2.3",
+      "owner": "Backend executor plus product owner",
+      "sequence": 4,
+      "handoffFrom": "T-041",
+      "activationRule": "T-041 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "backend-runtime-config",
+      "taskId": "T-050",
+      "wave": "W3.1",
+      "owner": "Mobile executor plus human release owner",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "backend-runtime-config",
+      "taskId": "T-073",
+      "wave": "W5.1",
+      "owner": "Human release owner plus data owner",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "backend-runtime-config",
+      "taskId": "T-075",
+      "wave": "W5.1",
+      "owner": "Backend executor plus human release owner",
+      "sequence": 2,
+      "handoffFrom": "T-073",
+      "activationRule": "T-073 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "backend-runtime-config",
+      "taskId": "T-077",
+      "wave": "W5.2",
+      "owner": "Human release owner plus mobile executor",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "d1-migration-ledger",
+      "taskId": "T-010",
+      "wave": "W1.2",
+      "owner": "Backend executor / Copilot or Engineer",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "d1-migration-ledger",
+      "taskId": "T-011",
+      "wave": "W1.2",
+      "owner": "Data owner / backend executor",
+      "sequence": 2,
+      "handoffFrom": "T-010",
+      "activationRule": "T-010 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "d1-migration-ledger",
+      "taskId": "T-012",
+      "wave": "W1.2",
+      "owner": "Planner plus data owner",
+      "sequence": 3,
+      "handoffFrom": "T-011",
+      "activationRule": "T-011 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "d1-migration-ledger",
+      "taskId": "T-025",
+      "wave": "W2.1",
+      "owner": "Data owner / backend executor",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "d1-migration-ledger",
+      "taskId": "T-026",
+      "wave": "W2.1",
+      "owner": "Human release owner plus data owner",
+      "sequence": 2,
+      "handoffFrom": "T-025",
+      "activationRule": "T-025 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "d1-migration-ledger",
+      "taskId": "T-027",
+      "wave": "W2.1",
+      "owner": "Data owner / backend executor",
+      "sequence": 3,
+      "handoffFrom": "T-026",
+      "activationRule": "T-026 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "d1-migration-ledger",
+      "taskId": "T-028",
+      "wave": "W2.1",
+      "owner": "Data owner / backend executor",
+      "sequence": 4,
+      "handoffFrom": "T-027",
+      "activationRule": "T-027 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "d1-migration-ledger",
+      "taskId": "T-029",
+      "wave": "W2.1",
+      "owner": "Data owner / backend executor",
+      "sequence": 5,
+      "handoffFrom": "T-028",
+      "activationRule": "T-028 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "d1-migration-ledger",
+      "taskId": "T-030",
+      "wave": "W2.1",
+      "owner": "Data owner / backend executor",
+      "sequence": 6,
+      "handoffFrom": "T-029",
+      "activationRule": "T-029 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "d1-migration-ledger",
+      "taskId": "T-056",
+      "wave": "W3.3",
+      "owner": "Product data owner / human plus backend executor",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "d1-migration-ledger",
+      "taskId": "T-057",
+      "wave": "W3.3",
+      "owner": "Product data owner / human",
+      "sequence": 2,
+      "handoffFrom": "T-056",
+      "activationRule": "T-056 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "d1-migration-ledger",
+      "taskId": "T-058",
+      "wave": "W3.3",
+      "owner": "Human release owner plus validation reviewer",
+      "sequence": 3,
+      "handoffFrom": "T-057",
+      "activationRule": "T-057 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "d1-migration-ledger",
+      "taskId": "T-074",
+      "wave": "W5.1",
+      "owner": "Data owner / backend executor",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "mobile-release-config",
+      "taskId": "T-003",
+      "wave": "W1.1",
+      "owner": "Release integrator / noesisX",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "mobile-release-config",
+      "taskId": "T-014",
+      "wave": "W1.2",
+      "owner": "Mobile executor / Codex",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "mobile-release-config",
+      "taskId": "T-045",
+      "wave": "W3.1",
+      "owner": "Mobile executor / Codex",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "mobile-release-config",
+      "taskId": "T-046",
+      "wave": "W3.1",
+      "owner": "Mobile executor / Codex",
+      "sequence": 2,
+      "handoffFrom": "T-045",
+      "activationRule": "T-045 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "mobile-release-config",
+      "taskId": "T-047",
+      "wave": "W3.1",
+      "owner": "Mobile executor / Codex",
+      "sequence": 3,
+      "handoffFrom": "T-046",
+      "activationRule": "T-046 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "mobile-release-config",
+      "taskId": "T-048",
+      "wave": "W3.1",
+      "owner": "Mobile executor / Codex",
+      "sequence": 4,
+      "handoffFrom": "T-047",
+      "activationRule": "T-047 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "mobile-release-config",
+      "taskId": "T-049",
+      "wave": "W3.1",
+      "owner": "Mobile executor / Codex",
+      "sequence": 5,
+      "handoffFrom": "T-048",
+      "activationRule": "T-048 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "payment-shared-contracts",
+      "taskId": "T-009",
+      "wave": "W1.2",
+      "owner": "Backend executor / Copilot or Engineer",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "payment-shared-contracts",
+      "taskId": "T-010",
+      "wave": "W1.2",
+      "owner": "Backend executor / Copilot or Engineer",
+      "sequence": 2,
+      "handoffFrom": "T-009",
+      "activationRule": "T-009 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "payment-shared-contracts",
+      "taskId": "T-014",
+      "wave": "W1.2",
+      "owner": "Mobile executor / Codex",
+      "sequence": 3,
+      "handoffFrom": "T-010",
+      "activationRule": "T-010 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "payment-shared-contracts",
+      "taskId": "T-033",
+      "wave": "W2.2",
+      "owner": "Backend executor / Copilot or Engineer",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "payment-shared-contracts",
+      "taskId": "T-034",
+      "wave": "W2.2",
+      "owner": "Human release owner",
+      "sequence": 2,
+      "handoffFrom": "T-033",
+      "activationRule": "T-033 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "payment-shared-contracts",
+      "taskId": "T-035",
+      "wave": "W2.2",
+      "owner": "Human release owner plus backend executor",
+      "sequence": 3,
+      "handoffFrom": "T-034",
+      "activationRule": "T-034 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "payment-shared-contracts",
+      "taskId": "T-037",
+      "wave": "W2.2",
+      "owner": "Validation reviewer plus human payer",
+      "sequence": 4,
+      "handoffFrom": "T-035",
+      "activationRule": "T-035 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "payment-shared-contracts",
+      "taskId": "T-038",
+      "wave": "W2.2",
+      "owner": "Validation reviewer / Gemini or reviewer",
+      "sequence": 5,
+      "handoffFrom": "T-037",
+      "activationRule": "T-037 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "payment-shared-contracts",
+      "taskId": "T-039",
+      "wave": "W2.3",
+      "owner": "Backend executor / Copilot or Engineer",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "payment-shared-contracts",
+      "taskId": "T-041",
+      "wave": "W2.3",
+      "owner": "Backend executor / Copilot or Engineer",
+      "sequence": 2,
+      "handoffFrom": "T-039",
+      "activationRule": "T-039 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "payment-shared-contracts",
+      "taskId": "T-042",
+      "wave": "W2.3",
+      "owner": "Operations owner / planner",
+      "sequence": 3,
+      "handoffFrom": "T-041",
+      "activationRule": "T-041 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "payment-shared-contracts",
+      "taskId": "T-043",
+      "wave": "W2.3",
+      "owner": "Backend executor plus product owner",
+      "sequence": 4,
+      "handoffFrom": "T-042",
+      "activationRule": "T-042 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "payment-shared-contracts",
+      "taskId": "T-046",
+      "wave": "W3.1",
+      "owner": "Mobile executor / Codex",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "payment-shared-contracts",
+      "taskId": "T-047",
+      "wave": "W3.1",
+      "owner": "Mobile executor / Codex",
+      "sequence": 2,
+      "handoffFrom": "T-046",
+      "activationRule": "T-046 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "payment-shared-contracts",
+      "taskId": "T-061",
+      "wave": "W4.1",
+      "owner": "Validation reviewer / security reviewer",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "payment-shared-contracts",
+      "taskId": "T-063",
+      "wave": "W4.1",
+      "owner": "Validation reviewer / security reviewer",
+      "sequence": 2,
+      "handoffFrom": "T-061",
+      "activationRule": "T-061 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "payment-shared-contracts",
+      "taskId": "T-064",
+      "wave": "W4.1",
+      "owner": "Validation reviewer plus operations owner",
+      "sequence": 3,
+      "handoffFrom": "T-063",
+      "activationRule": "T-063 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "payment-shared-contracts",
+      "taskId": "T-065",
+      "wave": "W4.1",
+      "owner": "Validation reviewer / privacy reviewer",
+      "sequence": 4,
+      "handoffFrom": "T-064",
+      "activationRule": "T-064 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "payment-shared-contracts",
+      "taskId": "T-075",
+      "wave": "W5.1",
+      "owner": "Backend executor plus human release owner",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "payment-shared-contracts",
+      "taskId": "T-076",
+      "wave": "W5.1",
+      "owner": "Validation reviewer plus release integrator",
+      "sequence": 2,
+      "handoffFrom": "T-075",
+      "activationRule": "T-075 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "payment-shared-contracts",
+      "taskId": "T-079",
+      "wave": "W5.2",
+      "owner": "Operations owner plus validation reviewer",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-001",
+      "wave": "W1.1",
+      "owner": "Planner / noesisX",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-002",
+      "wave": "W1.1",
+      "owner": "Validation reviewer / QATester",
+      "sequence": 2,
+      "handoffFrom": "T-001",
+      "activationRule": "T-001 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-008",
+      "wave": "W1.1",
+      "owner": "Planner / noesisX",
+      "sequence": 3,
+      "handoffFrom": "T-002",
+      "activationRule": "T-002 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-015",
+      "wave": "W1.2",
+      "owner": "Planner plus human release owner",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-016",
+      "wave": "W1.2",
+      "owner": "Planner / noesisX",
+      "sequence": 2,
+      "handoffFrom": "T-015",
+      "activationRule": "T-015 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-017",
+      "wave": "W1.3",
+      "owner": "Planner / noesisX",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-019",
+      "wave": "W1.3",
+      "owner": "Planner / noesisX",
+      "sequence": 2,
+      "handoffFrom": "T-017",
+      "activationRule": "T-017 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-020",
+      "wave": "W1.3",
+      "owner": "Validation reviewer / Gemini or reviewer",
+      "sequence": 3,
+      "handoffFrom": "T-019",
+      "activationRule": "T-019 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-021",
+      "wave": "W1.3",
+      "owner": "Validation reviewer / Gemini or reviewer",
+      "sequence": 4,
+      "handoffFrom": "T-020",
+      "activationRule": "T-020 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-022",
+      "wave": "W1.3",
+      "owner": "Validation reviewer / Gemini or reviewer",
+      "sequence": 5,
+      "handoffFrom": "T-021",
+      "activationRule": "T-021 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-023",
+      "wave": "W1.3",
+      "owner": "Planner / noesisX",
+      "sequence": 6,
+      "handoffFrom": "T-022",
+      "activationRule": "T-022 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-024",
+      "wave": "W1.3",
+      "owner": "Release integrator / noesisX",
+      "sequence": 7,
+      "handoffFrom": "T-023",
+      "activationRule": "T-023 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-031",
+      "wave": "W2.1",
+      "owner": "Validation reviewer / isolated reviewer",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-032",
+      "wave": "W2.1",
+      "owner": "Release integrator / noesisX",
+      "sequence": 2,
+      "handoffFrom": "T-031",
+      "activationRule": "T-031 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-037",
+      "wave": "W2.2",
+      "owner": "Validation reviewer plus human payer",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-038",
+      "wave": "W2.2",
+      "owner": "Validation reviewer / Gemini or reviewer",
+      "sequence": 2,
+      "handoffFrom": "T-037",
+      "activationRule": "T-037 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-042",
+      "wave": "W2.3",
+      "owner": "Operations owner / planner",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-044",
+      "wave": "W2.3",
+      "owner": "Release integrator / noesisX",
+      "sequence": 2,
+      "handoffFrom": "T-042",
+      "activationRule": "T-042 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-051",
+      "wave": "W3.2",
+      "owner": "Validation reviewer / QATester",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-052",
+      "wave": "W3.2",
+      "owner": "Validation reviewer / QATester",
+      "sequence": 2,
+      "handoffFrom": "T-051",
+      "activationRule": "T-051 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-053",
+      "wave": "W3.2",
+      "owner": "Validation reviewer plus human payer",
+      "sequence": 3,
+      "handoffFrom": "T-052",
+      "activationRule": "T-052 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-054",
+      "wave": "W3.2",
+      "owner": "Validation reviewer / Gemini or reviewer",
+      "sequence": 4,
+      "handoffFrom": "T-053",
+      "activationRule": "T-053 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-055",
+      "wave": "W3.2",
+      "owner": "Release integrator / noesisX",
+      "sequence": 5,
+      "handoffFrom": "T-054",
+      "activationRule": "T-054 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-061",
+      "wave": "W4.1",
+      "owner": "Validation reviewer / security reviewer",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-062",
+      "wave": "W4.1",
+      "owner": "Validation reviewer / security reviewer",
+      "sequence": 2,
+      "handoffFrom": "T-061",
+      "activationRule": "T-061 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-063",
+      "wave": "W4.1",
+      "owner": "Validation reviewer / security reviewer",
+      "sequence": 3,
+      "handoffFrom": "T-062",
+      "activationRule": "T-062 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-064",
+      "wave": "W4.1",
+      "owner": "Validation reviewer plus operations owner",
+      "sequence": 4,
+      "handoffFrom": "T-063",
+      "activationRule": "T-063 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-065",
+      "wave": "W4.1",
+      "owner": "Validation reviewer / privacy reviewer",
+      "sequence": 5,
+      "handoffFrom": "T-064",
+      "activationRule": "T-064 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-066",
+      "wave": "W4.1",
+      "owner": "Release integrator plus human owner",
+      "sequence": 6,
+      "handoffFrom": "T-065",
+      "activationRule": "T-065 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-067",
+      "wave": "W4.2",
+      "owner": "Release integrator / noesisX",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-068",
+      "wave": "W4.2",
+      "owner": "Content reviewer plus designer/human",
+      "sequence": 2,
+      "handoffFrom": "T-067",
+      "activationRule": "T-067 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-069",
+      "wave": "W4.2",
+      "owner": "Human release owner plus planner",
+      "sequence": 3,
+      "handoffFrom": "T-068",
+      "activationRule": "T-068 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-070",
+      "wave": "W4.2",
+      "owner": "Validation reviewer / QATester",
+      "sequence": 4,
+      "handoffFrom": "T-069",
+      "activationRule": "T-069 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-071",
+      "wave": "W4.2",
+      "owner": "Planner plus human release owner",
+      "sequence": 5,
+      "handoffFrom": "T-070",
+      "activationRule": "T-070 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-072",
+      "wave": "W4.2",
+      "owner": "Human release owner plus release integrator",
+      "sequence": 6,
+      "handoffFrom": "T-071",
+      "activationRule": "T-071 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-076",
+      "wave": "W5.1",
+      "owner": "Validation reviewer plus release integrator",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-078",
+      "wave": "W5.2",
+      "owner": "Human release owner plus planner",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-079",
+      "wave": "W5.2",
+      "owner": "Operations owner plus validation reviewer",
+      "sequence": 2,
+      "handoffFrom": "T-078",
+      "activationRule": "T-078 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "release-orchestration",
+      "taskId": "T-080",
+      "wave": "W5.2",
+      "owner": "Release integrator / noesisX",
+      "sequence": 3,
+      "handoffFrom": "T-079",
+      "activationRule": "T-079 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "store-assets",
+      "taskId": "T-057",
+      "wave": "W3.3",
+      "owner": "Product data owner / human",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "store-assets",
+      "taskId": "T-058",
+      "wave": "W3.3",
+      "owner": "Human release owner plus validation reviewer",
+      "sequence": 2,
+      "handoffFrom": "T-057",
+      "activationRule": "T-057 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "store-assets",
+      "taskId": "T-059",
+      "wave": "W3.3",
+      "owner": "Content reviewer / planner plus human",
+      "sequence": 3,
+      "handoffFrom": "T-058",
+      "activationRule": "T-058 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "store-assets",
+      "taskId": "T-060",
+      "wave": "W3.3",
+      "owner": "Planner / noesisX",
+      "sequence": 4,
+      "handoffFrom": "T-059",
+      "activationRule": "T-059 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "store-assets",
+      "taskId": "T-067",
+      "wave": "W4.2",
+      "owner": "Release integrator / noesisX",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "store-assets",
+      "taskId": "T-068",
+      "wave": "W4.2",
+      "owner": "Content reviewer plus designer/human",
+      "sequence": 2,
+      "handoffFrom": "T-067",
+      "activationRule": "T-067 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "store-assets",
+      "taskId": "T-069",
+      "wave": "W4.2",
+      "owner": "Human release owner plus planner",
+      "sequence": 3,
+      "handoffFrom": "T-068",
+      "activationRule": "T-068 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "store-assets",
+      "taskId": "T-070",
+      "wave": "W4.2",
+      "owner": "Validation reviewer / QATester",
+      "sequence": 4,
+      "handoffFrom": "T-069",
+      "activationRule": "T-069 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "store-assets",
+      "taskId": "T-071",
+      "wave": "W4.2",
+      "owner": "Planner plus human release owner",
+      "sequence": 5,
+      "handoffFrom": "T-070",
+      "activationRule": "T-070 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "store-assets",
+      "taskId": "T-072",
+      "wave": "W4.2",
+      "owner": "Human release owner plus release integrator",
+      "sequence": 6,
+      "handoffFrom": "T-071",
+      "activationRule": "T-071 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "store-assets",
+      "taskId": "T-077",
+      "wave": "W5.2",
+      "owner": "Human release owner plus mobile executor",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "store-assets",
+      "taskId": "T-078",
+      "wave": "W5.2",
+      "owner": "Human release owner plus planner",
+      "sequence": 2,
+      "handoffFrom": "T-077",
+      "activationRule": "T-077 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "store-assets",
+      "taskId": "T-080",
+      "wave": "W5.2",
+      "owner": "Release integrator / noesisX",
+      "sequence": 3,
+      "handoffFrom": "T-078",
+      "activationRule": "T-078 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "wiki-corpus",
+      "taskId": "T-004",
+      "wave": "W1.1",
+      "owner": "Planner / noesisX",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "wiki-corpus",
+      "taskId": "T-005",
+      "wave": "W1.1",
+      "owner": "Validation reviewer / isolated reviewer",
+      "sequence": 2,
+      "handoffFrom": "T-004",
+      "activationRule": "T-004 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "wiki-corpus",
+      "taskId": "T-006",
+      "wave": "W1.1",
+      "owner": "Release integrator / noesisX",
+      "sequence": 3,
+      "handoffFrom": "T-005",
+      "activationRule": "T-005 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "wiki-corpus",
+      "taskId": "T-007",
+      "wave": "W1.1",
+      "owner": "Content reviewer / Codex worker",
+      "sequence": 4,
+      "handoffFrom": "T-006",
+      "activationRule": "T-006 evidence accepted and ownership released"
+    },
+    {
+      "zoneId": "wiki-corpus",
+      "taskId": "T-059",
+      "wave": "W3.3",
+      "owner": "Content reviewer / planner plus human",
+      "sequence": 1,
+      "handoffFrom": null,
+      "activationRule": "wave prerequisite evidence accepted"
+    },
+    {
+      "zoneId": "wiki-corpus",
+      "taskId": "T-060",
+      "wave": "W3.3",
+      "owner": "Planner / noesisX",
+      "sequence": 2,
+      "handoffFrom": "T-059",
+      "activationRule": "T-059 evidence accepted and ownership released"
+    }
+  ]
+}

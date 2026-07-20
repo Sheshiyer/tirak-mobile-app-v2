@@ -42,7 +42,7 @@ import { TranslationToggle } from '@/components/chat/TranslationToggle';
 import { ChatSettings } from '@/components/chat/ChatSettings';
 import { EnhancedMessageInput } from '@/components/chat/EnhancedMessageInput';
 import { useTranslation } from 'react-i18next';
-import { useBookingQuery } from '@/app/api/booking/booking';
+import { useBookingQuery } from '@/services/api/booking/booking';
 import { getBookingExperienceState } from '@/utils/booking-state';
 import {
   bookingMessageFromSocketEvent,

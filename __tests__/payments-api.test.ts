@@ -22,7 +22,7 @@ jest.mock('axios', () => ({
 const {
   createPromptPayCharge,
   fetchPromptPayCharge,
-} = require('@/app/api/payments/payments');
+} = require('@/services/api/payments/payments');
 
 describe('PromptPay payment API', () => {
   beforeEach(() => {

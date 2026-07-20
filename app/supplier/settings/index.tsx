@@ -15,7 +15,7 @@ import {
 import { colors } from '@/constants/colors';
 import { useSupplierStore } from '@/stores/supplier-store';
 import { designTokens } from '@/constants/design-tokens';
-import { useCompanionProfile } from '@/app/api/companion/profile';
+import { useCompanionProfile } from '@/services/api/companion/profile';
 import { useAuthStore } from '@/stores/auth-store';
 import Constants from 'expo-constants';
 import {

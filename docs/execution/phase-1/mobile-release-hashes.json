@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-20T13:03:25Z",
+  "purpose": "T-020 mobile release gate inputs; update only through reviewed release integration.",
+  "files": {
+    "app.json": "72517655e931ec839ec1438b5fb8c9f0ff478ac1f53614c75ecebc1ca51b5998",
+    "app.config.js": "98fbb6dfc003d76b9568eb91e6a38f8539bf3284ed529f6e9e0b48131d363dca",
+    "eas.json": "4780f5d4f9c6143e0daae0ad6db71d624ba8ba67bf1892e18e3b036d86f9867e",
+    "package.json": "616ee01deeaee864f95897b6d915bb8767efc99693fc227f46371eb6c3728118",
+    "package-lock.json": "d62f14baf30bc16ce2def6647823aaadc246b106cab4298feb01599ce73d65d3",
+    "constants/api.ts": "807b71af2522633fa06be210b6d7d3e290c6ba46c0076c7a562832fc1a473780",
+    "services/api/payments/payments.ts": "c98f87f94aae9974f06390ccdd40334c95bb2773750f57e202c9e7d0d0c7615d",
+    "utils/booking-contract.ts": "9529b26c77aeeb28148947cc19bcecd1a39b9950a3a193cbb67fb1415087fc13",
+    "utils/booking-state.ts": "89d88b29c14d3f099327e7756b14d564f085d27e43615803ce8911199fe4ebd3",
+    "__tests__/booking-experience-guard.test.ts": "7600b8c805a49b46e2f6f63d41bd4f81a362dca211acf96b10c03e3cba8c9bed",
+    "__tests__/release-provenance.test.ts": "d376d560c674cf420c97c14056f53462843e6db60e8afa0c26bb6073b691f66e",
+    "scripts/copy-pwa-assets.mjs": "cabc0742a572efe6e35db03ad80ebca0fbebddcb92660a7dfce9074256dde83a",
+    "scripts/release/verify-mobile-release.mjs": "cc4ddfbe60061c8269ba5948bcf551ecdc37d04cc01113e2d7db26840b192098"
+  }
+}

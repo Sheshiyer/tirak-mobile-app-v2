@@ -23,7 +23,7 @@ import { ProfileImage } from '@/components/ui/ProfileImage';
 import { CategoryChip } from '@/components/ui/CategoryChip';
 import { RadialGradient } from '@/components/ui/RadialGradient';
 import { designTokens } from '@/constants/design-tokens';
-import { useCompanionsQuery, Companion as APICompanion, CompanionSearchParams } from '@/app/api/companion/companion';
+import { useCompanionsQuery, Companion as APICompanion, CompanionSearchParams } from '@/services/api/companion/companion';
 import { Companion } from '@/types/companion';
 import { SearchShimmer } from '@/components/ui/SearchShimmer';
 import {
@@ -265,7 +265,7 @@ export default function SearchScreen() {
 
   // Navigation handlers
   const handleCompanionPress = (companionId: string) => {
-    router.push(`/companion/${companionId}?experienceIndex=0`);
+    router.push(`/experiences/${companionId}?experienceIndex=0`);
   };
 
   const openFilterModal = () => {

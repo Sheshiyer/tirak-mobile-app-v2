@@ -24,7 +24,7 @@ import { BookingStepFooter } from '../BookingStepFooter';
 import { ProfileImage } from '@/components/ui/ProfileImage';
 import { useBookingStore } from '@/stores/booking-store';
 import { designTokens, componentTokens } from '@/constants/design-tokens';
-import { useCreateBooking } from '@/app/api/booking/booking';
+import { useCreateBooking } from '@/services/api/booking/booking';
 import { useTranslation } from 'react-i18next';
 import { convertCurrency, formatOriginalCurrencyContext, formatTravelerCurrency } from '@/utils/currency';
 import { usePostHog } from 'posthog-react-native';

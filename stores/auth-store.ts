@@ -52,7 +52,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         set({ isLoading: true, error: null });
         try {
           // Import the real API function
-          const { login: loginAPI } = await import('@/app/api/auth/login');
+          const { login: loginAPI } = await import('@/services/api/auth/login');
           
           const response = await loginAPI({
             identifier: email,
@@ -95,7 +95,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         set({ isLoading: true, error: null });
         try {
           // Import the real API function
-          const { register: registerAPI } = await import('@/app/api/auth/register');
+          const { register: registerAPI } = await import('@/services/api/auth/register');
           
           // Prepare the registration data
           const registrationData = {

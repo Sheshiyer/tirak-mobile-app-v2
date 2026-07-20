@@ -1,4 +1,4 @@
-import type { BookingStatus, PaymentStatus } from '@/app/api/booking/booking';
+import type { BookingStatus, PaymentStatus } from '@/services/api/booking/booking';
 
 export type BookingExperienceLabel =
   | 'requested'
