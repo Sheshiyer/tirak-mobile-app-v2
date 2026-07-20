@@ -51,16 +51,18 @@ function verifyArtifacts() {
   }
 }
 
-function verifyUnlaunchedState() {
+function verifyUnlaunchedState({ requireLiveAbsence }) {
   const issueMap = JSON.parse(git('mobile', ['show', `${manifest.repositories.mobile.commit}:docs/orchestration/phase-1/github-issue-map.json`]));
   const vcs = JSON.parse(git('mobile', ['show', `${manifest.repositories.mobile.commit}:docs/orchestration/phase-1/branch-worktree-manifest.json`]));
   assert(issueMap.publication.githubMutated === false, 'issue map claims GitHub mutation');
   assert(issueMap.issues.every((issue) => issue.issueNumber === null && issue.publishState === 'planned_not_created'), 'an issue is marked published');
   assert(vcs.worktreesCreated === false && vcs.mappings.every((mapping) => mapping.created === false), 'a worktree is marked created');
-  for (const mapping of vcs.mappings) {
-    const branch = git(mapping.repository, ['branch', '--list', mapping.branch]).trim();
-    assert(branch === '', `planned branch already exists: ${mapping.branch}`);
-    assert(!existsSync(mapping.worktree), `planned worktree already exists: ${mapping.worktree}`);
+  if (requireLiveAbsence) {
+    for (const mapping of vcs.mappings) {
+      const branch = git(mapping.repository, ['branch', '--list', mapping.branch]).trim();
+      assert(branch === '', `planned branch already exists: ${mapping.branch}`);
+      assert(!existsSync(mapping.worktree), `planned worktree already exists: ${mapping.worktree}`);
+    }
   }
 }
 
@@ -94,17 +96,17 @@ try {
   }
   verifyRepositories();
   verifyArtifacts();
-  verifyUnlaunchedState();
+  verifyUnlaunchedState({ requireLiveAbsence: !approved });
   runGates();
   console.log(JSON.stringify({
     status: approved ? 'APPROVED_HUMAN_T024' : 'READY_FOR_HUMAN_T024_APPROVAL',
     repositories: manifest.repositories,
     artifacts: manifest.artifacts.length,
     mode: full ? 'full' : 'standard',
-    githubMutations: 0,
-    plannedBranchesCreated: 0,
-    plannedWorktreesCreated: 0,
-    stagingCommandsExecuted: 0,
+    preApprovalSnapshotGithubMutations: 0,
+    preApprovalSnapshotBranchesCreated: 0,
+    preApprovalSnapshotWorktreesCreated: 0,
+    stagingMutationsExecutedByThisVerifier: 0,
     deploymentsExecuted: 0,
     humanT024Approval: approved ? 'APPROVED' : 'PENDING',
   }, null, 2));

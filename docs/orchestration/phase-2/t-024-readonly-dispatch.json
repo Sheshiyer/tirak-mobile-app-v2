@@ -1,0 +1,14 @@
+[
+  {
+    "id": "github-publication-audit",
+    "backend": "command-code",
+    "model": "auto",
+    "task": "Read-only audit for Tirak T-024. Repository: /Volumes/madara/2026/twc-vault/01-Projects/thoughtseed/Tirak/mobile app/repo. Inspect docs/orchestration/phase-1/github-issue-map.json and the authenticated GitHub repository Sheshiyer/tirak-mobile-app-v2 using read-only gh commands. Do not create, edit, close, label, milestone, push, or otherwise mutate anything. Determine existing-label, milestone, and issue-title collisions; validate that an idempotent publisher could safely create the planned 80 issues after T-024 approval. Return only a concise summary with counts, blockers, and exact read-only evidence. Never print tokens or secrets. Production, live Omise, App Store, and deployment actions are forbidden."
+  },
+  {
+    "id": "cloudflare-staging-inventory",
+    "backend": "command-code",
+    "model": "auto",
+    "task": "Read-only T-025 staging identity discovery for Tirak. Repository: /Volumes/madara/2026/twc-vault/01-Projects/thoughtseed/Tirak/Backend/tirak-backend-alpha01. Inspect wrangler.toml/package.json/scripts and use only authenticated read-only Wrangler listing/info commands to inventory account identity, Worker names/versions, D1 databases and migration ledgers, KV namespaces, R2 buckets, queues/DLQs, and Durable Object declarations relevant to staging. Do not create, edit, delete, deploy, apply migrations, execute SQL writes, set secrets, invoke live Omise, access production data, or print tokens/secrets. Clearly distinguish configured placeholders from verified remote resources, identify exact candidate staging bindings, and list unresolved items requiring human confirmation. Return a concise evidence summary only."
+  }
+]

@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -315,7 +315,47 @@ export function buildArtifacts() {
 function writeArtifacts() {
   mkdirSync(outputRoot, { recursive: true });
   for (const [name, artifact] of Object.entries(buildArtifacts())) {
-    writeFileSync(resolve(outputRoot, name), `${JSON.stringify(artifact, null, 2)}\n`);
+    const outputPath = resolve(outputRoot, name);
+    let next = artifact;
+    if (existsSync(outputPath) && ['github-issue-map.json', 'branch-worktree-manifest.json'].includes(name)) {
+      const current = JSON.parse(readFileSync(outputPath, 'utf8'));
+      const approval = JSON.parse(readFileSync(resolve(root, 'docs/execution/phase-1/t-024-phase1-readiness-manifest.json'), 'utf8'));
+      if (name === 'branch-worktree-manifest.json') {
+        const currentByTask = new Map(current.mappings.map((entry) => [entry.taskId, entry]));
+        next = {
+          ...artifact,
+          worktreesCreated: current.worktreesCreated,
+          mappings: artifact.mappings.map((entry) => ({
+            ...entry,
+            created: currentByTask.get(entry.taskId)?.created ?? false,
+          })),
+        };
+      } else {
+        const currentMilestones = new Map(current.milestones.map((entry) => [entry.id, entry]));
+        const currentLabels = new Map(current.labels.map((entry) => [entry.name, entry]));
+        const currentWaves = new Map(current.waveSummaries.map((entry) => [entry.id, entry]));
+        const currentIssues = new Map(current.issues.map((entry) => [entry.id, entry]));
+        next = {
+          ...artifact,
+          publication: current.publication,
+          milestones: artifact.milestones.map((entry) => ({ ...entry, state: currentMilestones.get(entry.id)?.state ?? entry.state })),
+          labels: artifact.labels.map((entry) => ({ ...entry, state: currentLabels.get(entry.name)?.state ?? entry.state })),
+          waveSummaries: artifact.waveSummaries.map((entry) => ({ ...entry, state: currentWaves.get(entry.id)?.state ?? entry.state })),
+          issues: artifact.issues.map((entry) => ({
+            ...entry,
+            issueNumber: currentIssues.get(entry.id)?.issueNumber ?? null,
+            publishState: currentIssues.get(entry.id)?.publishState ?? entry.publishState,
+          })),
+        };
+      }
+      const hasOperationalState = name === 'branch-worktree-manifest.json'
+        ? next.worktreesCreated || next.mappings.some((entry) => entry.created)
+        : next.publication.githubMutated || next.issues.some((entry) => entry.publishState !== 'planned_not_created');
+      if (hasOperationalState && approval.status !== 'APPROVED_HUMAN_T024') {
+        throw new Error(`${name} has operational state without T-024 approval`);
+      }
+    }
+    writeFileSync(outputPath, `${JSON.stringify(next, null, 2)}\n`);
   }
 }
 

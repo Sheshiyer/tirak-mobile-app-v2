@@ -1,10 +1,16 @@
-import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildArtifacts } from './generate-phase1-scaffolds.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const artifactRoot = resolve(root, 'docs/orchestration/phase-1');
+const repositoryRoots = {
+  mobile: root,
+  backend: resolve(root, '../../Backend/tirak-backend-alpha01'),
+  wiki: resolve(root, '../../tirakwiki/wikiv2-tirakapp'),
+};
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -24,9 +30,24 @@ function verifyGeneratedArtifacts() {
   const expected = buildArtifacts();
   for (const [name, artifact] of Object.entries(expected)) {
     const actual = readJson(name);
-    assert(JSON.stringify(actual) === JSON.stringify(artifact), `${name} drifted from the plan-derived generator`);
+    const normalized = structuredClone(actual);
+    if (name === 'branch-worktree-manifest.json') {
+      normalized.worktreesCreated = false;
+      for (const mapping of normalized.mappings) mapping.created = false;
+    }
+    if (name === 'github-issue-map.json') {
+      normalized.publication = artifact.publication;
+      normalized.milestones.forEach((milestone) => { milestone.state = 'planned_not_created'; });
+      normalized.labels.forEach((label) => { label.state = 'planned_not_created'; });
+      normalized.waveSummaries.forEach((wave) => { wave.state = 'planned_not_created'; });
+      normalized.issues.forEach((issue) => {
+        issue.issueNumber = null;
+        issue.publishState = 'planned_not_created';
+      });
+    }
+    assert(JSON.stringify(normalized) === JSON.stringify(artifact), `${name} structural fields drifted from the plan-derived generator`);
   }
-  return expected;
+  return Object.fromEntries(Object.keys(expected).map((name) => [name, readJson(name)]));
 }
 
 function verifyIssueMap(map) {
@@ -45,13 +66,24 @@ function verifyIssueMap(map) {
 
 function verifyVcs(manifest) {
   exactIds(manifest.mappings, 'taskId', 'VCS manifest');
-  assert(manifest.worktreesCreated === false, 'VCS manifest claims worktrees already exist');
   assert(manifest.authorizationGate === 'T-024 human approval', 'VCS manifest lost T-024 gate');
   const branches = manifest.mappings.map((entry) => entry.branch);
   const worktrees = manifest.mappings.map((entry) => entry.worktree);
   assert(new Set(branches).size === 80, 'branch collision detected');
   assert(new Set(worktrees).size === 80, 'worktree path collision detected');
-  assert(manifest.mappings.every((entry) => entry.created === false), 'a task was marked as created before T-024');
+  const approval = JSON.parse(readFileSync(resolve(root, 'docs/execution/phase-1/t-024-phase1-readiness-manifest.json'), 'utf8'));
+  const created = manifest.mappings.filter((entry) => entry.created);
+  assert(manifest.worktreesCreated === (created.length > 0), 'VCS manifest worktree aggregate state is inconsistent');
+  if (created.length > 0) assert(approval.status === 'APPROVED_HUMAN_T024', 'a task was created without T-024 approval');
+  for (const entry of created) {
+    assert(existsSync(entry.worktree), `${entry.taskId} declared worktree does not exist`);
+    const branch = execFileSync('git', ['branch', '--list', entry.branch], {
+      cwd: repositoryRoots[entry.repository],
+      encoding: 'utf8',
+    }).trim();
+    assert(branch.length > 0, `${entry.taskId} declared branch does not exist`);
+  }
+  return created.length;
 }
 
 function verifyLocks(ledger) {
@@ -108,7 +140,7 @@ function verifyWorkerPackets() {
 try {
   const artifacts = verifyGeneratedArtifacts();
   verifyIssueMap(artifacts['github-issue-map.json']);
-  verifyVcs(artifacts['branch-worktree-manifest.json']);
+  const worktreesCreated = verifyVcs(artifacts['branch-worktree-manifest.json']);
   verifyLocks(artifacts['lock-zone-ownership.json']);
   verifyEvidence(artifacts['wave-evidence-matrix.json']);
   verifyWorkerPackets();
@@ -118,7 +150,7 @@ try {
     phases: 5,
     waves: 13,
     branches: 80,
-    worktreesCreated: 0,
+    worktreesCreated,
     githubMutations: 0,
     lockAssignments: artifacts['lock-zone-ownership.json'].assignments.length,
     evidenceRows: 80,

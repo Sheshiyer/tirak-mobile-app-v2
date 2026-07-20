@@ -6,7 +6,7 @@
     "sha256": "90250e2538419b5016b8309e0b906c1e39e5b04288ff64ec7a0a7a2538be1668"
   },
   "authorizationGate": "T-024 human approval",
-  "worktreesCreated": false,
+  "worktreesCreated": true,
   "mappings": [
     {
       "taskId": "T-001",
@@ -246,7 +246,7 @@
       "worktree": "/Volumes/madara/2026/twc-vault/01-Projects/thoughtseed/Tirak/.worktrees/mobile/t-024-close-phase-1-readiness-gate",
       "baseGate": "T-020, T-021, T-023",
       "mergeGate": "W1.3 wave close",
-      "created": false
+      "created": true
     },
     {
       "taskId": "T-025",
@@ -256,7 +256,7 @@
       "worktree": "/Volumes/madara/2026/twc-vault/01-Projects/thoughtseed/Tirak/.worktrees/backend/t-025-resolve-staging-resource-identities-and-ledger",
       "baseGate": "T-024",
       "mergeGate": "W2.1 wave close",
-      "created": false
+      "created": true
     },
     {
       "taskId": "T-026",
