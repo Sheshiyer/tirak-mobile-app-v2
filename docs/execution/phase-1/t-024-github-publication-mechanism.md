@@ -1,6 +1,6 @@
 # T-024 GitHub Publication Mechanism
 
-Status: **IMPLEMENTED AND LOCALLY VERIFIED — REAL GITHUB MUTATION NOT EXECUTED**
+Status: **PUBLISHED AND REMOTELY VERIFIED — T-024 BOUNDED AUTHORITY**
 
 ## Purpose
 
@@ -34,13 +34,13 @@ Local fake-provider and negative verification:
 npm run release:verify-github-publisher
 ```
 
-Authorized real publication is deliberately incomplete unless the operator adds the exact confirmation:
+Authorized real publication requires the exact confirmation:
 
 ```bash
 npm run release:github:publish -- --confirm T-024_APPROVED_GITHUB_PUBLICATION
 ```
 
-This implementation task did **not** run the real publication command. It performed no push, deployment, production access, live Omise operation, or App Store mutation.
+The authorized command ran at `2026-07-20T13:58:48.769Z`. It created 58 planned labels, five planned milestones, and issues `#1` through `#80` in `Sheshiyer/tirak-mobile-app-v2`. It performed no push, deployment, production access, live Omise operation, or App Store mutation.
 
 ## Verification result
 
@@ -49,6 +49,9 @@ This implementation task did **not** run the real publication command. It perfor
 - Idempotent fake-provider rerun: all 143 objects reused with zero POST/PATCH operations.
 - Seven negative fixtures reject missing approval, wrong CLI repository, missing confirmation, partial map state, API failure, authenticated repository mismatch, and stable task-title collision.
 - TypeScript, 8/8 Jest suites, 47/47 tests, scaffold verification, secret scan, and `git diff --check` pass.
+- Real first run: 58 labels, five milestones, and 80 issues created; local map atomically moved to `published`.
+- Real second run: 58 labels, five milestones, and 80 issues reused; zero creations or updates.
+- Remote read-back: exactly 80 issues exist, from `[T-001]` issue `#1` through `[T-080]` issue `#80`; all five milestone titles match the frozen map.
 
 ## Recovery and idempotency
 

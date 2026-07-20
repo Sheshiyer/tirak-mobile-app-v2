@@ -34,7 +34,21 @@ function makeFixture(directory) {
   const map = resolve(directory, 'map.json');
   const manifest = resolve(directory, 'manifest.json');
   const approval = resolve(directory, 'approval.md');
-  copyFileSync(sourceMap, map);
+  const plannedMap = JSON.parse(readFileSync(sourceMap, 'utf8'));
+  plannedMap.publication = {
+    state: 'planned_not_created',
+    authorizationGate: plannedMap.publication.authorizationGate,
+    githubMutated: false,
+  };
+  plannedMap.labels = plannedMap.labels.map(({ url: _url, ...label }) => ({ ...label, state: 'planned_not_created' }));
+  plannedMap.milestones = plannedMap.milestones.map(({ milestoneNumber: _number, url: _url, ...milestone }) => ({ ...milestone, state: 'planned_not_created' }));
+  plannedMap.waveSummaries = plannedMap.waveSummaries.map((wave) => ({ ...wave, state: 'planned_not_created' }));
+  plannedMap.issues = plannedMap.issues.map(({ issueUrl: _url, ...issue }) => ({
+    ...issue,
+    issueNumber: null,
+    publishState: 'planned_not_created',
+  }));
+  writeFileSync(map, JSON.stringify(plannedMap));
   copyFileSync(sourceManifest, manifest);
   copyFileSync(sourceApproval, approval);
   return { map, manifest, approval };
@@ -124,7 +138,7 @@ try {
   partialMap.issues[0].issueNumber = 17;
   writeFileSync(fixture.map, JSON.stringify(partialMap));
   expectFailure('partial map', baseArgs, /ambiguous partial publication state/);
-  copyFileSync(sourceMap, fixture.map);
+  makeFixture(directory);
 
   const fakeEnv = { FAKE_GH_STATE: statePath, FAKE_GH_LOG: logPath, FAKE_GH_SCENARIO: 'api-failure' };
   expectFailure('API failure', ['--execute', '--confirm', confirmation, '--gh-bin', fakeGh, ...baseArgs], /simulated API failure/, fakeEnv);

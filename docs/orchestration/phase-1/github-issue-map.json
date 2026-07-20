@@ -6,269 +6,344 @@
     "sha256": "90250e2538419b5016b8309e0b906c1e39e5b04288ff64ec7a0a7a2538be1668"
   },
   "publication": {
-    "state": "planned_not_created",
+    "state": "published",
     "authorizationGate": "T-024 human approval",
-    "githubMutated": false
+    "githubMutated": true,
+    "repository": "Sheshiyer/tirak-mobile-app-v2",
+    "publishedAt": "2026-07-20T13:58:48.769Z",
+    "counts": {
+      "labels": 58,
+      "milestones": 5,
+      "issues": 80
+    }
   },
   "milestones": [
     {
       "id": "P1",
       "title": "Phase 1 — Baseline and contract freeze",
-      "state": "planned_not_created"
+      "state": "published",
+      "milestoneNumber": 1,
+      "url": "https://github.com/Sheshiyer/tirak-mobile-app-v2/milestone/1"
     },
     {
       "id": "P2",
       "title": "Phase 2 — Staging backend, data, and Omise",
-      "state": "planned_not_created"
+      "state": "published",
+      "milestoneNumber": 2,
+      "url": "https://github.com/Sheshiyer/tirak-mobile-app-v2/milestone/2"
     },
     {
       "id": "P3",
       "title": "Phase 3 — Mobile and reviewer experience",
-      "state": "planned_not_created"
+      "state": "published",
+      "milestoneNumber": 3,
+      "url": "https://github.com/Sheshiyer/tirak-mobile-app-v2/milestone/3"
     },
     {
       "id": "P4",
       "title": "Phase 4 — Release hardening",
-      "state": "planned_not_created"
+      "state": "published",
+      "milestoneNumber": 4,
+      "url": "https://github.com/Sheshiyer/tirak-mobile-app-v2/milestone/4"
     },
     {
       "id": "P5",
       "title": "Phase 5 — Production and submission",
-      "state": "planned_not_created"
+      "state": "published",
+      "milestoneNumber": 5,
+      "url": "https://github.com/Sheshiyer/tirak-mobile-app-v2/milestone/5"
     }
   ],
   "labels": [
     {
       "name": "area:backend",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/area:backend"
     },
     {
       "name": "area:data",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/area:data"
     },
     {
       "name": "area:frontend",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/area:frontend"
     },
     {
       "name": "area:infra",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/area:infra"
     },
     {
       "name": "area:product",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/area:product"
     },
     {
       "name": "area:qa",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/area:qa"
     },
     {
       "name": "lock:exclusive",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/lock:exclusive"
     },
     {
       "name": "phase:p1",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/phase:p1"
     },
     {
       "name": "phase:p2",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/phase:p2"
     },
     {
       "name": "phase:p3",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/phase:p3"
     },
     {
       "name": "phase:p4",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/phase:p4"
     },
     {
       "name": "phase:p5",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/phase:p5"
     },
     {
       "name": "status:planned-not-created",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/status:planned-not-created"
     },
     {
       "name": "swarm:backend-wiki-baseline",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/swarm:backend-wiki-baseline"
     },
     {
       "name": "swarm:cloud-config",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/swarm:cloud-config"
     },
     {
       "name": "swarm:content-review",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/swarm:content-review"
     },
     {
       "name": "swarm:data-cutover",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/swarm:data-cutover"
     },
     {
       "name": "swarm:data-migration",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/swarm:data-migration"
     },
     {
       "name": "swarm:device-matrix",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/swarm:device-matrix"
     },
     {
       "name": "swarm:financial-integrity",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/swarm:financial-integrity"
     },
     {
       "name": "swarm:financial-operations",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/swarm:financial-operations"
     },
     {
       "name": "swarm:integration-contracts",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/swarm:integration-contracts"
     },
     {
       "name": "swarm:integration-gate",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/swarm:integration-gate"
     },
     {
       "name": "swarm:migration-validation",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/swarm:migration-validation"
     },
     {
       "name": "swarm:mobile-baseline",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/swarm:mobile-baseline"
     },
     {
       "name": "swarm:mobile-config",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/swarm:mobile-config"
     },
     {
       "name": "swarm:mobile-workflows",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/swarm:mobile-workflows"
     },
     {
       "name": "swarm:monitoring",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/swarm:monitoring"
     },
     {
       "name": "swarm:orchestration",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/swarm:orchestration"
     },
     {
       "name": "swarm:orchestration-scaffold",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/swarm:orchestration-scaffold"
     },
     {
       "name": "swarm:payment-data-contracts",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/swarm:payment-data-contracts"
     },
     {
       "name": "swarm:payment-e2e",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/swarm:payment-e2e"
     },
     {
       "name": "swarm:product-release-contracts",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/swarm:product-release-contracts"
     },
     {
       "name": "swarm:release-gate",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/swarm:release-gate"
     },
     {
       "name": "swarm:resilience",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/swarm:resilience"
     },
     {
       "name": "swarm:review-data",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/swarm:review-data"
     },
     {
       "name": "swarm:security",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/swarm:security"
     },
     {
       "name": "swarm:store-assets",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/swarm:store-assets"
     },
     {
       "name": "swarm:submission",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/swarm:submission"
     },
     {
       "name": "swarm:telemetry",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/swarm:telemetry"
     },
     {
       "name": "swarm:validation-scaffold",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/swarm:validation-scaffold"
     },
     {
       "name": "swarm:worker-cutover",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/swarm:worker-cutover"
     },
     {
       "name": "tirak-omise",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/tirak-omise"
     },
     {
       "name": "vcs:baseline",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/vcs:baseline"
     },
     {
       "name": "vcs:standard",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/vcs:standard"
     },
     {
       "name": "wave:w1.1",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/wave:w1.1"
     },
     {
       "name": "wave:w1.2",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/wave:w1.2"
     },
     {
       "name": "wave:w1.3",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/wave:w1.3"
     },
     {
       "name": "wave:w2.1",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/wave:w2.1"
     },
     {
       "name": "wave:w2.2",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/wave:w2.2"
     },
     {
       "name": "wave:w2.3",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/wave:w2.3"
     },
     {
       "name": "wave:w3.1",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/wave:w3.1"
     },
     {
       "name": "wave:w3.2",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/wave:w3.2"
     },
     {
       "name": "wave:w3.3",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/wave:w3.3"
     },
     {
       "name": "wave:w4.1",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/wave:w4.1"
     },
     {
       "name": "wave:w4.2",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/wave:w4.2"
     },
     {
       "name": "wave:w5.1",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/wave:w5.1"
     },
     {
       "name": "wave:w5.2",
-      "state": "planned_not_created"
+      "state": "published",
+      "url": "https://api.github.com/repos/Sheshiyer/tirak-mobile-app-v2/labels/wave:w5.2"
     }
   ],
   "waveSummaries": [
@@ -287,7 +362,7 @@
       ],
       "taskCount": 8,
       "estimatedHours": 16,
-      "state": "planned_not_created"
+      "state": "published"
     },
     {
       "id": "W1.2",
@@ -304,7 +379,7 @@
       ],
       "taskCount": 8,
       "estimatedHours": 24,
-      "state": "planned_not_created"
+      "state": "published"
     },
     {
       "id": "W1.3",
@@ -321,7 +396,7 @@
       ],
       "taskCount": 8,
       "estimatedHours": 25,
-      "state": "planned_not_created"
+      "state": "published"
     },
     {
       "id": "W2.1",
@@ -338,7 +413,7 @@
       ],
       "taskCount": 8,
       "estimatedHours": 27,
-      "state": "planned_not_created"
+      "state": "published"
     },
     {
       "id": "W2.2",
@@ -353,7 +428,7 @@
       ],
       "taskCount": 6,
       "estimatedHours": 18,
-      "state": "planned_not_created"
+      "state": "published"
     },
     {
       "id": "W2.3",
@@ -368,7 +443,7 @@
       ],
       "taskCount": 6,
       "estimatedHours": 26,
-      "state": "planned_not_created"
+      "state": "published"
     },
     {
       "id": "W3.1",
@@ -383,7 +458,7 @@
       ],
       "taskCount": 6,
       "estimatedHours": 21,
-      "state": "planned_not_created"
+      "state": "published"
     },
     {
       "id": "W3.2",
@@ -397,7 +472,7 @@
       ],
       "taskCount": 5,
       "estimatedHours": 16,
-      "state": "planned_not_created"
+      "state": "published"
     },
     {
       "id": "W3.3",
@@ -411,7 +486,7 @@
       ],
       "taskCount": 5,
       "estimatedHours": 20,
-      "state": "planned_not_created"
+      "state": "published"
     },
     {
       "id": "W4.1",
@@ -426,7 +501,7 @@
       ],
       "taskCount": 6,
       "estimatedHours": 23,
-      "state": "planned_not_created"
+      "state": "published"
     },
     {
       "id": "W4.2",
@@ -441,7 +516,7 @@
       ],
       "taskCount": 6,
       "estimatedHours": 20,
-      "state": "planned_not_created"
+      "state": "published"
     },
     {
       "id": "W5.1",
@@ -454,7 +529,7 @@
       ],
       "taskCount": 4,
       "estimatedHours": 10,
-      "state": "planned_not_created"
+      "state": "published"
     },
     {
       "id": "W5.2",
@@ -467,13 +542,13 @@
       ],
       "taskCount": 4,
       "estimatedHours": 15,
-      "state": "planned_not_created"
+      "state": "published"
     }
   ],
   "issues": [
     {
       "id": "T-001",
-      "issueNumber": null,
+      "issueNumber": 1,
       "title": "[T-001] Inventory mobile integration diff",
       "milestone": "P1",
       "wave": "W1.1",
@@ -497,11 +572,12 @@
         "validation": "`git status`, diff stats, scope review, and inventory hash",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/1"
     },
     {
       "id": "T-002",
-      "issueNumber": null,
+      "issueNumber": 2,
       "title": "[T-002] Re-prove mobile baseline",
       "milestone": "P1",
       "wave": "W1.1",
@@ -526,11 +602,12 @@
         "validation": "Command logs and test counts",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/2"
     },
     {
       "id": "T-003",
-      "issueNumber": null,
+      "issueNumber": 3,
       "title": "[T-003] Preserve mobile baseline commit",
       "milestone": "P1",
       "wave": "W1.1",
@@ -556,11 +633,12 @@
         "validation": "Staged secret scan, commit diff audit, tree hash, and SHA record",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/3"
     },
     {
       "id": "T-004",
-      "issueNumber": null,
+      "issueNumber": 4,
       "title": "[T-004] Inventory backend integration diff",
       "milestone": "P1",
       "wave": "W1.1",
@@ -584,11 +662,12 @@
         "validation": "`git status`, route/seed/config/script/migration audit, diff stats, and inventory hash",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/4"
     },
     {
       "id": "T-005",
-      "issueNumber": null,
+      "issueNumber": 5,
       "title": "[T-005] Re-prove backend and migration baseline",
       "milestone": "P1",
       "wave": "W1.1",
@@ -613,11 +692,12 @@
         "validation": "Vitest, TypeScript, SQLite probes, secret scan, script audit, and diff check",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/5"
     },
     {
       "id": "T-006",
-      "issueNumber": null,
+      "issueNumber": 6,
       "title": "[T-006] Preserve backend baseline commit",
       "milestone": "P1",
       "wave": "W1.1",
@@ -643,11 +723,12 @@
         "validation": "Staged secret scan, commit diff audit, tree hash, and SHA record",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/6"
     },
     {
       "id": "T-007",
-      "issueNumber": null,
+      "issueNumber": 7,
       "title": "[T-007] Preserve canonical wiki baseline",
       "milestone": "P1",
       "wave": "W1.1",
@@ -671,11 +752,12 @@
         "validation": "Node tests, two-build hashes, corpus hashes/count, Astro build, route probes, staged secret scan, and SHA record",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/7"
     },
     {
       "id": "T-008",
-      "issueNumber": null,
+      "issueNumber": 8,
       "title": "[T-008] Publish cross-repository baseline manifest",
       "milestone": "P1",
       "wave": "W1.1",
@@ -703,11 +785,12 @@
         "validation": "SHA/tree/diff-hash verification, clean-or-declared repository snapshots, and human approval",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/8"
     },
     {
       "id": "T-009",
-      "issueNumber": null,
+      "issueNumber": 9,
       "title": "[T-009] Freeze payment HTTP and route-surface contract",
       "milestone": "P1",
       "wave": "W1.2",
@@ -732,11 +815,12 @@
         "validation": "Contract tests and mounted-route audit",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/9"
     },
     {
       "id": "T-010",
-      "issueNumber": null,
+      "issueNumber": 10,
       "title": "[T-010] Freeze payment and cancellation state mapping",
       "milestone": "P1",
       "wave": "W1.2",
@@ -761,11 +845,12 @@
         "validation": "Table-driven invariant tests cover every combination",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/10"
     },
     {
       "id": "T-011",
-      "issueNumber": null,
+      "issueNumber": 11,
       "title": "[T-011] Freeze target D1 schema contract",
       "milestone": "P1",
       "wave": "W1.2",
@@ -791,11 +876,12 @@
         "validation": "Schema introspection fixture, permission matrix, and SQL invariant assertions",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/11"
     },
     {
       "id": "T-012",
-      "issueNumber": null,
+      "issueNumber": 12,
       "title": "[T-012] Decide legacy 004 and additive chat 009 strategy",
       "milestone": "P1",
       "wave": "W1.2",
@@ -821,11 +907,12 @@
         "validation": "Rehearsal design review and SQL/Worker dependency graph",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/12"
     },
     {
       "id": "T-013",
-      "issueNumber": null,
+      "issueNumber": 13,
       "title": "[T-013] Freeze environment, resource identity, and rollout modes",
       "milestone": "P1",
       "wave": "W1.2",
@@ -851,11 +938,12 @@
         "validation": "Config tests, binding-name audit, wrong-target refusal, and target confirmation",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/13"
     },
     {
       "id": "T-014",
-      "issueNumber": null,
+      "issueNumber": 14,
       "title": "[T-014] Freeze mobile booking and checkout boundary",
       "milestone": "P1",
       "wave": "W1.2",
@@ -881,11 +969,12 @@
         "validation": "Cross-layer contract tests",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/14"
     },
     {
       "id": "T-015",
-      "issueNumber": null,
+      "issueNumber": 15,
       "title": "[T-015] Freeze reviewer fixture and clean-seed provenance",
       "milestone": "P1",
       "wave": "W1.2",
@@ -911,11 +1000,12 @@
         "validation": "End-to-end provenance checklist, prohibited-source/data assertion, cache purge proof design, and provider-receipt requirement",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/15"
     },
     {
       "id": "T-016",
-      "issueNumber": null,
+      "issueNumber": 16,
       "title": "[T-016] Approve shared contract packet",
       "milestone": "P1",
       "wave": "W1.2",
@@ -945,11 +1035,12 @@
         "validation": "Contract and causal-control checklist with zero unknown enforcement locations or drift",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/16"
     },
     {
       "id": "T-017",
-      "issueNumber": null,
+      "issueNumber": 17,
       "title": "[T-017] Design GitHub milestone and issue map",
       "milestone": "P1",
       "wave": "W1.3",
@@ -974,11 +1065,12 @@
         "validation": "Mapping-schema validation",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/17"
     },
     {
       "id": "T-018",
-      "issueNumber": null,
+      "issueNumber": 18,
       "title": "[T-018] Generate branch and worktree manifest",
       "milestone": "P1",
       "wave": "W1.3",
@@ -1003,11 +1095,12 @@
         "validation": "Duplicate and path-collision probe",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/18"
     },
     {
       "id": "T-019",
-      "issueNumber": null,
+      "issueNumber": 19,
       "title": "[T-019] Publish lock-zone ownership ledger",
       "milestone": "P1",
       "wave": "W1.3",
@@ -1032,11 +1125,12 @@
         "validation": "Ownership matrix inspection",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/19"
     },
     {
       "id": "T-020",
-      "issueNumber": null,
+      "issueNumber": 20,
       "title": "[T-020] Establish mobile CI release gate",
       "milestone": "P1",
       "wave": "W1.3",
@@ -1064,11 +1158,12 @@
         "validation": "CI dry run on baseline SHA with negative fixtures and built-artifact scan",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/20"
     },
     {
       "id": "T-021",
-      "issueNumber": null,
+      "issueNumber": 21,
       "title": "[T-021] Establish fail-closed backend CI, deploy, backup, and migration gate",
       "milestone": "P1",
       "wave": "W1.3",
@@ -1097,11 +1192,12 @@
         "validation": "CI dry run, deliberate failure matrix, shell audit, SQLite/D1 disposable fixture, and local restore rehearsal",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/21"
     },
     {
       "id": "T-022",
-      "issueNumber": null,
+      "issueNumber": 22,
       "title": "[T-022] Publish wave evidence matrix",
       "milestone": "P1",
       "wave": "W1.3",
@@ -1127,11 +1223,12 @@
         "validation": "Matrix coverage and tool-provenance audit against T-001–T-080",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/22"
     },
     {
       "id": "T-023",
-      "issueNumber": null,
+      "issueNumber": 23,
       "title": "[T-023] Generate worker bootstrap packet templates",
       "milestone": "P1",
       "wave": "W1.3",
@@ -1159,11 +1256,12 @@
         "validation": "Packet completeness and prohibited-pattern checklist",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/23"
     },
     {
       "id": "T-024",
-      "issueNumber": null,
+      "issueNumber": 24,
       "title": "[T-024] Close Phase 1 readiness gate",
       "milestone": "P1",
       "wave": "W1.3",
@@ -1191,11 +1289,12 @@
         "validation": "Wave-close checklist, independent review, and human approval",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/24"
     },
     {
       "id": "T-025",
-      "issueNumber": null,
+      "issueNumber": 25,
       "title": "[T-025] Resolve staging resource identities and ledger",
       "milestone": "P2",
       "wave": "W2.1",
@@ -1220,11 +1319,12 @@
         "validation": "Wrangler metadata, config read-back, wrong-target refusal, and signed manifest",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/25"
     },
     {
       "id": "T-026",
-      "issueNumber": null,
+      "issueNumber": 26,
       "title": "[T-026] Capture and restore staging recovery point",
       "milestone": "P2",
       "wave": "W2.1",
@@ -1249,11 +1349,12 @@
         "validation": "`d1 info`, Time Travel/export, disposable restore, checksums, and row-count evidence",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/26"
     },
     {
       "id": "T-027",
-      "issueNumber": null,
+      "issueNumber": 27,
       "title": "[T-027] Inspect staging booking, payment, and chat schema",
       "milestone": "P2",
       "wave": "W2.1",
@@ -1278,11 +1379,12 @@
         "validation": "Read-only SQL output checked against T-011",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/27"
     },
     {
       "id": "T-028",
-      "issueNumber": null,
+      "issueNumber": 28,
       "title": "[T-028] Implement approved migration lineage and additive chat expansion",
       "milestone": "P2",
       "wave": "W2.1",
@@ -1309,11 +1411,12 @@
         "validation": "Fresh/existing schema, restored-backup replay, idempotency, permission, and dual-Worker compatibility tests",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/28"
     },
     {
       "id": "T-029",
-      "issueNumber": null,
+      "issueNumber": 29,
       "title": "[T-029] Rehearse migration 008",
       "milestone": "P2",
       "wave": "W2.1",
@@ -1340,11 +1443,12 @@
         "validation": "Schema assertions and foreign-key check",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/29"
     },
     {
       "id": "T-030",
-      "issueNumber": null,
+      "issueNumber": 30,
       "title": "[T-030] Rehearse additive migration 009",
       "milestone": "P2",
       "wave": "W2.1",
@@ -1370,11 +1474,12 @@
         "validation": "Schema, legacy-preservation, dual-Worker, uniqueness, and row-count probes",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/30"
     },
     {
       "id": "T-031",
-      "issueNumber": null,
+      "issueNumber": 31,
       "title": "[T-031] Validate migration integrity and recovery",
       "milestone": "P2",
       "wave": "W2.1",
@@ -1399,11 +1504,12 @@
         "validation": "Independent SQL probes and restore rehearsal",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/31"
     },
     {
       "id": "T-032",
-      "issueNumber": null,
+      "issueNumber": 32,
       "title": "[T-032] Approve staging migration go/no-go",
       "milestone": "P2",
       "wave": "W2.1",
@@ -1429,11 +1535,12 @@
         "validation": "Wave-close evidence review",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/32"
     },
     {
       "id": "T-033",
-      "issueNumber": null,
+      "issueNumber": 33,
       "title": "[T-033] Implement payment environment-mode and kill-switch guard",
       "milestone": "P2",
       "wave": "W2.2",
@@ -1460,11 +1567,12 @@
         "validation": "Unit, route, config, concurrent-request, and operator-toggle tests",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/33"
     },
     {
       "id": "T-034",
-      "issueNumber": null,
+      "issueNumber": 34,
       "title": "[T-034] Provision staging Omise test secrets",
       "milestone": "P2",
       "wave": "W2.2",
@@ -1491,11 +1599,12 @@
         "validation": "Secret listing metadata and repository secret scan",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/34"
     },
     {
       "id": "T-035",
-      "issueNumber": null,
+      "issueNumber": 35,
       "title": "[T-035] Register staging webhook endpoint",
       "milestone": "P2",
       "wave": "W2.2",
@@ -1520,11 +1629,12 @@
         "validation": "Dashboard screenshot and signed delivery log",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/35"
     },
     {
       "id": "T-036",
-      "issueNumber": null,
+      "issueNumber": 36,
       "title": "[T-036] Deploy baseline Worker to staging",
       "milestone": "P2",
       "wave": "W2.2",
@@ -1552,11 +1662,12 @@
         "validation": "Deployment ID, health probes, route smoke logs",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/36"
     },
     {
       "id": "T-037",
-      "issueNumber": null,
+      "issueNumber": 37,
       "title": "[T-037] Execute staging PromptPay happy path",
       "milestone": "P2",
       "wave": "W2.2",
@@ -1582,11 +1693,12 @@
         "validation": "API logs, provider charge, D1 rows, screenshots",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/37"
     },
     {
       "id": "T-038",
-      "issueNumber": null,
+      "issueNumber": 38,
       "title": "[T-038] Execute failure, cancellation, kill-switch, and recovery matrix",
       "milestone": "P2",
       "wave": "W2.2",
@@ -1611,11 +1723,12 @@
         "validation": "Adversarial logs, concurrent-request probe, and cross-table state snapshots",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/38"
     },
     {
       "id": "T-039",
-      "issueNumber": null,
+      "issueNumber": 39,
       "title": "[T-039] Add structured payment and webhook telemetry",
       "milestone": "P2",
       "wave": "W2.3",
@@ -1640,11 +1753,12 @@
         "validation": "Unit tests, log sample, redaction scan",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/39"
     },
     {
       "id": "T-040",
-      "issueNumber": null,
+      "issueNumber": 40,
       "title": "[T-040] Define dashboards and alert thresholds",
       "milestone": "P2",
       "wave": "W2.3",
@@ -1669,11 +1783,12 @@
         "validation": "Synthetic alert tests and dashboard screenshots",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/40"
     },
     {
       "id": "T-041",
-      "issueNumber": null,
+      "issueNumber": 41,
       "title": "[T-041] Implement scheduled reconciliation and stale-attempt leasing",
       "milestone": "P2",
       "wave": "W2.3",
@@ -1699,11 +1814,12 @@
         "validation": "Fixture tests, scheduled-run log, and sample report",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/41"
     },
     {
       "id": "T-042",
-      "issueNumber": null,
+      "issueNumber": 42,
       "title": "[T-042] Write indeterminate recovery runbook",
       "milestone": "P2",
       "wave": "W2.3",
@@ -1729,11 +1845,12 @@
         "validation": "Tabletop exercise with evidence checklist",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/42"
     },
     {
       "id": "T-043",
-      "issueNumber": null,
+      "issueNumber": 43,
       "title": "[T-043] Implement cancellation interlock and restitution operations",
       "milestone": "P2",
       "wave": "W2.3",
@@ -1759,11 +1876,12 @@
         "validation": "State-race, permission, duplicate-restitution, and tabletop restitution tests",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/43"
     },
     {
       "id": "T-044",
-      "issueNumber": null,
+      "issueNumber": 44,
       "title": "[T-044] Close staging backend and operations gate",
       "milestone": "P2",
       "wave": "W2.3",
@@ -1793,11 +1911,12 @@
         "validation": "Wave-close checklist and independent review",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/44"
     },
     {
       "id": "T-045",
-      "issueNumber": null,
+      "issueNumber": 45,
       "title": "[T-045] Configure EAS staging environment",
       "milestone": "P3",
       "wave": "W3.1",
@@ -1824,11 +1943,12 @@
         "validation": "Config inspection and runtime endpoint proof",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/45"
     },
     {
       "id": "T-046",
-      "issueNumber": null,
+      "issueNumber": 46,
       "title": "[T-046] Verify mobile payment API contract",
       "milestone": "P3",
       "wave": "W3.1",
@@ -1854,11 +1974,12 @@
         "validation": "Jest contract tests and staging API capture",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/46"
     },
     {
       "id": "T-047",
-      "issueNumber": null,
+      "issueNumber": 47,
       "title": "[T-047] Harden checkout lifecycle UI",
       "milestone": "P3",
       "wave": "W3.1",
@@ -1884,11 +2005,12 @@
         "validation": "Component tests and screen recordings",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/47"
     },
     {
       "id": "T-048",
-      "issueNumber": null,
+      "issueNumber": 48,
       "title": "[T-048] Validate booking-scoped iOS WebSocket chat",
       "milestone": "P3",
       "wave": "W3.1",
@@ -1914,11 +2036,12 @@
         "validation": "Device logs and backend event trace",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/48"
     },
     {
       "id": "T-049",
-      "issueNumber": null,
+      "issueNumber": 49,
       "title": "[T-049] Harden accessibility, localization, privacy, and failure copy",
       "milestone": "P3",
       "wave": "W3.1",
@@ -1943,11 +2066,12 @@
         "validation": "Accessibility/locale tests, tracker instrumentation probe, screenshots",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/49"
     },
     {
       "id": "T-050",
-      "issueNumber": null,
+      "issueNumber": 50,
       "title": "[T-050] Produce signed internal EAS build",
       "milestone": "P3",
       "wave": "W3.1",
@@ -1977,11 +2101,12 @@
         "validation": "EAS build logs and artifact metadata",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/50"
     },
     {
       "id": "T-051",
-      "issueNumber": null,
+      "issueNumber": 51,
       "title": "[T-051] Run iPhone reviewer journey",
       "milestone": "P3",
       "wave": "W3.2",
@@ -2006,11 +2131,12 @@
         "validation": "Device video, screenshots, network logs",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/51"
     },
     {
       "id": "T-052",
-      "issueNumber": null,
+      "issueNumber": 52,
       "title": "[T-052] Run iPad Air reviewer journey",
       "milestone": "P3",
       "wave": "W3.2",
@@ -2035,11 +2161,12 @@
         "validation": "Device/simulator screenshots and assertions",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/52"
     },
     {
       "id": "T-053",
-      "issueNumber": null,
+      "issueNumber": 53,
       "title": "[T-053] Validate PromptPay banking handoff workflow",
       "milestone": "P3",
       "wave": "W3.2",
@@ -2065,11 +2192,12 @@
         "validation": "Banking-app test notes, QR image proof, provider receipt",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/53"
     },
     {
       "id": "T-054",
-      "issueNumber": null,
+      "issueNumber": 54,
       "title": "[T-054] Test mobile interruption and abuse cases",
       "milestone": "P3",
       "wave": "W3.2",
@@ -2094,11 +2222,12 @@
         "validation": "Device automation, API logs, D1/provider comparison",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/54"
     },
     {
       "id": "T-055",
-      "issueNumber": null,
+      "issueNumber": 55,
       "title": "[T-055] Close signed-device validation gate",
       "milestone": "P3",
       "wave": "W3.2",
@@ -2127,11 +2256,12 @@
         "validation": "Evidence index and zero-critical-finding review",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/55"
     },
     {
       "id": "T-056",
-      "issueNumber": null,
+      "issueNumber": 56,
       "title": "[T-056] Create stable review guide and experiences",
       "milestone": "P3",
       "wave": "W3.3",
@@ -2157,11 +2287,12 @@
         "validation": "Read-only API snapshots and copy scan",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/56"
     },
     {
       "id": "T-057",
-      "issueNumber": null,
+      "issueNumber": 57,
       "title": "[T-057] Create confirmed-unpaid reviewer booking",
       "milestone": "P3",
       "wave": "W3.3",
@@ -2186,11 +2317,12 @@
         "validation": "API response, D1 record, mobile screenshot",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/57"
     },
     {
       "id": "T-058",
-      "issueNumber": null,
+      "issueNumber": 58,
       "title": "[T-058] Create legitimately paid reviewer booking",
       "milestone": "P3",
       "wave": "W3.3",
@@ -2216,11 +2348,12 @@
         "validation": "Omise charge, webhook/retrieval logs, D1/mobile proof",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/58"
     },
     {
       "id": "T-059",
-      "issueNumber": null,
+      "issueNumber": 59,
       "title": "[T-059] Audit and harden every live distribution surface",
       "milestone": "P3",
       "wave": "W3.3",
@@ -2247,11 +2380,12 @@
         "validation": "Automated scans, role/deep-link crawl, live screenshots, endpoint and seed captures",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/59"
     },
     {
       "id": "T-060",
-      "issueNumber": null,
+      "issueNumber": 60,
       "title": "[T-060] Assemble App Review evidence packet",
       "milestone": "P3",
       "wave": "W3.3",
@@ -2278,11 +2412,12 @@
         "validation": "Dry-run by independent reviewer",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/60"
     },
     {
       "id": "T-061",
-      "issueNumber": null,
+      "issueNumber": 61,
       "title": "[T-061] Run secret, dependency, and checkout-tracking audit",
       "milestone": "P4",
       "wave": "W4.1",
@@ -2308,11 +2443,12 @@
         "validation": "Secret scanner, dependency audit, bundle and instrumentation inspection",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/61"
     },
     {
       "id": "T-062",
-      "issueNumber": null,
+      "issueNumber": 62,
       "title": "[T-062] Adversarially test auth, ownership, and rate limits",
       "milestone": "P4",
       "wave": "W4.1",
@@ -2338,11 +2474,12 @@
         "validation": "API adversarial suite and logs",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/62"
     },
     {
       "id": "T-063",
-      "issueNumber": null,
+      "issueNumber": 63,
       "title": "[T-063] Drill webhook tamper, replay, and rotation",
       "milestone": "P4",
       "wave": "W4.1",
@@ -2367,11 +2504,12 @@
         "validation": "Raw-body signed fixtures and event ledger",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/63"
     },
     {
       "id": "T-064",
-      "issueNumber": null,
+      "issueNumber": 64,
       "title": "[T-064] Drill reconciliation and restitution operations",
       "milestone": "P4",
       "wave": "W4.1",
@@ -2398,11 +2536,12 @@
         "validation": "Timed drill, scheduled-run reports, and provider/local/restitution before-after evidence",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/64"
     },
     {
       "id": "T-065",
-      "issueNumber": null,
+      "issueNumber": 65,
       "title": "[T-065] Verify privacy and log redaction",
       "milestone": "P4",
       "wave": "W4.1",
@@ -2428,11 +2567,12 @@
         "validation": "Log sampling, source scan, privacy checklist",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/65"
     },
     {
       "id": "T-066",
-      "issueNumber": null,
+      "issueNumber": 66,
       "title": "[T-066] Close security and financial signoff",
       "milestone": "P4",
       "wave": "W4.1",
@@ -2462,11 +2602,12 @@
         "validation": "Independent findings review",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/66"
     },
     {
       "id": "T-067",
-      "issueNumber": null,
+      "issueNumber": 67,
       "title": "[T-067] Freeze release version and commit manifest",
       "milestone": "P4",
       "wave": "W4.2",
@@ -2494,11 +2635,12 @@
         "validation": "SHA, build metadata, deployment ID verification",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/67"
     },
     {
       "id": "T-068",
-      "issueNumber": null,
+      "issueNumber": 68,
       "title": "[T-068] Produce final App Store screenshots and metadata",
       "milestone": "P4",
       "wave": "W4.2",
@@ -2525,11 +2667,12 @@
         "validation": "Screenshot comparison and prohibited-language scan",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/68"
     },
     {
       "id": "T-069",
-      "issueNumber": null,
+      "issueNumber": 69,
       "title": "[T-069] Finalize category, age, privacy, legal, and support fields",
       "milestone": "P4",
       "wave": "W4.2",
@@ -2554,11 +2697,12 @@
         "validation": "Field-by-field review and URL probes",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/69"
     },
     {
       "id": "T-070",
-      "issueNumber": null,
+      "issueNumber": 70,
       "title": "[T-070] Run exact release-candidate regression",
       "milestone": "P4",
       "wave": "W4.2",
@@ -2583,11 +2727,12 @@
         "validation": "CI, device recordings, API/provider/D1 logs",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/70"
     },
     {
       "id": "T-071",
-      "issueNumber": null,
+      "issueNumber": 71,
       "title": "[T-071] Finalize App Review reply and review notes",
       "milestone": "P4",
       "wave": "W4.2",
@@ -2615,11 +2760,12 @@
         "validation": "Independent claim-to-evidence audit",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/71"
     },
     {
       "id": "T-072",
-      "issueNumber": null,
+      "issueNumber": 72,
       "title": "[T-072] Hold production and submission go/no-go",
       "milestone": "P4",
       "wave": "W4.2",
@@ -2646,11 +2792,12 @@
         "validation": "Go/no-go checklist and approvals",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/72"
     },
     {
       "id": "T-073",
-      "issueNumber": null,
+      "issueNumber": 73,
       "title": "[T-073] Open cutover bridge and capture production recovery point",
       "milestone": "P5",
       "wave": "W5.1",
@@ -2676,11 +2823,12 @@
         "validation": "Read-only D1/Worker/payment evidence and approval",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/73"
     },
     {
       "id": "T-074",
-      "issueNumber": null,
+      "issueNumber": 74,
       "title": "[T-074] Apply approved production migration set",
       "milestone": "P5",
       "wave": "W5.1",
@@ -2706,11 +2854,12 @@
         "validation": "D1 migration output, checksums, legacy-write probe, and independent read-only SQL verification",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/74"
     },
     {
       "id": "T-075",
-      "issueNumber": null,
+      "issueNumber": 75,
       "title": "[T-075] Deploy production Worker disabled, then configure live webhook",
       "milestone": "P5",
       "wave": "W5.1",
@@ -2736,11 +2885,12 @@
         "validation": "Deployment ID, dashboard evidence, signed webhook and disabled-create smoke",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/75"
     },
     {
       "id": "T-076",
-      "issueNumber": null,
+      "issueNumber": 76,
       "title": "[T-076] Enable controlled production charge and create review fixtures",
       "milestone": "P5",
       "wave": "W5.1",
@@ -2765,11 +2915,12 @@
         "validation": "Provider/local/restitution records, fixture provenance, content scan, logs, alerts, and mobile result",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/76"
     },
     {
       "id": "T-077",
-      "issueNumber": null,
+      "issueNumber": 77,
       "title": "[T-077] Build, device-validate, and submit exact production archive",
       "milestone": "P5",
       "wave": "W5.2",
@@ -2795,11 +2946,12 @@
         "validation": "EAS/TestFlight/App Store metadata, artifact hash, device recordings, and production API/provider/D1 traces",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/77"
     },
     {
       "id": "T-078",
-      "issueNumber": null,
+      "issueNumber": 78,
       "title": "[T-078] Monitor App Review and respond with evidence",
       "milestone": "P5",
       "wave": "W5.2",
@@ -2824,11 +2976,12 @@
         "validation": "App Store correspondence record",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/78"
     },
     {
       "id": "T-079",
-      "issueNumber": null,
+      "issueNumber": 79,
       "title": "[T-079] Run 72-hour payment and platform watch",
       "milestone": "P5",
       "wave": "W5.2",
@@ -2854,11 +3007,12 @@
         "validation": "Dashboards, alerts, reconciliation reports, crash data",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/79"
     },
     {
       "id": "T-080",
-      "issueNumber": null,
+      "issueNumber": 80,
       "title": "[T-080] Close rollout and preserve operational handoff",
       "milestone": "P5",
       "wave": "W5.2",
@@ -2885,7 +3039,8 @@
         "validation": "Full graph audit and human signoff",
         "authorityBoundary": "No GitHub mutation before T-024 human approval."
       },
-      "publishState": "planned_not_created"
+      "publishState": "published",
+      "issueUrl": "https://github.com/Sheshiyer/tirak-mobile-app-v2/issues/80"
     }
   ]
 }
