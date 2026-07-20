@@ -6,10 +6,13 @@ import { buildArtifacts } from './generate-phase1-scaffolds.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const artifactRoot = resolve(root, 'docs/orchestration/phase-1');
+const gitCommonDir = execFileSync('git', ['rev-parse', '--git-common-dir'], { cwd: root, encoding: 'utf8' }).trim();
+const primaryMobileRoot = dirname(resolve(root, gitCommonDir));
+const tirakRoot = resolve(primaryMobileRoot, '../..');
 const repositoryRoots = {
   mobile: root,
-  backend: resolve(root, '../../Backend/tirak-backend-alpha01'),
-  wiki: resolve(root, '../../tirakwiki/wikiv2-tirakapp'),
+  backend: resolve(tirakRoot, 'Backend/tirak-backend-alpha01'),
+  wiki: resolve(tirakRoot, 'tirakwiki/wikiv2-tirakapp'),
 };
 
 function assert(condition, message) {
@@ -26,39 +29,59 @@ function exactIds(entries, property, label) {
   assert(JSON.stringify(ids) === JSON.stringify(expected), `${label} does not map T-001 through T-080 exactly once`);
 }
 
+function stableIssueMapProjection(map) {
+  return {
+    schemaVersion: map.schemaVersion,
+    generatedAt: map.generatedAt,
+    source: map.source,
+    publication: { authorizationGate: map.publication?.authorizationGate },
+    milestones: map.milestones.map(({ state: _state, milestoneNumber: _number, url: _url, ...milestone }) => milestone),
+    labels: map.labels.map(({ state: _state, url: _url, ...label }) => label),
+    waveSummaries: map.waveSummaries.map(({ state: _state, ...wave }) => wave),
+    issues: map.issues.map(({ issueNumber: _number, issueUrl: _url, publishState: _state, ...issue }) => issue),
+  };
+}
+
 function verifyGeneratedArtifacts() {
   const expected = buildArtifacts();
   for (const [name, artifact] of Object.entries(expected)) {
     const actual = readJson(name);
-    const normalized = structuredClone(actual);
-    if (name === 'branch-worktree-manifest.json') {
+    if (name === 'github-issue-map.json') {
+      assert(
+        JSON.stringify(stableIssueMapProjection(actual)) === JSON.stringify(stableIssueMapProjection(artifact)),
+        `${name} operational projection drifted from the plan-derived generator`,
+      );
+    } else if (name === 'branch-worktree-manifest.json') {
+      const normalized = structuredClone(actual);
       normalized.worktreesCreated = false;
       for (const mapping of normalized.mappings) mapping.created = false;
+      assert(JSON.stringify(normalized) === JSON.stringify(artifact), `${name} structural fields drifted from the plan-derived generator`);
+    } else {
+      assert(JSON.stringify(actual) === JSON.stringify(artifact), `${name} drifted from the plan-derived generator`);
     }
-    if (name === 'github-issue-map.json') {
-      normalized.publication = artifact.publication;
-      normalized.milestones.forEach((milestone) => { milestone.state = 'planned_not_created'; });
-      normalized.labels.forEach((label) => { label.state = 'planned_not_created'; });
-      normalized.waveSummaries.forEach((wave) => { wave.state = 'planned_not_created'; });
-      normalized.issues.forEach((issue) => {
-        issue.issueNumber = null;
-        issue.publishState = 'planned_not_created';
-      });
-    }
-    assert(JSON.stringify(normalized) === JSON.stringify(artifact), `${name} structural fields drifted from the plan-derived generator`);
   }
   return Object.fromEntries(Object.keys(expected).map((name) => [name, readJson(name)]));
 }
 
 function verifyIssueMap(map) {
   exactIds(map.issues, 'id', 'issue map');
-  assert(map.publication.state === 'planned_not_created', 'issue map publication state is unsafe');
-  assert(map.publication.githubMutated === false, 'issue map claims GitHub mutation');
   assert(map.publication.authorizationGate === 'T-024 human approval', 'issue map lost T-024 gate');
   assert(map.milestones.length === 5, 'issue map must contain five phase milestones');
   assert(map.waveSummaries.length === 13, 'issue map must contain thirteen wave summaries');
+  if (map.publication.state === 'planned_not_created') {
+    assert(map.publication.githubMutated === false, 'planned issue map claims GitHub mutation');
+    assert(map.issues.every((issue) => issue.issueNumber === null && issue.publishState === 'planned_not_created'), 'planned issue map contains publication residue');
+  } else {
+    assert(map.publication.state === 'published', 'issue map publication state is unsupported');
+    assert(map.publication.githubMutated === true, 'published issue map does not record GitHub mutation');
+    assert(map.publication.repository === 'Sheshiyer/tirak-mobile-app-v2', 'published issue map repository identity drift');
+    assert(map.labels.every((label) => label.state === 'published'), 'published issue map contains an unpublished label');
+    assert(map.milestones.every((milestone) => milestone.state === 'published' && Number.isInteger(milestone.milestoneNumber)), 'published issue map contains an incomplete milestone');
+    assert(map.waveSummaries.every((wave) => wave.state === 'published'), 'published issue map contains an unpublished wave');
+    assert(map.issues.every((issue) => Number.isInteger(issue.issueNumber) && issue.publishState === 'published'), 'published issue map contains an incomplete issue');
+    assert(new Set(map.issues.map((issue) => issue.issueNumber)).size === 80, 'published issue map contains duplicate issue numbers');
+  }
   for (const issue of map.issues) {
-    assert(issue.issueNumber === null && issue.publishState === 'planned_not_created', `${issue.id} was marked published`);
     assert(issue.labels.length >= 7, `${issue.id} has incomplete labels`);
     assert(issue.body.deliverable && issue.body.acceptance && issue.body.validation, `${issue.id} has an incomplete body`);
   }
@@ -151,7 +174,8 @@ try {
     waves: 13,
     branches: 80,
     worktreesCreated,
-    githubMutations: 0,
+    githubMutations: artifacts['github-issue-map.json'].publication.githubMutated ? 1 : 0,
+    githubPublicationState: artifacts['github-issue-map.json'].publication.state,
     lockAssignments: artifacts['lock-zone-ownership.json'].assignments.length,
     evidenceRows: 80,
     workerPacketFiles: 6,

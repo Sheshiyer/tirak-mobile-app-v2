@@ -299,6 +299,19 @@ function buildEvidenceMatrix(tasks, planSha256) {
   };
 }
 
+function stableIssueMapProjection(map) {
+  return {
+    schemaVersion: map.schemaVersion,
+    generatedAt: map.generatedAt,
+    source: map.source,
+    publication: { authorizationGate: map.publication?.authorizationGate },
+    milestones: map.milestones.map(({ state: _state, milestoneNumber: _number, url: _url, ...milestone }) => milestone),
+    labels: map.labels.map(({ state: _state, url: _url, ...label }) => label),
+    waveSummaries: map.waveSummaries.map(({ state: _state, ...wave }) => wave),
+    issues: map.issues.map(({ issueNumber: _number, issueUrl: _url, publishState: _state, ...issue }) => issue),
+  };
+}
+
 export function buildArtifacts() {
   const plan = readFileSync(resolve(root, planPath), 'utf8');
   const tasks = parsePlan(plan);
@@ -331,6 +344,11 @@ function writeArtifacts() {
           })),
         };
       } else {
+        const hasCurrentOperationalState = current.publication?.githubMutated
+          || current.issues.some((entry) => entry.publishState !== 'planned_not_created');
+        if (hasCurrentOperationalState && JSON.stringify(stableIssueMapProjection(current)) !== JSON.stringify(stableIssueMapProjection(artifact))) {
+          throw new Error('refusing to preserve an operational GitHub issue map whose frozen plan projection drifted');
+        }
         const currentMilestones = new Map(current.milestones.map((entry) => [entry.id, entry]));
         const currentLabels = new Map(current.labels.map((entry) => [entry.name, entry]));
         const currentWaves = new Map(current.waveSummaries.map((entry) => [entry.id, entry]));
@@ -338,12 +356,22 @@ function writeArtifacts() {
         next = {
           ...artifact,
           publication: current.publication,
-          milestones: artifact.milestones.map((entry) => ({ ...entry, state: currentMilestones.get(entry.id)?.state ?? entry.state })),
-          labels: artifact.labels.map((entry) => ({ ...entry, state: currentLabels.get(entry.name)?.state ?? entry.state })),
+          milestones: artifact.milestones.map((entry) => ({
+            ...entry,
+            state: currentMilestones.get(entry.id)?.state ?? entry.state,
+            ...(currentMilestones.get(entry.id)?.milestoneNumber === undefined ? {} : { milestoneNumber: currentMilestones.get(entry.id).milestoneNumber }),
+            ...(currentMilestones.get(entry.id)?.url === undefined ? {} : { url: currentMilestones.get(entry.id).url }),
+          })),
+          labels: artifact.labels.map((entry) => ({
+            ...entry,
+            state: currentLabels.get(entry.name)?.state ?? entry.state,
+            ...(currentLabels.get(entry.name)?.url === undefined ? {} : { url: currentLabels.get(entry.name).url }),
+          })),
           waveSummaries: artifact.waveSummaries.map((entry) => ({ ...entry, state: currentWaves.get(entry.id)?.state ?? entry.state })),
           issues: artifact.issues.map((entry) => ({
             ...entry,
             issueNumber: currentIssues.get(entry.id)?.issueNumber ?? null,
+            ...(currentIssues.get(entry.id)?.issueUrl === undefined ? {} : { issueUrl: currentIssues.get(entry.id).issueUrl }),
             publishState: currentIssues.get(entry.id)?.publishState ?? entry.publishState,
           })),
         };
