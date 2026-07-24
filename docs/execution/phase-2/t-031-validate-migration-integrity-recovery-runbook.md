@@ -1,7 +1,8 @@
 # T-031 — Validate Migration Integrity and Recovery · Execution Runbook
 
-Status: **DRAFT FOR HUMAN REVIEW — NOT YET EXECUTED**
+Status: **EXECUTED 2026-07-24 — ALL STAGES PASS, GATES 1+2 APPROVED (teardown Option A)**
 Prepared: 2026-07-24
+Executed evidence: backend repo `Sheshiyer/tirak-backend-alpha01` PR #21 (open at execution time) — `docs/execution/phase-2/t-031-validation-evidence.md` + `t-031-validation-ledger.json`, `evidence/t031/` bundle
 Task: GitHub issue `Sheshiyer/tirak-mobile-app-v2#31` — "[T-031] Validate migration integrity and recovery"
 Wave: W2.1 · Swarm: migration-validation
 Owner: Validation reviewer / isolated reviewer
