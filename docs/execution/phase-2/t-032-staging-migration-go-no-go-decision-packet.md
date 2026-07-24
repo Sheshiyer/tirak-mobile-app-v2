@@ -1,6 +1,6 @@
 # T-032 — Approve Staging Migration Go/No-Go · Decision Packet
 
-Status: **DRAFT FOR HUMAN SIGNATURE**
+Status: **SIGNED — GO (2026-07-24, human release owner)**
 Prepared: 2026-07-24
 Task: GitHub issue `Sheshiyer/tirak-mobile-app-v2#32` — "[T-032] Approve staging migration go/no-go"
 Wave: W2.1 close · Swarm: integration-gate
@@ -170,16 +170,16 @@ Open items that do not block this decision, each with a recorded disposition:
 
 **Decision:**
 
-- ☐ **GO** — authorize application of the canonical lineage to `tirak-staging` under
+- ☑ **GO** — authorize application of the canonical lineage to `tirak-staging` under
   the binding pre-conditions (§6) and pre-registered abort triggers (§7).
 - ☐ **NO-GO** — refuse application; invoke the NO-GO path below.
 
 | Field | Entry |
 | --- | --- |
-| Human name | ______________________________ |
-| ISO date | ______________________________ |
+| Human name | Sheshiyer — human release owner |
+| ISO date | 2026-07-24 |
 | Confirmation statement (GO) | *"I authorize application of the canonical lineage baseline+008+010+011 to tirak-staging under the registered abort triggers and pre-conditions."* |
-| Signature | ______________________________ |
+| Signature | Signed via owner chat approval 2026-07-24 (verbatim: "yes proceed", given in direct response to the GO/NO-GO signature request for this packet); recorded verbatim by the orchestrator — no statement fabricated |
 
 **NO-GO path:** the wave halts at this gate. All wave evidence is quarantined with a
 recorded owner and review date, and issue `Sheshiyer/tirak-mobile-app-v2#32` is
