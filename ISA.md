@@ -244,14 +244,14 @@ For the execution iteration, complete `T-001` through `T-080` in dependency orde
 - [x] ISC-146: `T-023` worker bootstrap packets pass their frozen acceptance and validation fields.
 - [x] ISC-147: `T-024` Phase 1 readiness gate passes its frozen acceptance and validation fields.
 - [x] ISC-148: `T-025` staging D1 identity ledger passes its frozen acceptance and validation fields.
-- [ ] ISC-149: `T-026` staging recovery point passes its frozen acceptance and validation fields.
-- [ ] ISC-150: `T-027` staging schema inspection passes its frozen acceptance and validation fields.
-- [ ] ISC-151: `T-028` migration lineage and chat expansion pass their frozen acceptance and validation fields.
-- [ ] ISC-152: `T-029` migration 008 rehearsal passes its frozen acceptance and validation fields.
-- [ ] ISC-153: `T-030` additive migration 009 rehearsal passes its frozen acceptance and validation fields.
-- [ ] ISC-154: `T-031` migration integrity and recovery validation passes its frozen acceptance and validation fields.
-- [ ] ISC-155: `T-032` staging migration go/no-go passes its frozen acceptance and validation fields.
-- [ ] ISC-156: `T-033` payment environment and kill-switch guard passes its frozen acceptance and validation fields.
+- [x] ISC-149: `T-026` staging recovery point passes its frozen acceptance and validation fields.
+- [x] ISC-150: `T-027` staging schema inspection passes its frozen acceptance and validation fields.
+- [x] ISC-151: `T-028` migration lineage and chat expansion pass their frozen acceptance and validation fields.
+- [x] ISC-152: `T-029` migration 008 rehearsal passes its frozen acceptance and validation fields.
+- [x] ISC-153: `T-030` additive migration 009 rehearsal passes its frozen acceptance and validation fields.
+- [x] ISC-154: `T-031` migration integrity and recovery validation passes its frozen acceptance and validation fields.
+- [x] ISC-155: `T-032` staging migration go/no-go passes its frozen acceptance and validation fields.
+- [x] ISC-156: `T-033` payment environment and kill-switch guard passes its frozen acceptance and validation fields.
 - [ ] ISC-157: `T-034` staging Omise secret provisioning passes its frozen acceptance and validation fields.
 - [ ] ISC-158: `T-035` staging webhook registration passes its frozen acceptance and validation fields.
 - [ ] ISC-159: `T-036` staging Worker deployment passes its frozen acceptance and validation fields.
