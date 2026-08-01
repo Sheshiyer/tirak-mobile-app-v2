@@ -1,7 +1,8 @@
 # Tirak Payment Redesign & Contract Refreeze Decision Packet
 
-Status: **READY FOR OWNER DECISION — NO AUTHORITY EXPANSION**
+Status: **CORRECTED OWNER-DECISION CANDIDATE — PREVIOUS VERSION SUPERSEDED; FRESH HASH-ADDRESSED REVIEW REQUIRED**
 Prepared: 2026-08-01
+Corrected: 2026-08-02
 Scope: Omise PromptPay test/staging architecture, environment contract, settlement boundary, and App Review evidence
 Affected frozen contracts: T-009, T-010, T-013
 Governing record: `docs/execution/phase-2/payment-park-and-resequencing-record.md`
@@ -11,6 +12,36 @@ Governing record: `docs/execution/phase-2/payment-park-and-resequencing-record.m
 > EAS build, or App Store submission. It does not enable payments. Parked tasks remain
 > parked until the human release owner signs a redesign choice and the affected
 > contracts are re-frozen by amendment.
+
+## 0. Supersession, review, and signature validity
+
+This corrected version explicitly supersedes the following review target:
+
+| Field | Superseded value |
+| --- | --- |
+| Pull-request head | `b44596d1d272b4eef9673407e2cba97cdb17cd32` |
+| Pull-request base | `2d2d6d8dd799f8c00b05c583842cdaa960571a06` |
+| Packet Git blob | `b2767f83a3971f8aa8694e7ead3f451e85eb5946` |
+| Packet SHA-256 | `9ad03344bb912b7f5c862957475c85604ba7c36c4bee1eff3fb98b2020a90947` |
+| Remote-head observation | Exact head above returned by `git ls-remote` at `2026-08-01T20:39:28Z` |
+
+The superseded packet and its §11 statement are **non-signable**. No review, absence
+of findings, prior copy of the statement, or future approval may be carried forward
+from that target. Its packet SHA is reproducible from repository bytes with:
+
+```bash
+git show 'b44596d1d272b4eef9673407e2cba97cdb17cd32:docs/execution/phase-2/payment-redesign-refreeze-decision-packet.md' | shasum -a 256
+```
+
+The corrected commit, tree, Git blob, and working-file SHA-256 must be recorded in a
+separate review record after commit because this file cannot contain its own identifiers
+without circularity. A valid owner decision must name that corrected target, follow a
+fresh review of exactly that target, and then reproduce §11. Any content change creates
+a new target and voids every earlier corrected-version review.
+
+This correction does not rotate or revoke a credential, update this pull request,
+push a branch, merge code, mutate a provider, enable payment, or authorize any such
+action.
 
 ## 1. Decision requested
 
@@ -46,8 +77,13 @@ Approval of this packet may authorize only:
 
 - amendment and re-freeze of T-009, T-010, and T-013;
 - local code, contract, fixture, and test work implementing the signed amendment; and
-- reviewed source-control branches and pull requests for that implementation under
-  the existing repository workflow.
+- reviewed source-control branches and pull requests for the T-009, T-010, and T-013
+  refreeze only, under the existing repository workflow.
+
+This packet is a proposal and cannot grant its own authority. Only the human release
+owner's exact §11 decision can grant the bounded refreeze scope above. The human release
+owner also remains the sole gate-holder for any push, pull-request update, merge, or
+external mutation; review agents and the packet author cannot confer that authority.
 
 It does **not** authorize:
 
@@ -78,14 +114,32 @@ boundaries.
 | Payment-config namespace | Unique `tirak-payment-config-staging` binding exists; zero keys at T-036 closure | No runtime override has opened payments |
 | Staging D1 | T-036 intentionally deployed without migrations; allowlisted read-only verification on 2026-08-01 returned HTTP 200, proved zero writes, found 41 user tables, matched all nine expected payment tables/indexes against `contracts/tirak-payments-v1/target-schema.sql` after normalized-DDL comparison (9/9, zero mismatches), matched the exact four-entry migration ledger (`canonical-baseline.sql`, `008_omise_promptpay_payments.sql`, `010_booking_chat_expansion.sql`, `011_payment_restitutions.sql`), and found zero foreign-key violations | Do not infer that a migration is needed; repeat the exact read-only inspection before testing and stop for separate migration authority only if drift is found |
 | Mobile runtime environment | Tracked source reads only `EXPO_PUBLIC_API_URL` | No Omise key belongs in the current app runtime |
-| Local mobile `.env` name-only audit | Mode `0600`; two different `EXPO_PUBLIC_API_URL` entries, neither consistently staging; no Omise secret/webhook secret or Cloudflare-token name | T-045 must create one deterministic build-profile API URL; server/operator credentials must not be copied into the mobile environment |
+| Owner-reported post-audit local state | In this task on 2026-08-02, the owner reported that the mobile-repository `.env` contains Omise server secrets and a full-write Cloudflare credential. Values were not re-read or copied during this correction. | These are not mobile runtime inputs. Remove the local copies before any build. Server secrets belong only in Worker secret storage; an operator credential belongs only in a controlled keychain or owner-only handoff after incident disposition. This packet authorizes none of those actions. |
+| Static tracked-source reachability | At the superseded head, `app.config.js` forwards only the PostHog token/host variables; tracked mobile runtime code reads only `EXPO_PUBLIC_API_URL`; no tracked runtime source forwards or references Omise, Cloudflare, or Supabase server/operator credentials; `.env` is ignored, untracked, and absent from local all-ref `.env` object history. | This bounded repository result is not proof that any credential is safe or invalid, and it does not substitute for incident containment. |
+| Credential-incident status | **UNRESOLVED — OWNER ACTION REQUIRED.** Real Cloudflare/Supabase credential material was printed into the task transcript. Omise transcript exposure is not proven. No value was re-read during this correction. | Treat each proven transcript-exposed old value as compromised until the owner proves it invalid. Rotation/revocation and value-free closure evidence remain owner-only work outside this packet. |
 | Existing public Omise key | Read-only capability call succeeded; no key value was printed or persisted | The key is useful for operator preflight, not required by the mobile QR flow |
 
-The full-scope Cloudflare token previously accepted for bounded T-036 execution is not
-a mobile runtime key. Its absence from the current mobile `.env` is correct from an
-application-security perspective. If operator tooling needs it again, load it only
-into the named process environment from a mode-0600, ignored operator handoff or the
-system keychain. Never bundle it with Expo.
+### Retracted credential-context evidence from the superseded target
+
+The following superseded row is preserved verbatim for provenance and is **RETRACTED
+as current-state evidence on 2026-08-02** because the owner's later report contradicts
+it:
+
+> | Local mobile `.env` name-only audit | Mode `0600`; two different `EXPO_PUBLIC_API_URL` entries, neither consistently staging; no Omise secret/webhook secret or Cloudflare-token name | T-045 must create one deterministic build-profile API URL; server/operator credentials must not be copied into the mobile environment |
+
+The following superseded paragraph is also preserved verbatim and **RETRACTED as
+current-state evidence**:
+
+> The full-scope Cloudflare token previously accepted for bounded T-036 execution is not
+> a mobile runtime key. Its absence from the current mobile `.env` is correct from an
+> application-security perspective. If operator tooling needs it again, load it only
+> into the named process environment from a mode-0600, ignored operator handoff or the
+> system keychain. Never bundle it with Expo.
+
+The architecture boundary remains: no server/operator credential belongs in Expo or
+tracked mobile runtime configuration. That static boundary is not incident remediation.
+Do not reuse any proven transcript-exposed old value, even from an otherwise appropriate
+operator handoff or keychain, until the owner has proved the old value invalid.
 
 Prior feedback memory also applies: before deleting an apparently orphaned Worker
 secret, run `git log -S "SECRET_NAME" --all`; consuming code may exist on an unmerged
@@ -400,6 +454,9 @@ payment method for a real-world service, not an IAP substitute.
 - Payment is shown only for an authenticated, confirmed booking; amount comes from the
   backend booking record.
 - Chat is tied to one active booking and limited by product policy to trip logistics.
+- No product, copy, route, or entitlement sells chat access. A paid-status flag alone
+  cannot unlock generic, social, dating, supplier, or off-booking chat; booking
+  lifecycle rules govern ancillary logistics chat.
 - No reachable UI offers dates, companionship, open-ended hangouts, tips, gifts,
   custom pay-to-person amounts, or digital unlocks.
 - Internal compatibility names are not themselves an Apple rule violation, but no
@@ -434,16 +491,25 @@ No EAS build or App Store Connect action is authorized by this section.
 ### Recommended approval statement
 
 To approve the recommendation and authorize contract refreeze/local implementation
-only, the human release owner may send this exact statement:
+only, the human release owner must first name the corrected commit and packet SHA-256
+from the separate fresh-review record, then send this exact statement. The superseded
+head/hash in §0 and any statement copied from it are invalid:
 
-> I approve the Tirak Payment Redesign Decision dated 2026-08-01: PromptPay-only v1;
+The separate record must supply one copy-paste decision message whose first sentence
+names the corrected commit, tree, and packet SHA-256 and whose remainder reproduces the
+quoted statement below. The quoted statement without that identifier sentence is
+invalid and grants nothing.
+
+> I approve the corrected Tirak Payment Redesign Decision dated 2026-08-02:
+> PromptPay-only v1;
 > Tirak-owned experiences and booking prices; exactly one environment-pinned dynamic
 > Omise webhook endpoint per charge instead of account-static webhook registration;
 > provider retrieval plus T-041 reconciliation as payment truth; proceeds limited to
 > Tirak's Omise merchant balance with no guide-recipient or transfer automation; and
 > the real-world-service App Review posture under Guideline 3.1.3(e). I authorize the
 > T-009, T-010, and T-013 amendment/refreeze and local implementation/validation work.
-> I also authorize reviewed source-control branches and pull requests for that work.
+> I also authorize reviewed source-control branches and pull requests for the T-009,
+> T-010, and T-013 refreeze only.
 > This does not authorize Omise or Cloudflare mutation, charges, webhook-secret
 > rotation, D1 migrations, payment enablement, recipients, transfers, payouts,
 > subscriptions, digital unlocks, production/live activity, EAS builds, TestFlight,
@@ -483,14 +549,36 @@ only, the human release owner may send this exact statement:
 - [App Review information fields](https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information/)
 - [Overview of submitting for review](https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/overview-of-submitting-for-review/)
 
-## 13. Independent review record
+## 13. Review record and corrected-version decision rule
 
-Three bounded, one-turn, no-tool reviews ran through native non-Codex OmniRoute profiles.
-They were advisory only; every accepted claim was checked against local code or a
-primary source, and unsupported recommendations were rejected.
+Four parallel, read-only, value-free non-Codex OmniRoute audits plus manual review must
+examine the exact corrected commit and tree. The task prompts, model/router attribution,
+timestamps, commit/tree/packet identifiers, terminal receipts, and findings belong in
+a separate review record so this packet remains a one-directional target. The four
+router/model calls are correlated advisory perspectives, not cryptographic signatures,
+human attestations, or a claim of statistical/provider independence.
 
-| Review | Profile/model | Terminal result | Cost | Disposition |
+The pre-registered decision rule is fail-closed: any factual contradiction, credential
+disclosure, authority-scope bleed, or other material blocker rejects the candidate.
+Any content correction—material or typographical—creates a new target, voids all four
+earlier corrected-version reviews, and requires the complete batch to rerun. Four of
+four no-material-blocker results establish review readiness only.
+
+This packet intentionally contains no corrected-version review rows and claims no
+completed corrected-version quorum. Those receipts can exist only in the separate
+record created after this file is committed; inserting them here would create a new,
+unreviewed target.
+
+**Four non-Codex OmniRoute audits and manual review are agent-generated inputs. They
+confer no approval. Absence of findings, reviewer sign-off, and successful CI confer no
+merge or mutation authority. The human release owner's target-bound §11 message is the
+sole authorization.**
+
+The three reviews below apply only to the superseded §0 target. They remain historical
+provenance and do not review or approve the corrected version.
+
+| Historical review of superseded target | Profile/model | Historical terminal result | Cost | Historical disposition — no current authority |
 | --- | --- | --- | --- | --- |
 | Omise architecture | `no-think-gh-claude-sonnet-5` / `no-think/gh/claude-sonnet-5` | success, session `fdfa06a4-d3d1-4935-b19c-c00cbb48f180` | $0.09417 | Accepted dynamic-webhook/reconciliation boundary; corrected KV/replay and kill-switch overstatements |
 | Apple commerce | `no-think-antigravity-claude-sonnet-5` / `no-think/antigravity/claude-sonnet-5` | success, session `1dc2aaa4-9b6a-4352-ad7a-e53997eca338` | $0.055476 | Accepted 3.1.3(e)/1.1.4 framing; rejected invented disclaimer, recording count, sandbox bypass, and do-not-test advice |
-| Final packet governance | `no-think-gh-claude-sonnet-5` / `no-think/gh/claude-sonnet-5` | success, session `d6e19d8d-e764-4516-9c79-0a43c05329ed` | $0.129396 | **APPROVE**; no material blockers; merged the duplicate API-version matrix row suggested as a nonblocking clarity improvement |
+| Final packet governance | `no-think-gh-claude-sonnet-5` / `no-think/gh/claude-sonnet-5` | success, session `d6e19d8d-e764-4516-9c79-0a43c05329ed` | $0.129396 | Superseded reviewer verdict used `APPROVE`; it has no current approval effect. No material blockers were reported; the duplicate API-version matrix row was merged as a nonblocking clarity improvement. |
