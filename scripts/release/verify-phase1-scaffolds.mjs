@@ -6,6 +6,7 @@ import { buildArtifacts } from './generate-phase1-scaffolds.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const artifactRoot = resolve(root, 'docs/orchestration/phase-1');
+const structuralOnly = process.argv.includes('--structural-only');
 const gitCommonDir = execFileSync('git', ['rev-parse', '--git-common-dir'], { cwd: root, encoding: 'utf8' }).trim();
 const primaryMobileRoot = dirname(resolve(root, gitCommonDir));
 const tirakRoot = resolve(primaryMobileRoot, '../..');
@@ -87,7 +88,7 @@ function verifyIssueMap(map) {
   }
 }
 
-function verifyVcs(manifest) {
+function verifyVcs(manifest, { verifyLiveWorktrees }) {
   exactIds(manifest.mappings, 'taskId', 'VCS manifest');
   assert(manifest.authorizationGate === 'T-024 human approval', 'VCS manifest lost T-024 gate');
   const branches = manifest.mappings.map((entry) => entry.branch);
@@ -98,13 +99,15 @@ function verifyVcs(manifest) {
   const created = manifest.mappings.filter((entry) => entry.created);
   assert(manifest.worktreesCreated === (created.length > 0), 'VCS manifest worktree aggregate state is inconsistent');
   if (created.length > 0) assert(approval.status === 'APPROVED_HUMAN_T024', 'a task was created without T-024 approval');
-  for (const entry of created) {
-    assert(existsSync(entry.worktree), `${entry.taskId} declared worktree does not exist`);
-    const branch = execFileSync('git', ['branch', '--list', entry.branch], {
-      cwd: repositoryRoots[entry.repository],
-      encoding: 'utf8',
-    }).trim();
-    assert(branch.length > 0, `${entry.taskId} declared branch does not exist`);
+  if (verifyLiveWorktrees) {
+    for (const entry of created) {
+      assert(existsSync(entry.worktree), `${entry.taskId} declared worktree does not exist`);
+      const branch = execFileSync('git', ['branch', '--list', entry.branch], {
+        cwd: repositoryRoots[entry.repository],
+        encoding: 'utf8',
+      }).trim();
+      assert(branch.length > 0, `${entry.taskId} declared branch does not exist`);
+    }
   }
   return created.length;
 }
@@ -161,9 +164,12 @@ function verifyWorkerPackets() {
 }
 
 try {
+  assert(!structuralOnly || process.env.CI === 'true', '--structural-only requires CI=true');
   const artifacts = verifyGeneratedArtifacts();
   verifyIssueMap(artifacts['github-issue-map.json']);
-  const worktreesCreated = verifyVcs(artifacts['branch-worktree-manifest.json']);
+  const worktreesCreated = verifyVcs(artifacts['branch-worktree-manifest.json'], {
+    verifyLiveWorktrees: !structuralOnly,
+  });
   verifyLocks(artifacts['lock-zone-ownership.json']);
   verifyEvidence(artifacts['wave-evidence-matrix.json']);
   verifyWorkerPackets();
@@ -174,6 +180,7 @@ try {
     waves: 13,
     branches: 80,
     worktreesCreated,
+    liveWorktreesVerified: !structuralOnly,
     githubMutations: artifacts['github-issue-map.json'].publication.githubMutated ? 1 : 0,
     githubPublicationState: artifacts['github-issue-map.json'].publication.state,
     lockAssignments: artifacts['lock-zone-ownership.json'].assignments.length,
