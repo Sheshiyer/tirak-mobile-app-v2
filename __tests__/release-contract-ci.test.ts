@@ -73,4 +73,24 @@ describe('release contract CI repository resolution', () => {
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain('--structural-only requires CI=true');
   });
+
+  test('excludes tests from repositories checked out under .ci', () => {
+    const fixtureRoot = path.join(root, '.ci', 'tirak-jest-foreign-fixture');
+    const fixtureTest = path.join(fixtureRoot, 'tests', 'foreign.test.ts');
+    fs.mkdirSync(path.dirname(fixtureTest), { recursive: true });
+    fs.writeFileSync(fixtureTest, "test('foreign suite', () => undefined);\n");
+
+    try {
+      const result = spawnSync(
+        process.execPath,
+        [path.join(root, 'node_modules/jest/bin/jest.js'), '--listTests', '--runInBand'],
+        { cwd: root, encoding: 'utf8' },
+      );
+
+      expect(result.status).toBe(0);
+      expect(result.stdout).not.toContain(fixtureTest);
+    } finally {
+      fs.rmSync(fixtureRoot, { recursive: true, force: true });
+    }
+  });
 });

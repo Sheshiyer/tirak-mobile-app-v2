@@ -42,7 +42,7 @@ Changed artifact SHA-256 values:
 | `npm audit --omit=dev --json` | Axios absent; `form-data` absent; zero direct high/critical findings |
 | `npm ls axios form-data --all` | Axios `1.19.0`; `form-data` `4.0.6` |
 | `npx --no-install tsc --noEmit` | PASS |
-| `npm test -- --runInBand` | 9/9 suites; 52/52 tests PASS |
+| `npm test -- --runInBand` | 9/9 suites; 53/53 tests PASS |
 | `TIRAK_BACKEND_ROOT=... npm run release:verify-contracts` | PASS; 15 immutable cross-repository contract artifacts checked |
 | `env -u TIRAK_BACKEND_ROOT npm run release:verify-contracts` | PASS from the manifest-defined mobile worktree fallback |
 | `CI=true npm run release:verify-phase1-scaffolds -- --structural-only` | PASS; all 80 tasks, 13 waves, 114 lock assignments, and T-024 authorization retained |
@@ -80,9 +80,19 @@ The repair does not bypass the contract gate:
   performs both checks.
 
 The regression suite was observed failing before each production change and
-passing afterward. Its final five cases cover the explicit backend checkout,
+passing afterward. Its final six cases cover the explicit backend checkout,
 missing-root fail-closed behavior, workflow wiring, CI-only structural
-verification, and rejection of structural-only mode outside CI.
+verification, rejection of structural-only mode outside CI, and exclusion of
+foreign test suites from repositories nested beneath `.ci`.
+
+The next GitHub run,
+[`30706900379`](https://github.com/Sheshiyer/tirak-mobile-app-v2/actions/runs/30706900379),
+proved that the backend checkout, contract verifier, and structural scaffold
+gate all pass on Actions. It then exposed Jest's repository-wide test glob,
+which discovered 25 backend Vitest suites under the nested `.ci` checkout.
+`jest.config.js` now excludes only `<rootDir>/.ci/`; a behavioral regression
+creates a foreign test under that directory and proves mobile Jest does not
+collect it. The backend checkout remains present for the immutable git checks.
 
 ## Independent non-Codex review
 
@@ -96,6 +106,7 @@ attempt:
 | Post-change governance retry | `antigravity/gemini-3.1-pro-high` | `rp_e0e180037714f0db` / `tc_exec_1785597590449_31599_1385629136_task_0_t061-mobile-governance-review-retry` | PASS |
 | CI gate-integrity audit | `no-think/gh/claude-sonnet-5` | session `db06f6ed-04e1-4c64-abd6-4358166a2ffe` / result `f39cfaca-77b0-4b63-9019-0ec799093086` | PASS; no blocker |
 | CI portability audit | `no-think/antigravity/claude-sonnet-5` | session `8355a305-fa16-4f3f-a332-3b61e66f59a8` / result `5ad4405e-6588-43e7-bd26-2bad12d6a2f4` | PASS; no blocker |
+| Nested-checkout Jest boundary | `no-think/gh/claude-sonnet-5` | session `36697044-b93d-4fe8-9ca4-096209ea2f89` / result `e2dbb651-d125-4b4a-b1ce-b66d9e754d69` | PASS; no blocker |
 
 One Laguna post-change governance attempt timed out without a final answer and
 was rejected rather than promoted. Reviewer language claiming that passing
