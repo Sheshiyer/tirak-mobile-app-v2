@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-20T14:01:20.333Z",
+  "generatedAt": "2026-08-01T15:12:35.370Z",
   "purpose": "T-020 mobile release gate inputs; update only through reviewed release integration.",
   "files": {
     "app.json": "72517655e931ec839ec1438b5fb8c9f0ff478ac1f53614c75ecebc1ca51b5998",
     "app.config.js": "98fbb6dfc003d76b9568eb91e6a38f8539bf3284ed529f6e9e0b48131d363dca",
     "eas.json": "4780f5d4f9c6143e0daae0ad6db71d624ba8ba67bf1892e18e3b036d86f9867e",
-    "package.json": "af5b04f20f04a4f8c3763b45adb562e32390c9bdf63d7abd689c8ca23671ce1d",
-    "package-lock.json": "d62f14baf30bc16ce2def6647823aaadc246b106cab4298feb01599ce73d65d3",
+    "package.json": "4a6310d26b55033dc1032231e22727605c7a5912e7b5b90fe554ca62d1fba55f",
+    "package-lock.json": "1347070db9098c1c38a88607ec0d40132d3f412ca50326dd020f7acecbba982e",
     "constants/api.ts": "807b71af2522633fa06be210b6d7d3e290c6ba46c0076c7a562832fc1a473780",
     "services/api/payments/payments.ts": "c98f87f94aae9974f06390ccdd40334c95bb2773750f57e202c9e7d0d0c7615d",
     "utils/booking-contract.ts": "9529b26c77aeeb28148947cc19bcecd1a39b9950a3a193cbb67fb1415087fc13",

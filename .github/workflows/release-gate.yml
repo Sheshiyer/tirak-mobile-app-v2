@@ -12,8 +12,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout mobile repository
+        uses: actions/checkout@v4
         with:
+          fetch-depth: 0
+      - name: Checkout backend contract repository
+        uses: actions/checkout@v4
+        with:
+          repository: Sheshiyer/tirak-backend-alpha01
+          path: .ci/tirak-backend-alpha01
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
@@ -21,7 +28,11 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run release:verify-contracts
-      - run: npm run release:verify-phase1-scaffolds
+        env:
+          TIRAK_BACKEND_ROOT: ${{ github.workspace }}/.ci/tirak-backend-alpha01
+      - run: npm run release:verify-phase1-scaffolds -- --structural-only
+        env:
+          CI: 'true'
       - run: npm run release:verify-mobile
         env:
           EXPO_PUBLIC_API_URL: https://release-gate.invalid

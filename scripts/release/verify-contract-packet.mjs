@@ -3,9 +3,10 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { resolveBackendRoot } from './resolve-backend-root.mjs';
 
 const mobileRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const backendRoot = resolve(mobileRoot, '../../Backend/tirak-backend-alpha01');
+const backendRoot = resolveBackendRoot(mobileRoot);
 const manifestPath = 'docs/contracts/tirak-payments-v1/contract-manifest.json';
 const evidencePath = 'docs/execution/phase-1/t-009-t-016-contract-evidence.md';
 const crosswalkPath = 'docs/contracts/tirak-payments-v1/blocker-ingestion-crosswalk.md';
