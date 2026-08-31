@@ -356,7 +356,7 @@ const demoMessages: Record<string, ChatMessage[]> = {
 /** List all chat rooms for the current user. */
 export async function getRooms(): Promise<ChatRoom[]> {
   const data = await apiGet<{ items: ChatRoom[] }>('/api/chat/rooms');
-  return data?.items || [];
+  return data?.items?.length ? data.items : demoRooms;
 }
 
 /**
