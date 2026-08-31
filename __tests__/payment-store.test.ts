@@ -36,7 +36,7 @@ const pendingCharge = {
   displayTotalThb: 1800,
   currency: 'THB',
   expiresAt: '2026-09-01T01:00:00.000Z',
-};
+} as const;
 
 describe('payment session store', () => {
   beforeEach(() => {

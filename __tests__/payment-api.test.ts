@@ -141,6 +141,6 @@ describe('tirak-payments-v1 charge client', () => {
     await expect(createPromptPayCharge('booking-1')).rejects.toEqual(
       expect.objectContaining<Partial<PaymentClientError>>({ kind: 'unauthorized' }),
     );
-    expect(axios.post).not.toHaveBeenCalled();
+    expect(mockPost).not.toHaveBeenCalled();
   });
 });

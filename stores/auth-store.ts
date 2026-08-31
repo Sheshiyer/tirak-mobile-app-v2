@@ -6,6 +6,7 @@ import { DeviceEventEmitter, Platform } from 'react-native';
 import { User, UserRole } from '@/types/auth';
 import { secureStorage } from '@/utils/secure-storage';
 import { posthog } from '@/utils/posthog';
+import { usePaymentStore } from '@/stores/payment-store';
 
 interface AuthState {
   user: User | null;
@@ -75,6 +76,8 @@ export const useAuthStore = create<AuthState & AuthActions>()(
               createdAt: new Date().toISOString(),
             };
 
+            if (get().user?.id !== user.id) usePaymentStore.getState().resetPayment();
+
             // Store user credentials for token validation
             await secureStorage.setItemAsync("userCredentials", JSON.stringify(user));
 
@@ -133,6 +136,8 @@ export const useAuthStore = create<AuthState & AuthActions>()(
               createdAt: new Date().toISOString(),
             };
 
+            if (get().user?.id !== user.id) usePaymentStore.getState().resetPayment();
+
             // Store user credentials for token validation
             await secureStorage.setItemAsync("userCredentials", JSON.stringify(user));
 
@@ -151,6 +156,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
 
       logout: async () => {
         try {
+          usePaymentStore.getState().resetPayment();
           set({ isLoading: true });
           posthog.capture('user_logged_out');
           posthog.reset();
@@ -293,6 +299,8 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             createdAt: new Date().toISOString(),
           };
 
+          if (get().user?.id !== demoUser.id) usePaymentStore.getState().resetPayment();
+
           set({ user: demoUser, isAuthenticated: true, onboarded: true, isLoading: false });
         } catch (error) {
           const errorMessage = 'Demo login failed';
@@ -305,6 +313,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         const currentUser = get().user;
         if (currentUser) {
           const nextUser = { ...currentUser, ...userData };
+          if (currentUser.id !== nextUser.id) usePaymentStore.getState().resetPayment();
           set({ user: nextUser });
           secureStorage.setItemAsync("userCredentials", JSON.stringify(nextUser)).catch((error) => {
             logger.warn('Failed to persist updated user credentials', error);
@@ -324,6 +333,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           if (token && userCredentials) {
             try {
               const userData = JSON.parse(userCredentials);
+              if (get().user?.id !== userData.id) usePaymentStore.getState().resetPayment();
               // If we have both token and user data, consider user authenticated
               set({ 
                 user: userData, 
