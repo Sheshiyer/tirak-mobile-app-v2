@@ -134,6 +134,25 @@ jest.mock('react-i18next', () => ({
       'payments.bookingConfirmed': 'Booking confirmed',
       'payments.cashState': 'Pay your guide in cash.',
       'payments.promptPayPendingState': 'PromptPay payment pending.',
+      'payments.stepHeading': 'Choose a payment method',
+      'payments.stepBody': 'Select how you want to handle payment for this booking.',
+      'payments.cashTitle': 'Cash',
+      'payments.cashBody': 'Pay your local guide directly in cash.',
+      'payments.promptPayTitle': 'PromptPay',
+      'payments.promptPayBody': 'Pay with a Thai banking app after your guide confirms the booking.',
+      'payments.localTest': 'Local test',
+      'payments.ineligible': 'PromptPay becomes available when this booking is confirmed.',
+      'payments.createPromptPayQr': 'Create PromptPay QR',
+      'payments.creatingQr': 'Creating QR...',
+      'payments.pendingHeading': 'Payment pending',
+      'payments.pendingBody': 'Scan with your banking app. Tirak confirms payment only after the server receives the provider update.',
+      'payments.noChargeError': 'We could not create the PromptPay QR. No charge was created. Try again or choose cash.',
+      'payments.uncertainOutcome': 'Payment status is uncertain. Do not pay again or switch methods. Check this booking later.',
+      'payments.lockedCashHelper': 'Wait for payment status before changing methods.',
+      'payments.disabledError': 'PromptPay is unavailable in this environment. Choose cash.',
+      'payments.qrUnavailable': 'QR details are not available. Keep this payment locked and check the booking later.',
+      'payments.expires': 'Expires',
+      'payments.chargeReference': 'Reference',
     } as Record<string, string>)[key] ?? key,
   }),
 }));
@@ -279,11 +298,11 @@ describe('PromptPay traveler checkout', () => {
     expect(screen.getByText('Cash')).toBeTruthy();
     expect(screen.getByLabelText('Cash payment method').props.accessibilityState.disabled).toBe(true);
     if (phase !== 'pending') {
-      expect(screen.getByText(
+      expect(screen.getAllByText(
         phase === 'creating'
           ? 'Creating QR...'
           : 'Payment status is uncertain. Do not pay again or switch methods. Check this booking later.',
-      )).toBeTruthy();
+      ).length).toBeGreaterThan(0);
     }
   });
 
@@ -346,5 +365,27 @@ describe('PromptPay traveler checkout', () => {
       expect(screen.queryByLabelText('Booking and payment complete')).toBeNull();
       expect(screen.queryByText(/Paid|Payment complete/i)).toBeNull();
     }
+  });
+
+  test('keeps an uncertain PromptPay outcome uncertain on confirmation', () => {
+    useBookingStore.setState({
+      bookingData: {
+        ...bookingFormData,
+        payment: { method: 'promptpay', amount: 1800, serviceFee: 0, totalAmount: 1800, currency: 'THB', terms: false },
+        currentStep: 7,
+      },
+    });
+    seedPayment({
+      selectedMethod: 'promptpay',
+      phase: 'error',
+      errorKind: 'network',
+      charge: null,
+    });
+
+    const screen = render(<BookingConfirmationStep onPrevious={jest.fn()} />);
+    expect(screen.getByText(
+      'Payment status is uncertain. Do not pay again or switch methods. Check this booking later.',
+    )).toBeTruthy();
+    expect(screen.queryByText(/Paid|Payment complete/i)).toBeNull();
   });
 });

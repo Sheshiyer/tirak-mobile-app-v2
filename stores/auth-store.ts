@@ -7,6 +7,8 @@ import { User, UserRole } from '@/types/auth';
 import { secureStorage } from '@/utils/secure-storage';
 import { posthog } from '@/utils/posthog';
 import { usePaymentStore } from '@/stores/payment-store';
+import { API_BASE_URL } from '@/constants/api';
+import { isLocalPromptPayEnabled } from '@/constants/payment-capabilities';
 
 interface AuthState {
   user: User | null;
@@ -300,6 +302,18 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           };
 
           if (get().user?.id !== demoUser.id) usePaymentStore.getState().resetPayment();
+
+          if (
+            userType === 'customer'
+            && isLocalPromptPayEnabled({
+              flag: process.env.EXPO_PUBLIC_PROMPTPAY_ENABLED,
+              apiBaseUrl: API_BASE_URL,
+              isDev: __DEV__,
+            })
+          ) {
+            await secureStorage.setItemAsync('authToken', 'tirak-local-fixture-token');
+            await secureStorage.setItemAsync('userCredentials', JSON.stringify(demoUser));
+          }
 
           set({ user: demoUser, isAuthenticated: true, onboarded: true, isLoading: false });
         } catch (error) {

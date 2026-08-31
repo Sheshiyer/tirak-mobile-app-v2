@@ -2,7 +2,8 @@ import { logger } from '@/utils/logger';
 import axios from "axios";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { secureStorage } from '@/utils/secure-storage';
-import { apiUrl } from '@/constants/api';
+import { API_BASE_URL, apiUrl } from '@/constants/api';
+import { isLocalPromptPayEnabled } from '@/constants/payment-capabilities';
 import { isTestCompanionId } from '@/utils/companion-display';
 import { handleApiError, isUnauthorizedError } from '@/utils/api-errors';
 import { useAuthStore } from '@/stores/auth-store';
@@ -166,7 +167,7 @@ const createDemoBookingResponse = (bookingData: CreateBookingRequest): CreateBoo
         location: bookingData.location,
         meetingPoint: bookingData.meetingPoint || '',
         specialRequests: bookingData.specialRequests,
-        status: 'pending',
+        status: isLocalPromptPayReviewBooking(bookingData) ? 'confirmed' : 'pending',
         totalAmount: servicePrice,
         serviceFee: 0,
         paymentStatus: 'pending',
@@ -236,6 +237,15 @@ const isDemoPreviewBookingRequest = (bookingData: CreateBookingRequest): boolean
     serviceId.startsWith('demo-service-')
   );
 };
+
+const isLocalPromptPayReviewBooking = (bookingData: CreateBookingRequest): boolean => (
+  isDemoPreviewBookingRequest(bookingData)
+  && isLocalPromptPayEnabled({
+    flag: process.env.EXPO_PUBLIC_PROMPTPAY_ENABLED,
+    apiBaseUrl: API_BASE_URL,
+    isDev: __DEV__,
+  })
+);
 
 const createAndStoreDemoBookingResponse = async (bookingData: CreateBookingRequest): Promise<CreateBookingResponse> => {
   const response = createDemoBookingResponse(bookingData);

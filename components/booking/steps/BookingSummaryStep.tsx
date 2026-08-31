@@ -28,6 +28,7 @@ import { useCreateBooking } from '@/app/api/booking/booking';
 import { useTranslation } from 'react-i18next';
 import { convertCurrency, formatOriginalCurrencyContext, formatTravelerCurrency } from '@/utils/currency';
 import { usePostHog } from 'posthog-react-native';
+import { usePaymentStore } from '@/stores/payment-store';
 
 interface BookingSummaryStepProps {
   onNext: () => void;
@@ -109,6 +110,7 @@ export const BookingSummaryStep: React.FC<BookingSummaryStepProps> = ({
   const createBookingMutation = useCreateBooking();
   const posthog = usePostHog();
   const { t } = useTranslation();
+  const setPaymentBooking = usePaymentStore((state) => state.setBooking);
 
   const companion = bookingData.companionData
     ? {
@@ -170,7 +172,6 @@ export const BookingSummaryStep: React.FC<BookingSummaryStepProps> = ({
       const result = await createBookingMutation.mutateAsync(bookingRequest);
       
       logger.log('Booking API Response:', {
-        result,
         success: result.success,
         bookingId: result?.data?.booking?.id,
         timestamp: new Date().toISOString()
@@ -189,8 +190,13 @@ export const BookingSummaryStep: React.FC<BookingSummaryStepProps> = ({
           payment_status: result.data.booking.paymentStatus,
           duration_minutes: result.data.booking.duration,
         });
+        setPaymentBooking({
+          id: result.data.booking.id,
+          status: result.data.booking.status,
+          paymentStatus: result.data.booking.paymentStatus,
+        });
         setBookingComplete(true);
-    onNext();
+        onNext();
       } else {
         console.error('❌ Booking creation failed - Invalid response format:', {
           timestamp: new Date().toISOString(),
@@ -471,7 +477,7 @@ export const BookingSummaryStep: React.FC<BookingSummaryStepProps> = ({
               </View>
             )}
             
-            <Text style={styles.paymentNote}>Paid in cash directly to your guide</Text>
+            <Text style={styles.paymentNote}>{t('payments.bookingReviewNote')}</Text>
             
             <View style={styles.divider} />
             

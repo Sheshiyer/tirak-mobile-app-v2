@@ -24,10 +24,10 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ProfileImage } from '@/components/ui/ProfileImage';
 import { useBookingStore } from '@/stores/booking-store';
-import { useCreateBooking } from '@/app/api/booking/booking';
 import { designTokens } from '@/constants/design-tokens';
 import { CompanionData } from '@/types/companion';
 import { useTranslation } from 'react-i18next';
+import { usePaymentStore } from '@/stores/payment-store';
 
 interface BookingConfirmationStepProps {
   onPrevious: () => void;
@@ -39,8 +39,8 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
   const { bookingData, resetBooking } = useBookingStore();
   const [animationValue] = useState(new Animated.Value(0));
   const [now, setNow] = useState(() => new Date());
-  const createBookingMutation = useCreateBooking();
   const { t } = useTranslation();
+  const { booking, selectedMethod, charge, phase, errorKind } = usePaymentStore();
 
   useEffect(() => {
     // Start success animation
@@ -98,12 +98,26 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
     });
   };
 
-  const bookingId = createBookingMutation.data?.data?.booking?.id || null;
+  const bookingId = booking?.id || null;
   const companion = bookingData.companionData;
   const service = bookingData.service;
   const dateTime = bookingData.dateTime;
   const location = bookingData.location;
   const payment = bookingData.payment;
+  const effectivePaymentMethod = selectedMethod || payment?.method || 'cash';
+  const isBookingConfirmed = booking?.status === 'confirmed';
+  const isPromptPayPending = effectivePaymentMethod === 'promptpay';
+  const isPromptPayUncertain = isPromptPayPending
+    && phase === 'error'
+    && ['in-progress', 'indeterminate', 'network', 'unknown'].includes(errorKind || '');
+  const statusHeading = isBookingConfirmed
+    ? t('payments.bookingConfirmed')
+    : t('payments.bookingRequestSent');
+  const paymentStateCopy = isPromptPayUncertain
+    ? t('payments.uncertainOutcome')
+    : isPromptPayPending
+      ? t('payments.promptPayPendingState')
+    : t('payments.cashState');
   const startsAt = dateTime ? new Date(`${dateTime.date}T${dateTime.time}:00`) : null;
   const countdownMs = startsAt ? Math.max(0, startsAt.getTime() - now.getTime()) : 0;
   const countdownDays = Math.floor(countdownMs / (1000 * 60 * 60 * 24));
@@ -125,7 +139,11 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
     const end = new Date(`${dateTime.date}T${dateTime.endTime}:00`);
     const formatCalendarDate = (date: Date) => date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
     const title = encodeURIComponent(`Tirak: ${service?.name || 'Local guide booking'} with ${companion.name}`);
-    const details = encodeURIComponent(`Message your local guide in Tirak before the experience. Pay the guide rate in cash directly to your guide.`);
+    const details = encodeURIComponent(
+      isPromptPayPending
+        ? 'Message your local guide in Tirak before the experience. PromptPay payment remains pending until server confirmation.'
+        : 'Message your local guide in Tirak before the experience. Pay the guide rate in cash directly to your guide.',
+    );
     const locationText = encodeURIComponent([location?.meetingPoint, location?.area].filter(Boolean).join(', '));
     const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${formatCalendarDate(start)}/${formatCalendarDate(end)}&details=${details}&location=${locationText}`;
 
@@ -140,7 +158,7 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
   return (
     <View style={styles.container}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Success Animation */}
+        {/* Booking and payment truth */}
         <Animated.View 
           style={[
             styles.successContainer,
@@ -155,12 +173,23 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
             },
           ]}
         >
-          <View style={styles.successIcon}>
-            <CheckCircle size={64} color={designTokens.colors.semantic.success} />
-          </View>
-          <Text style={styles.successTitle}>{t('bookingConfirmation.bookingConfirmed')}</Text>
+          {isBookingConfirmed && !isPromptPayPending ? (
+            <View style={styles.successIcon} accessibilityLabel="Booking confirmed status">
+              <CheckCircle size={64} color={designTokens.colors.semantic.success} />
+            </View>
+          ) : (
+            <View style={styles.pendingStatusIcon} accessibilityLabel="Booking or payment pending status">
+              <Clock size={48} color={designTokens.colors.semantic.warning} />
+            </View>
+          )}
+          <Text style={[
+            styles.successTitle,
+            (!isBookingConfirmed || isPromptPayPending) && styles.pendingTitle,
+          ]}>
+            {statusHeading}
+          </Text>
           <Text style={styles.successSubtitle}>
-            {t('bookingConfirmation.bookingSubmitted')}
+            {paymentStateCopy}
           </Text>
           {bookingId && (
             <View style={styles.bookingIdContainer}>
@@ -274,8 +303,8 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
             <View style={styles.detailSection}>
               <Text style={styles.detailSectionTitle}>{t('bookingConfirmation.paymentMethod')}</Text>
               <Text style={styles.detailSectionValue}>
-                    {payment.method === 'cash' ? 'Cash Payment' :
-                     payment.method === 'promptpay' ? 'PromptPay QR' :
+                    {effectivePaymentMethod === 'cash' ? t('bookingConfirmation.cashPayment') :
+                     effectivePaymentMethod === 'promptpay' ? t('bookingConfirmation.promptPay') :
                  'Bank Transfer'}
               </Text>
             </View>
@@ -283,7 +312,9 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
             <View style={styles.detailSection}>
               <Text style={styles.detailSectionTitle}>{t('bookingConfirmation.totalAmount')}</Text>
               <Text style={styles.totalAmount}>
-                    ฿{payment.totalAmount.toLocaleString()}
+                    {(isPromptPayPending && charge
+                      ? `${charge.displayTotalThb.toLocaleString()} ${charge.currency}`
+                      : `฿${payment.totalAmount.toLocaleString()}`)}
               </Text>
             </View>
               </>
@@ -386,12 +417,24 @@ const styles = StyleSheet.create({
     marginBottom: designTokens.spacing.scale.xl,
     ...designTokens.shadows.lg,
   },
+  pendingStatusIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: designTokens.spacing.scale.xl,
+    backgroundColor: `${designTokens.colors.semantic.warning}18`,
+  },
   successTitle: {
     ...designTokens.typography.styles.heading,
     fontSize: designTokens.typography.sizes.xlarge,
     color: designTokens.colors.semantic.success,
     textAlign: 'center',
     marginBottom: designTokens.spacing.scale.sm,
+  },
+  pendingTitle: {
+    color: designTokens.colors.semantic.text,
   },
   successSubtitle: {
     ...designTokens.typography.styles.body,
@@ -406,10 +449,10 @@ const styles = StyleSheet.create({
     gap: designTokens.spacing.scale.sm,
     paddingHorizontal: designTokens.spacing.scale.lg,
     paddingVertical: designTokens.spacing.scale.md,
-    backgroundColor: designTokens.colors.semantic.success + '20',
+    backgroundColor: designTokens.colors.semantic.primary + '12',
     borderRadius: designTokens.borderRadius.components.button,
     borderWidth: 1,
-    borderColor: designTokens.colors.semantic.success + '40',
+    borderColor: designTokens.colors.semantic.primary + '30',
     ...designTokens.shadows.sm,
   },
   bookingIdLabel: {
@@ -419,7 +462,7 @@ const styles = StyleSheet.create({
   bookingIdValue: {
     ...designTokens.typography.styles.caption,
     fontWeight: designTokens.typography.weights.bold,
-    color: designTokens.colors.semantic.success,
+    color: designTokens.colors.semantic.primary,
   },
   sectionCard: {
     marginBottom: designTokens.spacing.scale.lg,
