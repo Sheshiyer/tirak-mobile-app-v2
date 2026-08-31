@@ -140,7 +140,9 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                   >
-                    <Text style={styles.stepNumber}>{index + 1}</Text>
+                    <Text style={styles.stepNumber} maxFontSizeMultiplier={1.2}>
+                      {index + 1}
+                    </Text>
                   </LinearGradient>
                 ) : (
                   <View
@@ -149,7 +151,11 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
                       isActive ? styles.activeCircle : styles.inactiveCircle,
                     ]}
                   >
-                    {isActive && <Text style={styles.stepNumber}>{index + 1}</Text>}
+                    {isActive && (
+                      <Text style={styles.stepNumber} maxFontSizeMultiplier={1.2}>
+                        {index + 1}
+                      </Text>
+                    )}
                   </View>
                 )}
               </Animated.View>
@@ -194,6 +200,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
                 index + 1 === currentStep && styles.activeLabel,
               ]}
               numberOfLines={1}
+              maxFontSizeMultiplier={1.4}
             >
               {label}
             </Text>

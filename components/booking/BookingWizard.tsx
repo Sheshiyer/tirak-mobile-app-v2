@@ -148,7 +148,11 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
             {bookingData.companionData && (
               <View style={styles.summaryChip}>
                 <User size={12} color={designTokens.colors.semantic.primary} />
-                <Text style={styles.summaryChipText} numberOfLines={1}>
+                <Text
+                  style={styles.summaryChipText}
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={1.4}
+                >
                   {bookingData.companionData.name}
                 </Text>
               </View>
@@ -156,7 +160,11 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
             {bookingData.service && (
               <View style={styles.summaryChip}>
                 <Briefcase size={12} color={designTokens.colors.semantic.primary} />
-                <Text style={styles.summaryChipText} numberOfLines={1}>
+                <Text
+                  style={styles.summaryChipText}
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={1.4}
+                >
                   {bookingData.service.name}
                 </Text>
               </View>
@@ -164,7 +172,11 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
             {bookingData.dateTime?.date && (
               <View style={styles.summaryChip}>
                 <Calendar size={12} color={designTokens.colors.semantic.primary} />
-                <Text style={styles.summaryChipText} numberOfLines={1}>
+                <Text
+                  style={styles.summaryChipText}
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={1.4}
+                >
                   {new Date(bookingData.dateTime.date).toLocaleDateString('en', { month: 'short', day: 'numeric' })}
                   {bookingData.dateTime.time ? ` · ${bookingData.dateTime.time}` : ''}
                 </Text>
