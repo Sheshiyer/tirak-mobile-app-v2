@@ -3,6 +3,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { act, cleanup, fireEvent, render, waitFor, within } from '@testing-library/react-native';
 
 const mockCreatePromptPayCharge = jest.fn();
+let mockLanguage = 'en';
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
@@ -109,53 +110,28 @@ jest.mock('@/app/api/booking/booking', () => ({
 }));
 jest.mock('@/utils/booking-notifications', () => ({}));
 jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
-jest.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => ({
-      'bookingConfirmation.noCompanionData': 'No guide data available',
-      'bookingConfirmation.bookingId': 'Booking ID',
-      'bookingConfirmation.message': 'Message',
-      'bookingConfirmation.bookingDetails': 'Booking Details',
-      'bookingConfirmation.service': 'Service',
-      'bookingConfirmation.dateTime': 'Date & Time',
-      'bookingConfirmation.meetingPoint': 'Meeting Point',
-      'bookingConfirmation.paymentMethod': 'Payment Method',
-      'bookingConfirmation.totalAmount': 'Guide Rate',
-      'bookingConfirmation.whatsNext': 'What happens next?',
-      'bookingConfirmation.waitForConfirmation': 'Wait for Confirmation',
-      'bookingConfirmation.waitForConfirmationDescription': 'Your local guide will confirm your booking within 24 hours.',
-      'bookingConfirmation.prepareForYourExperience': 'Plan the details',
-      'bookingConfirmation.prepareForYourExperienceDescription': 'Use chat to plan the details.',
-      'bookingConfirmation.meetAtTheLocation': 'Meet at the public start point',
-      'bookingConfirmation.meetAtTheLocationDescription': 'Arrive early.',
-      'bookingConfirmation.bookings': 'Bookings',
-      'bookingConfirmation.backToHome': 'Back to Home',
-      'payments.bookingRequestSent': 'Booking request sent',
-      'payments.bookingConfirmed': 'Booking confirmed',
-      'payments.cashState': 'Pay your guide in cash.',
-      'payments.promptPayPendingState': 'PromptPay payment pending.',
-      'payments.stepHeading': 'Choose a payment method',
-      'payments.stepBody': 'Select how you want to handle payment for this booking.',
-      'payments.cashTitle': 'Cash',
-      'payments.cashBody': 'Pay your local guide directly in cash.',
-      'payments.promptPayTitle': 'PromptPay',
-      'payments.promptPayBody': 'Pay with a Thai banking app after your guide confirms the booking.',
-      'payments.localTest': 'Local test',
-      'payments.ineligible': 'PromptPay becomes available when this booking is confirmed.',
-      'payments.createPromptPayQr': 'Create PromptPay QR',
-      'payments.creatingQr': 'Creating QR...',
-      'payments.pendingHeading': 'Payment pending',
-      'payments.pendingBody': 'Scan with your banking app. Tirak confirms payment only after the server receives the provider update.',
-      'payments.noChargeError': 'We could not create the PromptPay QR. No charge was created. Try again or choose cash.',
-      'payments.uncertainOutcome': 'Payment status is uncertain. Do not pay again or switch methods. Check this booking later.',
-      'payments.lockedCashHelper': 'Wait for payment status before changing methods.',
-      'payments.disabledError': 'PromptPay is unavailable in this environment. Choose cash.',
-      'payments.qrUnavailable': 'QR details are not available. Keep this payment locked and check the booking later.',
-      'payments.expires': 'Expires',
-      'payments.chargeReference': 'Reference',
-    } as Record<string, string>)[key] ?? key,
-  }),
-}));
+jest.mock('react-i18next', () => {
+  const resources = {
+    en: require('../locales/en.json'),
+    th: require('../locales/th.json'),
+  } as Record<string, Record<string, unknown>>;
+  const translate = (key: string, values?: Record<string, unknown>) => {
+    const raw = key.split('.').reduce<unknown>((value, segment) => (
+      value && typeof value === 'object' ? (value as Record<string, unknown>)[segment] : undefined
+    ), resources[mockLanguage]);
+    if (typeof raw !== 'string') return key;
+    return Object.entries(values ?? {}).reduce(
+      (text, [name, value]) => text.replace(new RegExp(`{{${name}}}`, 'g'), String(value)),
+      raw,
+    );
+  };
+  return {
+    useTranslation: () => ({
+      t: translate,
+      i18n: { language: mockLanguage, resolvedLanguage: mockLanguage },
+    }),
+  };
+});
 
 import { PaymentSelectionStep } from '@/components/booking/steps/PaymentSelectionStep';
 import { PromptPayPendingCard } from '@/components/booking/payment/PromptPayPendingCard';
@@ -234,6 +210,7 @@ const renderPaymentStep = () => render(
 
 describe('PromptPay traveler checkout', () => {
   beforeEach(() => {
+    mockLanguage = 'en';
     process.env.EXPO_PUBLIC_PROMPTPAY_ENABLED = 'true';
     mockCreatePromptPayCharge.mockReset();
     usePaymentStore.getState().resetPayment();
@@ -366,6 +343,70 @@ describe('PromptPay traveler checkout', () => {
     expect(screen.getByLabelText('Cash payment method').props.accessibilityState.disabled).toBe(false);
   });
 
+  test('an already-paid booking disables every payment action and never renders cash instructions', () => {
+    seedPayment({
+      booking: { id: 'booking-1', status: 'confirmed', paymentStatus: 'paid' },
+      selectedMethod: 'promptpay',
+      phase: 'paid' as never,
+      errorKind: 'already-paid' as never,
+      charge: { ...pendingCharge, attemptStatus: 'successful', paymentStatus: 'paid' },
+    });
+    const screen = renderPaymentStep();
+
+    expect(screen.getByText('This booking is already paid or refunded. Do not pay again.')).toBeTruthy();
+    expect(screen.getByLabelText('Cash payment method').props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByLabelText('PromptPay payment method').props.accessibilityState.disabled).toBe(true);
+    expect(screen.queryByText('Pay your local guide directly in cash.')).toBeNull();
+    expect(screen.queryByText('Pay with a Thai banking app after your guide confirms the booking.')).toBeNull();
+    expect(screen.getByLabelText('Continue').props.accessibilityState.disabled).toBe(false);
+  });
+
+  test('an authoritative paid booking can continue even when cash was previously selected', () => {
+    seedPayment({
+      booking: { id: 'booking-1', status: 'confirmed', paymentStatus: 'paid' },
+      selectedMethod: 'cash',
+      phase: 'idle',
+    });
+
+    const screen = renderPaymentStep();
+    expect(screen.getByText('This booking is already paid or refunded. Do not pay again.')).toBeTruthy();
+    expect(screen.queryByText('Pay your local guide directly in cash.')).toBeNull();
+    expect(screen.getByLabelText('Continue').props.accessibilityState.disabled).toBe(false);
+  });
+
+  test.each([
+    ['paid', 'Payment confirmed. Do not pay again.'],
+    ['failed', 'PromptPay payment failed. Choose cash or try PromptPay again.'],
+    ['expired', 'The PromptPay QR expired. Choose cash or create a new QR.'],
+    ['indeterminate', 'Payment status is uncertain. Do not pay again or switch methods. Check this booking later.'],
+  ] as const)('renders explicit %s PromptPay truth', (terminalPhase, copy) => {
+    seedPayment({
+      selectedMethod: 'promptpay',
+      phase: terminalPhase as never,
+      charge: terminalPhase === 'paid'
+        ? { ...pendingCharge, attemptStatus: 'successful', paymentStatus: 'paid' }
+        : null,
+    });
+
+    const screen = renderPaymentStep();
+    expect(screen.getByText(copy)).toBeTruthy();
+  });
+
+  test.each([
+    ['restitution_pending', 'Payment return is pending. Do not pay again or switch methods.'],
+    ['restituted', 'Payment was returned. Do not pay again; review this booking before choosing another method.'],
+    ['restitution_failed', 'Payment return needs support. Do not pay again or switch methods.'],
+  ] as const)('locks alternate methods during %s and shows restitution truth', (terminalPhase, copy) => {
+    seedPayment({ selectedMethod: 'promptpay', phase: terminalPhase as never });
+
+    const screen = renderPaymentStep();
+    expect(screen.getByText(copy)).toBeTruthy();
+    expect(screen.getByLabelText('Cash payment method').props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByLabelText('PromptPay payment method').props.accessibilityState.disabled).toBe(true);
+    expect(screen.queryByText('Pay your local guide directly in cash.')).toBeNull();
+    expect(screen.getByLabelText('Continue').props.accessibilityState.disabled).toBe(false);
+  });
+
   test('renders only server pending fields and never paid language', () => {
     const screen = render(<PromptPayPendingCard charge={pendingCharge} />);
 
@@ -439,5 +480,75 @@ describe('PromptPay traveler checkout', () => {
       'Payment status is uncertain. Do not pay again or switch methods. Check this booking later.',
     )).toBeTruthy();
     expect(screen.queryByText(/Paid|Payment complete/i)).toBeNull();
+  });
+
+  test.each([
+    ['paid', 'Payment confirmed. Do not pay again.'],
+    ['failed', 'PromptPay payment failed. Choose cash or try PromptPay again.'],
+    ['expired', 'The PromptPay QR expired. Choose cash or create a new QR.'],
+    ['indeterminate', 'Payment status is uncertain. Do not pay again or switch methods. Check this booking later.'],
+  ] as const)('keeps terminal %s payment truth on confirmation', (terminalPhase, copy) => {
+    useBookingStore.setState({
+      bookingData: {
+        ...bookingFormData,
+        payment: { method: 'promptpay', amount: 1800, serviceFee: 0, totalAmount: 1800, currency: 'THB', terms: false },
+        currentStep: 7,
+      },
+    });
+    seedPayment({
+      selectedMethod: 'promptpay',
+      phase: terminalPhase as never,
+      errorKind: null,
+      charge: terminalPhase === 'paid'
+        ? { ...pendingCharge, attemptStatus: 'successful', paymentStatus: 'paid' }
+        : null,
+    });
+
+    const screen = render(<BookingConfirmationStep onPrevious={jest.fn()} />);
+    expect(screen.getByText(copy)).toBeTruthy();
+    expect(screen.queryByText('Pay your guide in cash.')).toBeNull();
+    if (terminalPhase === 'paid') {
+      expect(screen.queryByText(/cash payment/i)).toBeNull();
+    }
+  });
+
+  test.each([
+    ['restitution_pending', 'Payment return is pending. Do not pay again or switch methods.'],
+    ['restituted', 'Payment was returned. Do not pay again; review this booking before choosing another method.'],
+    ['restitution_failed', 'Payment return needs support. Do not pay again or switch methods.'],
+  ] as const)('keeps %s restitution truth on confirmation', (terminalPhase, copy) => {
+    useBookingStore.setState({
+      bookingData: {
+        ...bookingFormData,
+        payment: { method: 'promptpay', amount: 1800, serviceFee: 0, totalAmount: 1800, currency: 'THB', terms: false },
+        currentStep: 7,
+      },
+    });
+    seedPayment({ selectedMethod: 'promptpay', phase: terminalPhase as never });
+
+    const screen = render(<BookingConfirmationStep onPrevious={jest.fn()} />);
+    expect(screen.getByText(copy)).toBeTruthy();
+    expect(screen.queryByText(/cash payment/i)).toBeNull();
+  });
+
+  test('renders the Phase 01 checkout and confirmation in Thai without English fallback copy', () => {
+    mockLanguage = 'th';
+    seedPayment({ selectedMethod: 'promptpay', phase: 'expired' as never });
+    const checkout = renderPaymentStep();
+
+    expect(checkout.getByText('คิวอาร์พร้อมเพย์หมดอายุแล้ว เลือกเงินสดหรือสร้างคิวอาร์ใหม่')).toBeTruthy();
+    expect(checkout.queryByText('Payment safety')).toBeNull();
+    cleanup();
+
+    useBookingStore.setState({
+      bookingData: {
+        ...bookingFormData,
+        payment: { method: 'promptpay', amount: 1800, serviceFee: 0, totalAmount: 1800, currency: 'THB', terms: false },
+        currentStep: 7,
+      },
+    });
+    const confirmation = render(<BookingConfirmationStep onPrevious={jest.fn()} />);
+    expect(confirmation.getByText('คิวอาร์พร้อมเพย์หมดอายุแล้ว เลือกเงินสดหรือสร้างคิวอาร์ใหม่')).toBeTruthy();
+    expect(confirmation.queryByText('Your local guide starts in')).toBeNull();
   });
 });

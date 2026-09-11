@@ -25,7 +25,7 @@ import { designTokens } from '@/constants/design-tokens';
 import { isLocalPromptPayEnabled } from '@/constants/payment-capabilities';
 import { useBookingStore, type BookingPayment } from '@/stores/booking-store';
 import { usePaymentStore, type PaymentMethod } from '@/stores/payment-store';
-import { formatTravelerCurrency } from '@/utils/currency';
+import { formatBookingTotal } from '@/components/booking/booking-format';
 
 interface PaymentSelectionStepProps {
   onNext: () => void;
@@ -36,6 +36,7 @@ interface MethodCardProps {
   id: PaymentMethod;
   title: string;
   body: string;
+  accessibilityLabel: string;
   selected: boolean;
   disabled: boolean;
   onPress: () => void;
@@ -58,10 +59,17 @@ const UNCERTAIN_ERRORS = new Set([
   'unknown',
 ]);
 
+const RESTITUTION_PHASES = new Set([
+  'restitution_pending',
+  'restituted',
+  'restitution_failed',
+]);
+
 const MethodCard: React.FC<MethodCardProps> = ({
   id,
   title,
   body,
+  accessibilityLabel,
   selected,
   disabled,
   onPress,
@@ -71,7 +79,7 @@ const MethodCard: React.FC<MethodCardProps> = ({
 }) => (
   <TouchableOpacity
     accessibilityRole="radio"
-    accessibilityLabel={`${title} payment method`}
+    accessibilityLabel={accessibilityLabel}
     accessibilityState={{ selected, disabled }}
     activeOpacity={disabled ? 1 : 0.8}
     disabled={disabled}
@@ -122,7 +130,8 @@ export const PaymentSelectionStep: React.FC<PaymentSelectionStepProps> = ({
   onNext,
   onPrevious,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const language = i18n?.resolvedLanguage || i18n?.language || 'en';
   const { updatePayment, calculateTotal } = useBookingStore();
   const {
     booking,
@@ -139,12 +148,22 @@ export const PaymentSelectionStep: React.FC<PaymentSelectionStepProps> = ({
     apiBaseUrl: API_BASE_URL,
     isDev: __DEV__,
   });
+  const paymentPhase = phase as string;
+  const paymentErrorKind = errorKind as string | null;
   const promptPayEligible = booking?.status === 'confirmed';
-  const uncertain = phase === 'error' && errorKind !== null && UNCERTAIN_ERRORS.has(errorKind);
-  const definiteNoCharge = phase === 'error'
+  const alreadyPaid = paymentPhase === 'paid'
+    || paymentErrorKind === 'already-paid'
+    || ['paid', 'completed', 'refunded'].includes(booking?.paymentStatus || '');
+  const restitutionLocked = RESTITUTION_PHASES.has(paymentPhase);
+  const financiallyClosed = alreadyPaid || restitutionLocked;
+  const uncertain = paymentPhase === 'indeterminate'
+    || (paymentPhase === 'error'
+      && paymentErrorKind !== null
+      && UNCERTAIN_ERRORS.has(paymentErrorKind));
+  const definiteNoCharge = paymentPhase === 'error'
     && errorKind !== null
     && DEFINITE_NO_CHARGE_ERRORS.has(errorKind);
-  const methodSwitchLocked = phase === 'creating' || phase === 'pending' || uncertain;
+  const methodSwitchLocked = ['creating', 'pending'].includes(paymentPhase) || uncertain || financiallyClosed;
   const totalAmount = calculateTotal();
 
   const saveMethod = (method: PaymentMethod) => {
@@ -164,20 +183,36 @@ export const PaymentSelectionStep: React.FC<PaymentSelectionStepProps> = ({
   };
 
   const handleCreateQr = () => {
-    if (selectedMethod !== 'promptpay' || !promptPayEligible || phase === 'creating') return;
+    if (selectedMethod !== 'promptpay' || !promptPayEligible || paymentPhase === 'creating' || financiallyClosed) return;
     void createCharge().catch(() => undefined);
   };
 
-  const canContinue = selectedMethod === 'cash'
-    || (selectedMethod === 'promptpay' && (phase === 'pending' || uncertain));
-  const actionTitle = phase === 'creating'
+  const canContinue = financiallyClosed
+    || (!financiallyClosed && selectedMethod === 'cash')
+    || (selectedMethod === 'promptpay' && (paymentPhase === 'pending' || uncertain || financiallyClosed));
+  const actionTitle = paymentPhase === 'creating'
     ? t('payments.creatingQr')
     : t('payments.createPromptPayQr');
+  const terminalStateCopy = paymentPhase === 'restitution_pending'
+    ? t('payments.restitutionPendingState')
+    : paymentPhase === 'restituted'
+      ? t('payments.restitutedState')
+      : paymentPhase === 'restitution_failed'
+        ? t('payments.restitutionFailedState')
+        : paymentErrorKind === 'already-paid' || (alreadyPaid && paymentPhase !== 'paid')
+          ? t('payments.alreadyPaidState')
+          : paymentPhase === 'paid'
+            ? t('payments.paidState')
+            : paymentPhase === 'failed'
+              ? t('payments.failedState')
+              : paymentPhase === 'expired'
+                ? t('payments.expiredState')
+                : t('payments.uncertainOutcome');
 
   return (
     <View style={styles.container}>
       <ScrollView
-        accessibilityLabel="Payment checkout content"
+        accessibilityLabel={t('payments.checkoutA11y')}
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
@@ -192,11 +227,11 @@ export const PaymentSelectionStep: React.FC<PaymentSelectionStepProps> = ({
         <Card style={styles.amountCard} padding={16}>
           <View style={styles.amountHeader}>
             <CreditCard size={20} color={designTokens.colors.semantic.primary} />
-            <Text style={styles.sectionTitle}>Payment summary</Text>
+            <Text style={styles.sectionTitle}>{t('payments.summaryHeading')}</Text>
           </View>
           <View style={styles.amountRow}>
-            <Text style={styles.amountLabel}>Guide rate</Text>
-            <Text style={styles.amountValue}>{formatTravelerCurrency(totalAmount, 'THB')}</Text>
+            <Text style={styles.amountLabel}>{t('payments.guideRate')}</Text>
+            <Text style={styles.amountValue}>{formatBookingTotal(totalAmount, language)}</Text>
           </View>
         </Card>
 
@@ -204,20 +239,28 @@ export const PaymentSelectionStep: React.FC<PaymentSelectionStepProps> = ({
           <MethodCard
             id="cash"
             title={t('payments.cashTitle')}
-            body={t('payments.cashBody')}
+            body={financiallyClosed ? t('payments.alternatePaymentUnavailablePaid') : t('payments.cashBody')}
+            accessibilityLabel={t('payments.cashMethodA11y')}
             selected={selectedMethod === 'cash'}
             disabled={methodSwitchLocked}
             onPress={() => saveMethod('cash')}
             icon={Banknote}
-            badge="Recommended"
-            helper={methodSwitchLocked ? t('payments.lockedCashHelper') : undefined}
+            badge={t('payments.recommended')}
+            helper={financiallyClosed
+              ? t('payments.paymentLockedHelper')
+              : methodSwitchLocked
+                ? t('payments.lockedCashHelper')
+                : undefined}
           />
 
           {promptPayVisible ? (
             <MethodCard
               id="promptpay"
               title={t('payments.promptPayTitle')}
-              body={t('payments.promptPayBody')}
+              body={financiallyClosed
+                ? t('payments.alternatePaymentUnavailablePaid')
+                : t('payments.promptPayBody')}
+              accessibilityLabel={t('payments.promptPayMethodA11y')}
               selected={selectedMethod === 'promptpay'}
               disabled={!promptPayEligible || methodSwitchLocked}
               onPress={() => saveMethod('promptpay')}
@@ -225,19 +268,21 @@ export const PaymentSelectionStep: React.FC<PaymentSelectionStepProps> = ({
               badge={t('payments.localTest')}
               helper={!promptPayEligible
                 ? t('payments.ineligible')
-                : methodSwitchLocked
+                : financiallyClosed
+                  ? t('payments.paymentLockedHelper')
+                  : methodSwitchLocked
                   ? t('payments.lockedCashHelper')
                   : undefined}
             />
           ) : null}
         </View>
 
-        {selectedMethod === 'promptpay' && phase === 'idle' ? (
+        {selectedMethod === 'promptpay' && paymentPhase === 'idle' ? (
           <Card style={styles.actionCard} padding={16}>
             <View style={styles.noticeRow}>
               <LockKeyhole size={20} color={designTokens.colors.semantic.info} />
               <Text style={styles.noticeText}>
-                The server calculates the charge from this confirmed booking. Do not close the app while the request starts.
+                {t('payments.serverChargeNotice')}
               </Text>
             </View>
             <Button
@@ -249,7 +294,7 @@ export const PaymentSelectionStep: React.FC<PaymentSelectionStepProps> = ({
           </Card>
         ) : null}
 
-        {selectedMethod === 'promptpay' && phase === 'creating' ? (
+        {selectedMethod === 'promptpay' && paymentPhase === 'creating' ? (
           <Card style={styles.actionCard} padding={16}>
             <View style={styles.noticeRow} accessibilityLiveRegion="polite">
               <Smartphone size={20} color={designTokens.colors.semantic.primary} />
@@ -259,7 +304,7 @@ export const PaymentSelectionStep: React.FC<PaymentSelectionStepProps> = ({
           </Card>
         ) : null}
 
-        {selectedMethod === 'promptpay' && phase === 'error' ? (
+        {selectedMethod === 'promptpay' && paymentPhase === 'error' && !financiallyClosed ? (
           <Card style={styles.errorCard} padding={16}>
             <View style={styles.noticeRow} accessibilityLiveRegion="polite">
               <AlertCircle size={20} color={designTokens.colors.semantic.error} />
@@ -272,31 +317,45 @@ export const PaymentSelectionStep: React.FC<PaymentSelectionStepProps> = ({
               </Text>
             </View>
             {definiteNoCharge && errorKind !== 'disabled' ? (
-              <Button title="Try again" onPress={handleCreateQr} variant="outline" fullWidth />
+              <Button title={t('common.tryAgain')} onPress={handleCreateQr} variant="outline" fullWidth />
             ) : null}
           </Card>
         ) : null}
 
-        {selectedMethod === 'promptpay' && phase === 'pending' && charge ? (
+        {selectedMethod === 'promptpay' && paymentPhase === 'pending' && charge ? (
           <PromptPayPendingCard charge={charge} />
         ) : null}
 
-        <Card style={styles.securityCard} padding={16}>
+        {(financiallyClosed || (selectedMethod === 'promptpay'
+          && ['failed', 'expired', 'indeterminate'].includes(paymentPhase))) ? (
+          <Card style={alreadyPaid ? styles.successCard : styles.errorCard} padding={16}>
+            <View style={styles.noticeRow} accessibilityLiveRegion="polite">
+              {alreadyPaid
+                ? <CheckCircle size={20} color={designTokens.colors.semantic.success} />
+                : <AlertCircle size={20} color={designTokens.colors.semantic.error} />}
+              <Text style={alreadyPaid ? styles.noticeText : styles.errorText}>
+                {terminalStateCopy}
+              </Text>
+            </View>
+          </Card>
+        ) : null}
+
+        {!financiallyClosed ? <Card style={styles.securityCard} padding={16}>
           <View style={styles.noticeRow}>
             <AlertCircle size={20} color={designTokens.colors.semantic.accent} />
-            <Text style={styles.sectionTitle}>Payment safety</Text>
+            <Text style={styles.sectionTitle}>{t('payments.safetyHeading')}</Text>
           </View>
           <Text style={styles.securityText}>
-            Cash goes directly to your guide. PromptPay is available only in this local test build and remains pending until server confirmation.
+            {t('payments.safetyBody')}
           </Text>
-        </Card>
+        </Card> : null}
 
         <BookingStepFooter
           onPrevious={onPrevious}
           onNext={onNext}
-          nextTitle="Continue"
+          nextTitle={t('payments.continue')}
           nextDisabled={!canContinue}
-          loading={phase === 'creating'}
+          loading={paymentPhase === 'creating'}
           showPrevious
           showNext
         />
@@ -448,6 +507,12 @@ const styles = StyleSheet.create({
     marginBottom: designTokens.spacing.scale.xl,
     borderWidth: 1,
     borderColor: designTokens.colors.semantic.error,
+    backgroundColor: designTokens.colors.semantic.surface,
+  },
+  successCard: {
+    marginBottom: designTokens.spacing.scale.xl,
+    borderWidth: 1,
+    borderColor: designTokens.colors.semantic.success,
     backgroundColor: designTokens.colors.semantic.surface,
   },
   noticeRow: {

@@ -16,6 +16,8 @@ import { useBookingStore } from '@/stores/booking-store';
 import { designTokens } from '@/constants/design-tokens';
 import { ArrowLeft, User, Calendar, Briefcase } from 'lucide-react-native';
 import { usePostHog } from 'posthog-react-native';
+import { useTranslation } from 'react-i18next';
+import { formatBookingDate } from '@/components/booking/booking-format';
 
 // Import step components (we'll create these next)
 import { ServiceSelectionStep } from './steps/ServiceSelectionStep';
@@ -31,7 +33,7 @@ interface BookingWizardProps {
   initialStep?: number;
 }
 
-const STEP_LABELS = [
+const STEP_ANALYTICS_LABELS = [
   'Service',
   'Date & Time',
   'Location',
@@ -47,6 +49,17 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
 }) => {
   const { companionId: paramCompanionId } = useLocalSearchParams();
   const posthog = usePostHog();
+  const { t, i18n } = useTranslation();
+  const language = i18n?.resolvedLanguage || i18n?.language || 'en';
+  const stepLabels = [
+    t('bookingWizard.service'),
+    t('bookingWizard.dateTime'),
+    t('bookingWizard.location'),
+    t('bookingWizard.requests'),
+    t('bookingWizard.summary'),
+    t('bookingWizard.payment'),
+    t('bookingWizard.confirmation'),
+  ];
   const {
     bookingData,
     isLoading,
@@ -73,7 +86,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
   const handleNext = () => {
     posthog.capture('booking_step_completed', {
       step: bookingData.currentStep,
-      step_name: STEP_LABELS[bookingData.currentStep - 1] ?? '',
+      step_name: STEP_ANALYTICS_LABELS[bookingData.currentStep - 1] ?? '',
       companion_id: currentCompanionId,
     });
     nextStep();
@@ -119,7 +132,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
               style={styles.closeButton}
               onPress={handleClose}
               accessibilityRole="button"
-              accessibilityLabel="Back to guide profile"
+              accessibilityLabel={t('bookingWizard.backToGuideA11y')}
             >
               <ArrowLeft size={22} color={designTokens.colors.semantic.text} />
             </TouchableOpacity>
@@ -127,10 +140,14 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
             <View style={styles.progressWrap}>
               <ProgressBar
                 currentStep={bookingData.currentStep}
-                totalSteps={STEP_LABELS.length}
-                labels={STEP_LABELS}
+                totalSteps={stepLabels.length}
+                labels={stepLabels}
                 showLabels={false}
                 variant="gradient"
+                accessibilityLabel={t('bookingWizard.progressA11y', {
+                  current: bookingData.currentStep,
+                  total: stepLabels.length,
+                })}
               />
             </View>
 
@@ -177,7 +194,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
                   numberOfLines={1}
                   maxFontSizeMultiplier={1.4}
                 >
-                  {new Date(bookingData.dateTime.date).toLocaleDateString('en', { month: 'short', day: 'numeric' })}
+                  {formatBookingDate(bookingData.dateTime.date, language)}
                   {bookingData.dateTime.time ? ` · ${bookingData.dateTime.time}` : ''}
                 </Text>
               </View>

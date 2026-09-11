@@ -11,10 +11,10 @@ interface PromptPayPendingCardProps {
   charge: PromptPayCharge;
 }
 
-const formatExpiry = (expiresAt: string): string | null => {
+const formatExpiry = (expiresAt: string, locale: string): string | null => {
   const expiry = new Date(expiresAt);
   if (Number.isNaN(expiry.getTime())) return null;
-  return expiry.toLocaleString('en-US', {
+  return expiry.toLocaleString(locale, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -29,8 +29,10 @@ const shortenChargeId = (chargeId: string): string => {
 };
 
 export const PromptPayPendingCard: React.FC<PromptPayPendingCardProps> = ({ charge }) => {
-  const { t } = useTranslation();
-  const expiry = charge.expiresAt ? formatExpiry(charge.expiresAt) : null;
+  const { t, i18n } = useTranslation();
+  const language = i18n?.resolvedLanguage || i18n?.language || 'en';
+  const locale = language?.toLowerCase().startsWith('th') ? 'th-TH' : 'en-US';
+  const expiry = charge.expiresAt ? formatExpiry(charge.expiresAt, locale) : null;
 
   return (
     <Card style={styles.card} padding={16}>
@@ -41,7 +43,7 @@ export const PromptPayPendingCard: React.FC<PromptPayPendingCardProps> = ({ char
         <View style={styles.statusCopy}>
           <Text style={styles.heading}>{t('payments.pendingHeading')}</Text>
           <Text style={styles.amount}>
-            {charge.displayTotalThb.toLocaleString('en-US')} {charge.currency}
+            {charge.displayTotalThb.toLocaleString(locale)} {charge.currency}
           </Text>
         </View>
       </View>
@@ -57,7 +59,7 @@ export const PromptPayPendingCard: React.FC<PromptPayPendingCardProps> = ({ char
             style={styles.qrImage}
             resizeMode="contain"
             accessibilityRole="image"
-            accessibilityLabel="PromptPay QR for the pending booking payment"
+            accessibilityLabel={t('payments.pendingQrA11y')}
           />
         </View>
       ) : (

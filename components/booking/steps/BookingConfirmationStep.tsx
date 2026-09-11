@@ -28,6 +28,11 @@ import { designTokens } from '@/constants/design-tokens';
 import { CompanionData } from '@/types/companion';
 import { useTranslation } from 'react-i18next';
 import { usePaymentStore } from '@/stores/payment-store';
+import {
+  formatBookingDate,
+  formatBookingTime,
+  formatBookingTotal,
+} from '@/components/booking/booking-format';
 
 interface BookingConfirmationStepProps {
   onPrevious: () => void;
@@ -39,7 +44,8 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
   const { bookingData, resetBooking } = useBookingStore();
   const [animationValue] = useState(new Animated.Value(0));
   const [now, setNow] = useState(() => new Date());
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const language = i18n?.resolvedLanguage || i18n?.language || 'en';
   const { booking, selectedMethod, charge, phase, errorKind } = usePaymentStore();
 
   useEffect(() => {
@@ -81,23 +87,6 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
     router.push('/(app)');
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
-
-  const formatTime = (time: string) => {
-    return new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
-  };
-
   const bookingId = booking?.id || null;
   const companion = bookingData.companionData;
   const service = bookingData.service;
@@ -106,18 +95,48 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
   const payment = bookingData.payment;
   const effectivePaymentMethod = selectedMethod || payment?.method || 'cash';
   const isBookingConfirmed = booking?.status === 'confirmed';
-  const isPromptPayPending = effectivePaymentMethod === 'promptpay';
-  const isPromptPayUncertain = isPromptPayPending
-    && phase === 'error'
-    && ['in-progress', 'indeterminate', 'network', 'unknown'].includes(errorKind || '');
+  const paymentPhase = phase as string;
+  const paymentErrorKind = errorKind as string | null;
+  const isPromptPayMethod = effectivePaymentMethod === 'promptpay';
+  const alreadyPaid = paymentPhase === 'paid'
+    || paymentErrorKind === 'already-paid'
+    || ['paid', 'completed', 'refunded'].includes(booking?.paymentStatus || '');
+  const restitutionLocked = [
+    'restitution_pending',
+    'restituted',
+    'restitution_failed',
+  ].includes(paymentPhase);
+  const paymentConfirmed = alreadyPaid && !restitutionLocked;
+  const isPromptPayUncertain = isPromptPayMethod && (
+    paymentPhase === 'indeterminate'
+    || (paymentPhase === 'error'
+      && ['in-progress', 'indeterminate', 'network', 'unknown'].includes(paymentErrorKind || ''))
+  );
   const statusHeading = isBookingConfirmed
     ? t('payments.bookingConfirmed')
     : t('payments.bookingRequestSent');
-  const paymentStateCopy = isPromptPayUncertain
-    ? t('payments.uncertainOutcome')
-    : isPromptPayPending
-      ? t('payments.promptPayPendingState')
+  let paymentStateCopy = isPromptPayMethod
+    ? t('payments.promptPayPendingState')
     : t('payments.cashState');
+
+  if (paymentPhase === 'restitution_pending') {
+    paymentStateCopy = t('payments.restitutionPendingState');
+  } else if (paymentPhase === 'restituted') {
+    paymentStateCopy = t('payments.restitutedState');
+  } else if (paymentPhase === 'restitution_failed') {
+    paymentStateCopy = t('payments.restitutionFailedState');
+  } else if (alreadyPaid) {
+    paymentStateCopy = paymentErrorKind === 'already-paid'
+      ? t('payments.alreadyPaidState')
+      : t('payments.paidState');
+  } else if (isPromptPayUncertain) {
+    paymentStateCopy = t('payments.uncertainOutcome');
+  } else if (paymentPhase === 'failed') {
+    paymentStateCopy = t('payments.failedState');
+  } else if (paymentPhase === 'expired') {
+    paymentStateCopy = t('payments.expiredState');
+  }
+  const pendingPresentation = !isBookingConfirmed || (isPromptPayMethod && !paymentConfirmed);
   const startsAt = dateTime ? new Date(`${dateTime.date}T${dateTime.time}:00`) : null;
   const countdownMs = startsAt ? Math.max(0, startsAt.getTime() - now.getTime()) : 0;
   const countdownDays = Math.floor(countdownMs / (1000 * 60 * 60 * 24));
@@ -125,25 +144,33 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
   const countdownMinutes = Math.floor((countdownMs / (1000 * 60)) % 60);
   const countdownText = startsAt
     ? countdownMs > 0
-      ? `${countdownDays}d ${countdownHours}h ${countdownMinutes}m`
-      : 'Starting now'
-    : 'Date pending';
+      ? t('bookingConfirmation.countdown', {
+          days: countdownDays,
+          hours: countdownHours,
+          minutes: countdownMinutes,
+        })
+      : t('bookingConfirmation.startingNow')
+    : t('bookingConfirmation.datePending');
 
   const handleAddToCalendar = async () => {
     if (!dateTime) {
-      Alert.alert('Calendar unavailable', 'Booking date and time are missing.');
+      Alert.alert(
+        t('bookingConfirmation.calendarUnavailable'),
+        t('bookingConfirmation.calendarMissingDate'),
+      );
       return;
     }
 
     const start = new Date(`${dateTime.date}T${dateTime.time}:00`);
     const end = new Date(`${dateTime.date}T${dateTime.endTime}:00`);
     const formatCalendarDate = (date: Date) => date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
-    const title = encodeURIComponent(`Tirak: ${service?.name || 'Local guide booking'} with ${companion.name}`);
-    const details = encodeURIComponent(
-      isPromptPayPending
-        ? 'Message your local guide in Tirak before the experience. PromptPay payment remains pending until server confirmation.'
-        : 'Message your local guide in Tirak before the experience. Pay the guide rate in cash directly to your guide.',
-    );
+    const title = encodeURIComponent(t('bookingConfirmation.calendarTitle', {
+      service: service?.name || t('bookingConfirmation.localGuideBooking'),
+      guide: companion.name,
+    }));
+    const details = encodeURIComponent(t('bookingConfirmation.calendarDetails', {
+      paymentState: paymentStateCopy,
+    }));
     const locationText = encodeURIComponent([location?.meetingPoint, location?.area].filter(Boolean).join(', '));
     const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${formatCalendarDate(start)}/${formatCalendarDate(end)}&details=${details}&location=${locationText}`;
 
@@ -151,7 +178,10 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
       await Linking.openURL(calendarUrl);
     } catch (error) {
       logger.warn('Unable to open calendar link', error);
-      Alert.alert('Calendar unavailable', 'We could not open the calendar event link on this device.');
+      Alert.alert(
+        t('bookingConfirmation.calendarUnavailable'),
+        t('bookingConfirmation.calendarOpenFailed'),
+      );
     }
   };
 
@@ -173,18 +203,18 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
             },
           ]}
         >
-          {isBookingConfirmed && !isPromptPayPending ? (
-            <View style={styles.successIcon} accessibilityLabel="Booking confirmed status">
+          {isBookingConfirmed && !pendingPresentation ? (
+            <View style={styles.successIcon} accessibilityLabel={t('bookingConfirmation.confirmedStatusA11y')}>
               <CheckCircle size={64} color={designTokens.colors.semantic.success} />
             </View>
           ) : (
-            <View style={styles.pendingStatusIcon} accessibilityLabel="Booking or payment pending status">
+            <View style={styles.pendingStatusIcon} accessibilityLabel={t('bookingConfirmation.pendingStatusA11y')}>
               <Clock size={48} color={designTokens.colors.semantic.warning} />
             </View>
           )}
           <Text style={[
             styles.successTitle,
-            (!isBookingConfirmed || isPromptPayPending) && styles.pendingTitle,
+            pendingPresentation && styles.pendingTitle,
           ]}>
             {statusHeading}
           </Text>
@@ -203,14 +233,17 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
           <Card style={styles.countdownCard} padding={16}>
             <View style={styles.countdownHeader}>
               <Calendar size={20} color={designTokens.colors.semantic.primary} />
-              <Text style={styles.countdownTitle}>Your local guide starts in</Text>
+              <Text style={styles.countdownTitle}>{t('bookingConfirmation.startsIn')}</Text>
             </View>
             <Text style={styles.countdownValue}>{countdownText}</Text>
             <Text style={styles.countdownDetail}>
-              {formatDate(dateTime.date)} at {formatTime(dateTime.time)}
+              {t('bookingConfirmation.dateAtTime', {
+                date: formatBookingDate(dateTime.date, language),
+                time: formatBookingTime(dateTime.time, language),
+              })}
             </Text>
             <Button
-              title="Add to Calendar"
+              title={t('bookingConfirmation.addToCalendar')}
               variant="outline"
               onPress={handleAddToCalendar}
               style={styles.calendarButton}
@@ -222,7 +255,7 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
 
         {/* Companion Contact Info */}
         <Card style={styles.sectionCard} padding={16}>
-          <Text style={styles.sectionTitle}>Your Local Guide</Text>
+          <Text style={styles.sectionTitle}>{t('bookingConfirmation.companion')}</Text>
           
           <View style={styles.companionSection}>
             <ProfileImage
@@ -239,7 +272,7 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
                 <View style={styles.detailRow}>
                   <Text style={styles.ratingText}>⭐ {companion.rating}/5</Text>
                   {typeof companion.reviews === 'number' && (
-                  <Text style={styles.reviewsText}>({companion.reviews} reviews)</Text>
+                  <Text style={styles.reviewsText}>({t('bookingConfirmation.reviewCount', { count: companion.reviews })})</Text>
                   )}
                 </View>
               </View>
@@ -248,6 +281,8 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
                 <TouchableOpacity 
                   style={styles.contactButton}
                   onPress={handleMessageCompanion}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('bookingConfirmation.messageGuideA11y')}
                 >
                   <MessageCircle size={18} color={designTokens.colors.semantic.surface} />
                   <Text style={styles.contactButtonText}>{t('bookingConfirmation.message')}</Text>
@@ -279,10 +314,10 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
                 <Text style={styles.detailSectionTitle}>{t('bookingConfirmation.dateTime')}</Text>
               </View>
               <Text style={styles.detailSectionValue}>
-                  {formatDate(dateTime.date)}
+                  {formatBookingDate(dateTime.date, language)}
               </Text>
               <Text style={styles.detailSectionSubvalue}>
-                  {formatTime(dateTime.time)} - {formatTime(dateTime.endTime)}
+                  {formatBookingTime(dateTime.time, language)} - {formatBookingTime(dateTime.endTime, language)}
               </Text>
             </View>
             )}
@@ -305,16 +340,16 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
               <Text style={styles.detailSectionValue}>
                     {effectivePaymentMethod === 'cash' ? t('bookingConfirmation.cashPayment') :
                      effectivePaymentMethod === 'promptpay' ? t('bookingConfirmation.promptPay') :
-                 'Bank Transfer'}
+                 t('bookingConfirmation.bankTransfer')}
               </Text>
             </View>
             
             <View style={styles.detailSection}>
               <Text style={styles.detailSectionTitle}>{t('bookingConfirmation.totalAmount')}</Text>
               <Text style={styles.totalAmount}>
-                    {(isPromptPayPending && charge
-                      ? `${charge.displayTotalThb.toLocaleString()} ${charge.currency}`
-                      : `฿${payment.totalAmount.toLocaleString()}`)}
+                    {(isPromptPayMethod && charge
+                      ? `${charge.displayTotalThb.toLocaleString(language)} ${charge.currency}`
+                      : formatBookingTotal(payment.totalAmount, language))}
               </Text>
             </View>
               </>
@@ -346,7 +381,13 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
               <View style={styles.stepContent}>
                 <Text style={styles.stepTitle}>{t('bookingConfirmation.prepareForYourExperience')}</Text>
                 <Text style={styles.stepDescription}>
-                  {t('bookingConfirmation.prepareForYourExperienceDescription')}
+                  {restitutionLocked
+                    ? t('bookingConfirmation.prepareForYourExperienceRestitutionDescription')
+                    : alreadyPaid
+                    ? t('bookingConfirmation.prepareForYourExperiencePaidDescription')
+                    : isPromptPayMethod
+                      ? t('bookingConfirmation.prepareForYourExperiencePromptPayDescription')
+                      : t('bookingConfirmation.prepareForYourExperienceDescription')}
                 </Text>
               </View>
             </View>
