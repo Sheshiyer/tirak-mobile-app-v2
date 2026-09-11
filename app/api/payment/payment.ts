@@ -8,6 +8,7 @@ export type PaymentErrorKind =
   | 'unauthorized'
   | 'booking-not-found'
   | 'booking-not-payable'
+  | 'already-paid'
   | 'in-progress'
   | 'indeterminate'
   | 'network'
@@ -47,6 +48,7 @@ const SAFE_ERROR_MESSAGES: Record<PaymentErrorKind, string> = {
   unauthorized: 'Please log in again before creating a payment.',
   'booking-not-found': 'This booking could not be found.',
   'booking-not-payable': 'This booking is not ready for PromptPay.',
+  'already-paid': 'This booking already has a completed or protected payment.',
   'in-progress': 'A PromptPay request is already in progress.',
   indeterminate: 'Payment status is uncertain. Do not create another charge.',
   network: 'The payment service could not be reached.',
@@ -82,10 +84,30 @@ const PAYMENT_STATUSES = new Set<PromptPayPaymentStatus>([
   'restitution_failed',
 ]);
 
+const ALLOWED_STATUS_PAIRS = new Set([
+  'creating:processing',
+  'indeterminate:processing',
+  'pending:pending',
+  'successful:paid',
+  'successful:restitution_pending',
+  'successful:restituted',
+  'successful:restitution_failed',
+  'failed:failed',
+  'expired:failed',
+]);
+
+export const PAYMENT_REQUEST_TIMEOUT_MS = 15_000;
+
 const isNullableString = (value: unknown): value is string | null =>
   value === null || typeof value === 'string';
 
-function parseCharge(value: unknown): PromptPayCharge {
+function isFiniteIsoTimestamp(value: unknown): value is string {
+  if (typeof value !== 'string') return false;
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) && new Date(timestamp).toISOString() === value;
+}
+
+export function parsePromptPayCharge(value: unknown): PromptPayCharge {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new PaymentClientError('unknown');
   }
@@ -103,8 +125,11 @@ function parseCharge(value: unknown): PromptPayCharge {
     || typeof candidate.displayTotalThb !== 'number'
     || !Number.isFinite(candidate.displayTotalThb)
     || candidate.displayTotalThb <= 0
-    || typeof candidate.currency !== 'string'
-    || (candidate.expiresAt !== undefined && typeof candidate.expiresAt !== 'string')
+    || Math.round(candidate.displayTotalThb * 100) !== candidate.amountSatang
+    || Math.abs(candidate.displayTotalThb * 100 - candidate.amountSatang) > 1e-6
+    || candidate.currency !== 'THB'
+    || !ALLOWED_STATUS_PAIRS.has(`${String(candidate.attemptStatus)}:${String(candidate.paymentStatus)}`)
+    || (candidate.expiresAt !== undefined && !isFiniteIsoTimestamp(candidate.expiresAt))
   ) {
     throw new PaymentClientError('unknown');
   }
@@ -131,13 +156,25 @@ function responseText(data: unknown): string {
     .toLowerCase();
 }
 
+function responseCode(data: unknown): string {
+  if (!data || typeof data !== 'object') return '';
+  const value = data as { code?: unknown; error?: unknown; reason?: unknown };
+  const raw = [value.code, value.error, value.reason]
+    .find((item): item is string => typeof item === 'string');
+  return (raw || '').trim().toUpperCase().replace(/[\s-]+/g, '_');
+}
+
 function mapRequestError(error: unknown): PaymentClientError {
   if (error instanceof PaymentClientError) return error;
   if (!axios.isAxiosError(error)) return new PaymentClientError('unknown');
+  if (['ECONNABORTED', 'ETIMEDOUT', 'ERR_CANCELED'].includes(String(error.code || ''))) {
+    return new PaymentClientError('indeterminate');
+  }
   if (!error.response) return new PaymentClientError('network');
 
   const status = error.response.status;
   const text = responseText(error.response.data);
+  const code = responseCode(error.response.data);
   if (status === 401 || status === 403) return new PaymentClientError('unauthorized');
   if (status === 404) return new PaymentClientError('booking-not-found');
   if (text.includes('payment_creation_disabled') || (status === 503 && text.includes('disabled'))) {
@@ -145,6 +182,13 @@ function mapRequestError(error: unknown): PaymentClientError {
   }
   if (text.includes('creation in progress') || text.includes('already in progress')) {
     return new PaymentClientError('in-progress');
+  }
+  if (
+    ['BOOKING_ALREADY_PAID', 'ALREADY_PAID', 'PAYMENT_ALREADY_COMPLETED'].includes(code)
+    || text.includes('already been paid')
+    || text.includes('already paid')
+  ) {
+    return new PaymentClientError('already-paid');
   }
   if (text.includes('indeterminate') || text.includes('requires recovery') || text.includes('outcome')) {
     return new PaymentClientError('indeterminate');
@@ -169,11 +213,12 @@ export function createPromptPayCharge(bookingId: string): Promise<PromptPayCharg
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
+          timeout: PAYMENT_REQUEST_TIMEOUT_MS,
         },
       );
 
       if (response.data?.success !== true) throw new PaymentClientError('unknown');
-      return parseCharge(response.data.data);
+      return parsePromptPayCharge(response.data.data);
     } catch (error) {
       throw mapRequestError(error);
     }

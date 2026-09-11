@@ -39,6 +39,17 @@ const contract = JSON.parse(fs.readFileSync(contractPath, 'utf8')) as {
   routes: Array<{ path: string; responseFields: string[] }>;
 };
 
+const stateMatrixPath = [
+  path.resolve(__dirname, '../../backend/tirak-backend-alpha01/contracts/tirak-payments-v1/state-matrix.json'),
+  path.resolve(__dirname, '../../../backend/tirak-backend-alpha01/contracts/tirak-payments-v1/state-matrix.json'),
+].find((candidate) => fs.existsSync(candidate));
+
+if (!stateMatrixPath) throw new Error('tirak-payments-v1 state matrix fixture was not found');
+
+const stateMatrix = JSON.parse(fs.readFileSync(stateMatrixPath, 'utf8')) as {
+  rules: Array<{ attempt: PromptPayCharge['attemptStatus']; publicPayment: PromptPayCharge['paymentStatus'] }>;
+};
+
 const charge: PromptPayCharge = {
   contractVersion: 'tirak-payments-v1',
   chargeId: 'chrg_local_12345678',
@@ -81,6 +92,7 @@ describe('tirak-payments-v1 charge client', () => {
       'Content-Type': 'application/json',
       Authorization: 'Bearer token-123',
     });
+    expect(config.timeout).toBe(15_000);
   });
 
   test('returns only the frozen response allowlist', async () => {
@@ -119,6 +131,36 @@ describe('tirak-payments-v1 charge client', () => {
   });
 
   test.each([
+    ['non-THB currency', { ...charge, currency: 'USD' }],
+    ['amount/display mismatch', { ...charge, displayTotalThb: 1799 }],
+    ['non-ISO expiry', { ...charge, expiresAt: 'not-a-date' }],
+    ['impossible ISO expiry', { ...charge, expiresAt: '2026-02-31T01:00:00.000Z' }],
+    ['invalid state pair', { ...charge, attemptStatus: 'successful', paymentStatus: 'pending' }],
+  ])('rejects contract-invalid charge truth: %s', async (_reason, invalidCharge) => {
+    mockPost.mockResolvedValueOnce({ data: { success: true, data: invalidCharge } });
+    await expect(createPromptPayCharge('booking-1')).rejects.toMatchObject({ kind: 'unknown' });
+  });
+
+  test.each(stateMatrix.rules)(
+    'accepts frozen state pair $attempt/$publicPayment',
+    async ({ attempt, publicPayment }) => {
+      const matrixCharge = {
+        ...charge,
+        attemptStatus: attempt,
+        paymentStatus: publicPayment,
+      };
+      mockPost.mockResolvedValueOnce({ data: { success: true, data: matrixCharge } });
+      await expect(createPromptPayCharge('booking-1')).resolves.toMatchObject(matrixCharge);
+    },
+  );
+
+  test('accepts a two-decimal THB total despite binary floating-point representation', async () => {
+    const fractionalCharge = { ...charge, amountSatang: 115, displayTotalThb: 1.15 };
+    mockPost.mockResolvedValueOnce({ data: { success: true, data: fractionalCharge } });
+    await expect(createPromptPayCharge('booking-1')).resolves.toEqual(fractionalCharge);
+  });
+
+  test.each([
     [axiosFailure(401, { message: 'Please log in' }), 'unauthorized'],
     [axiosFailure(404, { message: 'The booking does not exist' }), 'booking-not-found'],
     [axiosFailure(409, { error: 'Booking is not payable', message: 'Only confirmed bookings can be paid' }), 'booking-not-payable'],
@@ -135,6 +177,22 @@ describe('tirak-payments-v1 charge client', () => {
       kind,
     });
   });
+
+  test.each([
+    axiosFailure(409, { error: 'BOOKING_ALREADY_PAID', message: 'Payment state changed' }),
+    axiosFailure(409, { error: 'Booking is not payable', message: 'This booking has already been paid' }),
+  ])('maps already-paid responses to a distinct terminal reason', async (failure) => {
+    mockPost.mockRejectedValueOnce(failure);
+    await expect(createPromptPayCharge('booking-1')).rejects.toMatchObject({ kind: 'already-paid' });
+  });
+
+  test.each(['ECONNABORTED', 'ETIMEDOUT', 'ERR_CANCELED'])(
+    'maps %s after POST to conservative indeterminate state',
+    async (code) => {
+      mockPost.mockRejectedValueOnce({ isAxiosError: true, code });
+      await expect(createPromptPayCharge('booking-1')).rejects.toMatchObject({ kind: 'indeterminate' });
+    },
+  );
 
   test('does not call Axios without an authentication token', async () => {
     mockGetItemAsync.mockResolvedValueOnce(null);

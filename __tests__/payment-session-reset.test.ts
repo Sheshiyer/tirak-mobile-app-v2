@@ -1,6 +1,8 @@
 jest.mock('react-native', () => ({
-  DeviceEventEmitter: { addListener: jest.fn() },
-  Platform: { OS: 'web' },
+  DeviceEventEmitter: {
+    addListener: jest.fn(),
+  },
+  Platform: { OS: 'ios' },
 }));
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
@@ -13,11 +15,15 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   },
 }));
 
+const mockSecureGetItem = jest.fn<Promise<string | null>, [string]>();
+const mockSecureSetItem = jest.fn<Promise<void>, [string, string]>();
+const mockSecureDeleteItem = jest.fn<Promise<void>, [string]>();
+
 jest.mock('@/utils/secure-storage', () => ({
   secureStorage: {
-    getItemAsync: jest.fn().mockResolvedValue(null),
-    setItemAsync: jest.fn().mockResolvedValue(undefined),
-    deleteItemAsync: jest.fn().mockResolvedValue(undefined),
+    getItemAsync: (key: string) => mockSecureGetItem(key),
+    setItemAsync: (key: string, value: string) => mockSecureSetItem(key, value),
+    deleteItemAsync: (key: string) => mockSecureDeleteItem(key),
   },
 }));
 
@@ -57,6 +63,7 @@ jest.mock('@/utils/currency', () => ({ convertCurrency: (amount: number) => amou
 import { usePaymentStore } from '@/stores/payment-store';
 import { useBookingStore } from '@/stores/booking-store';
 import { useAuthStore } from '@/stores/auth-store';
+import { DeviceEventEmitter } from 'react-native';
 
 const pendingCharge = {
   contractVersion: 'tirak-payments-v1' as const,
@@ -82,6 +89,9 @@ const seedPaymentForUserA = () => {
 describe('payment session isolation', () => {
   beforeEach(() => {
     mockCreatePromptPayCharge.mockReset();
+    mockSecureGetItem.mockReset().mockResolvedValue(null);
+    mockSecureSetItem.mockReset().mockResolvedValue(undefined);
+    mockSecureDeleteItem.mockReset().mockResolvedValue(undefined);
     usePaymentStore.getState().resetPayment();
     useAuthStore.setState({ user: null, isAuthenticated: false, isLoading: false, error: null, onboarded: false });
   });
@@ -97,7 +107,60 @@ describe('payment session isolation', () => {
     seedPaymentForUserA();
     await useAuthStore.getState().logout();
     expect(usePaymentStore.getState()).toMatchObject({ booking: null, charge: null, selectedMethod: null });
+    expect(mockSecureDeleteItem).toHaveBeenCalledWith('tirak-payment-session');
     consoleError.mockRestore();
+  });
+
+  test('missing credentials invalidate auth and remove persisted payment state', async () => {
+    seedPaymentForUserA();
+    await useAuthStore.getState().validateToken();
+
+    expect(useAuthStore.getState()).toMatchObject({ user: null, isAuthenticated: false, isLoading: false });
+    expect(usePaymentStore.getState()).toMatchObject({ booking: null, charge: null, selectedMethod: null });
+    expect(mockSecureDeleteItem).toHaveBeenCalledWith('tirak-payment-session');
+    expect(mockSecureDeleteItem).toHaveBeenCalledWith('authToken');
+    expect(mockSecureDeleteItem).toHaveBeenCalledWith('refreshToken');
+    expect(mockSecureDeleteItem).toHaveBeenCalledWith('userCredentials');
+  });
+
+  test('corrupt credentials invalidate auth and remove persisted payment state', async () => {
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    mockSecureGetItem.mockImplementation(async (key) => key === 'authToken' ? 'token-123' : '{bad json');
+    seedPaymentForUserA();
+    await useAuthStore.getState().validateToken();
+
+    expect(useAuthStore.getState().isAuthenticated).toBe(false);
+    expect(usePaymentStore.getState().charge).toBeNull();
+    expect(mockSecureDeleteItem).toHaveBeenCalledWith('tirak-payment-session');
+    consoleError.mockRestore();
+  });
+
+  test('secure storage read failure still invalidates memory and attempts every persisted cleanup', async () => {
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    mockSecureGetItem.mockRejectedValueOnce(new Error('secure storage unavailable'));
+    seedPaymentForUserA();
+    await useAuthStore.getState().validateToken();
+
+    expect(useAuthStore.getState().isAuthenticated).toBe(false);
+    expect(usePaymentStore.getState().charge).toBeNull();
+    expect(mockSecureDeleteItem).toHaveBeenCalledWith('tirak-payment-session');
+    expect(mockSecureDeleteItem).toHaveBeenCalledWith('authToken');
+    expect(mockSecureDeleteItem).toHaveBeenCalledWith('refreshToken');
+    expect(mockSecureDeleteItem).toHaveBeenCalledWith('userCredentials');
+    consoleError.mockRestore();
+  });
+
+  test('unauthorized event awaits the same centralized invalidation path', async () => {
+    seedPaymentForUserA();
+    const addListener = DeviceEventEmitter.addListener as jest.Mock;
+    expect(addListener).toHaveBeenCalledWith('auth:unauthorized', expect.any(Function));
+    const unauthorizedListener = addListener.mock.calls.find(([event]) => event === 'auth:unauthorized')?.[1];
+
+    await unauthorizedListener();
+
+    expect(useAuthStore.getState().isAuthenticated).toBe(false);
+    expect(usePaymentStore.getState().charge).toBeNull();
+    expect(mockSecureDeleteItem).toHaveBeenCalledWith('tirak-payment-session');
   });
 
   test('authenticated-user identity change removes user A payment data', () => {

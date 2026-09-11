@@ -1,18 +1,10 @@
 const mockCreatePromptPayCharge = jest.fn();
 
 jest.mock('@/app/api/payment/payment', () => {
-  class PaymentClientError extends Error {
-    kind: string;
-
-    constructor(...mockArgs: string[]) {
-      super('Safe payment error');
-      this.name = 'PaymentClientError';
-      this.kind = mockArgs[0];
-    }
-  }
+  const actual = jest.requireActual('@/app/api/payment/payment');
   return {
+    ...actual,
     createPromptPayCharge: (...args: unknown[]) => mockCreatePromptPayCharge(...args),
-    PaymentClientError,
   };
 });
 
@@ -24,7 +16,7 @@ jest.mock('@/utils/secure-storage', () => ({
   },
 }));
 
-import { usePaymentStore } from '@/stores/payment-store';
+import { derivePaymentPhase, usePaymentStore } from '@/stores/payment-store';
 
 const pendingCharge = {
   contractVersion: 'tirak-payments-v1' as const,
@@ -81,6 +73,100 @@ describe('payment session store', () => {
       charge: pendingCharge,
       errorKind: null,
     });
+  });
+
+  test.each([
+    ['creating', 'processing', 'creating'],
+    ['indeterminate', 'processing', 'indeterminate'],
+    ['pending', 'pending', 'pending'],
+    ['successful', 'paid', 'paid'],
+    ['successful', 'restitution_pending', 'restitution_pending'],
+    ['successful', 'restituted', 'restituted'],
+    ['successful', 'restitution_failed', 'restitution_failed'],
+    ['failed', 'failed', 'failed'],
+    ['expired', 'failed', 'expired'],
+  ] as const)(
+    'derives %s/%s as %s from canonical payment truth',
+    (attemptStatus, paymentStatus, phase) => {
+      expect(derivePaymentPhase({ ...pendingCharge, attemptStatus, paymentStatus })).toBe(phase);
+    },
+  );
+
+  test('stores a successful idempotent POST response as paid', async () => {
+    const paidCharge = {
+      ...pendingCharge,
+      attemptStatus: 'successful' as const,
+      paymentStatus: 'paid' as const,
+    };
+    mockCreatePromptPayCharge.mockResolvedValueOnce(paidCharge);
+    usePaymentStore.getState().setBooking({ id: 'booking-1', status: 'confirmed', paymentStatus: 'pending' });
+
+    await usePaymentStore.getState().createCharge();
+
+    expect(usePaymentStore.getState()).toMatchObject({
+      phase: 'paid',
+      charge: paidCharge,
+      errorKind: null,
+    });
+  });
+
+  test('rehydrates a paid charge through the same canonical phase derivation', async () => {
+    const paidCharge = {
+      ...pendingCharge,
+      attemptStatus: 'successful' as const,
+      paymentStatus: 'paid' as const,
+    };
+    const previousOptions = usePaymentStore.persist.getOptions();
+    usePaymentStore.persist.setOptions({
+      storage: {
+        getItem: async () => ({
+          state: {
+            booking: { id: 'booking-1', status: 'confirmed', paymentStatus: 'paid' },
+            selectedMethod: 'promptpay' as const,
+            charge: paidCharge,
+          },
+        }),
+        setItem: async () => undefined,
+        removeItem: async () => undefined,
+      },
+    });
+
+    try {
+      await usePaymentStore.persist.rehydrate();
+      expect(usePaymentStore.getState()).toMatchObject({ phase: 'paid', charge: paidCharge });
+    } finally {
+      usePaymentStore.persist.setOptions(previousOptions);
+    }
+  });
+
+  test.each(['paid', 'completed', 'refunded', 'restitution_pending', 'restituted', 'restitution_failed'])(
+    'refuses a new charge for locally known terminal booking state %s',
+    async (paymentStatus) => {
+      usePaymentStore.getState().setBooking({ id: 'booking-1', status: 'confirmed', paymentStatus });
+      await expect(usePaymentStore.getState().createCharge()).rejects.toMatchObject({ kind: 'already-paid' });
+      expect(mockCreatePromptPayCharge).not.toHaveBeenCalled();
+      expect(usePaymentStore.getState()).toMatchObject({ phase: 'paid', errorKind: 'already-paid' });
+    },
+  );
+
+  test('turns a server already-paid response into authoritative paid store state', async () => {
+    const { PaymentClientError } = jest.requireActual('@/app/api/payment/payment');
+    mockCreatePromptPayCharge.mockRejectedValueOnce(new PaymentClientError('already-paid'));
+    usePaymentStore.getState().setBooking({ id: 'booking-1', status: 'confirmed', paymentStatus: 'pending' });
+
+    await expect(usePaymentStore.getState().createCharge()).rejects.toMatchObject({ kind: 'already-paid' });
+
+    expect(usePaymentStore.getState()).toMatchObject({ phase: 'paid', errorKind: 'already-paid', charge: null });
+  });
+
+  test('turns an indeterminate POST outcome into explicit indeterminate store state', async () => {
+    const { PaymentClientError } = jest.requireActual('@/app/api/payment/payment');
+    mockCreatePromptPayCharge.mockRejectedValueOnce(new PaymentClientError('indeterminate'));
+    usePaymentStore.getState().setBooking({ id: 'booking-1', status: 'confirmed', paymentStatus: 'pending' });
+
+    await expect(usePaymentStore.getState().createCharge()).rejects.toMatchObject({ kind: 'indeterminate' });
+
+    expect(usePaymentStore.getState()).toMatchObject({ phase: 'indeterminate', errorKind: 'indeterminate', charge: null });
   });
 
   test('changing booking identity clears the prior charge session', () => {

@@ -137,6 +137,15 @@ const server = http.createServer((request, response) => {
       return;
     }
 
+    if (body.bookingId === 'booking-already-paid') {
+      sendJson(response, 409, {
+        success: false,
+        error: 'BOOKING_ALREADY_PAID',
+        message: 'This local fixture booking has already been paid',
+      });
+      return;
+    }
+
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
     sendJson(response, 200, {
       success: true,

@@ -27,6 +27,7 @@ interface AuthActions {
   clearError: () => void;
   updateUser: (userData: Partial<User>) => void;
   validateToken: () => Promise<void>;
+  invalidateAuth: () => Promise<void>;
 }
 
 // Helper to format a Date into local YYYY-MM-DD without timezone shifting
@@ -49,6 +50,24 @@ export const useAuthStore = create<AuthState & AuthActions>()(
 
       setOnboarded: (value: boolean) => {
         set({ onboarded: value });
+      },
+
+      invalidateAuth: async () => {
+        set({
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: null,
+          onboarded: false,
+        });
+
+        const cleanup = (operation: () => Promise<void>) => Promise.resolve().then(operation);
+        await Promise.allSettled([
+          cleanup(() => usePaymentStore.getState().clearPaymentSession()),
+          cleanup(() => secureStorage.deleteItemAsync('authToken')),
+          cleanup(() => secureStorage.deleteItemAsync('refreshToken')),
+          cleanup(() => secureStorage.deleteItemAsync('userCredentials')),
+        ]);
       },
 
       login: async (email: string, password: string) => {
@@ -158,7 +177,6 @@ export const useAuthStore = create<AuthState & AuthActions>()(
 
       logout: async () => {
         try {
-          usePaymentStore.getState().resetPayment();
           set({ isLoading: true });
           posthog.capture('user_logged_out');
           posthog.reset();
@@ -168,26 +186,8 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           // IMPORTANT: Clear all storage FIRST before anything else
           // This prevents re-authentication on page reload
           
-          // Clear authentication token from secure storage
-          await secureStorage.deleteItemAsync("authToken");
-          logger.log('[Logout] Cleared authToken');
-          
-          // Clear refresh token if it exists
-          await secureStorage.deleteItemAsync("refreshToken");
-          logger.log('[Logout] Cleared refreshToken');
-          
-          // Clear any other sensitive data from secure storage
-          await secureStorage.deleteItemAsync("userCredentials");
-          logger.log('[Logout] Cleared userCredentials');
-          
-          // Clear user state and authentication
-          set({
-            user: null,
-            isAuthenticated: false,
-            isLoading: false,
-            error: null,
-            onboarded: false, // Reset onboarded status
-          });
+          await get().invalidateAuth();
+          logger.log('[Logout] Cleared authentication and payment session');
           
           // Clear other stores that contain user-specific data
           // Import and reset booking store
@@ -233,6 +233,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
               window.localStorage.removeItem('tirak-auth-storage');
               window.localStorage.removeItem('tirak-booking-storage');
               window.localStorage.removeItem('tirak-supplier-storage');
+              window.localStorage.removeItem('tirak-payment-session');
               logger.log('[Logout] localStorage cleared directly');
             } catch (localStorageError) {
               logger.warn('[Logout] localStorage clear failed:', localStorageError);
@@ -253,14 +254,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           
         } catch (error) {
           console.error('Error during logout:', error);
-          // Even if there's an error, still clear the auth state
-          set({
-            user: null,
-            isAuthenticated: false,
-            isLoading: false,
-            error: null,
-            onboarded: false,
-          });
+          await get().invalidateAuth();
         }
       },
 
@@ -347,6 +341,9 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           if (token && userCredentials) {
             try {
               const userData = JSON.parse(userCredentials);
+              if (!userData || typeof userData !== 'object' || typeof userData.id !== 'string' || !userData.id) {
+                throw new Error('Stored user credentials are invalid');
+              }
               if (get().user?.id !== userData.id) usePaymentStore.getState().resetPayment();
               // If we have both token and user data, consider user authenticated
               set({ 
@@ -357,19 +354,15 @@ export const useAuthStore = create<AuthState & AuthActions>()(
               // logger.log('Token validation successful - user authenticated:', userData.email);
             } catch (parseError) {
               console.error('Error parsing stored user credentials:', parseError);
-              // Clear invalid data
-              await secureStorage.deleteItemAsync("authToken").catch(() => {});
-              await secureStorage.deleteItemAsync("userCredentials").catch(() => {});
-              set({ isAuthenticated: false });
+              await get().invalidateAuth();
             }
           } else {
-            // No token or credentials found
-            set({ isAuthenticated: false });
+            await get().invalidateAuth();
             logger.log('No valid token found - user not authenticated');
           }
         } catch (error) {
           console.error('Error validating token:', error);
-          set({ isAuthenticated: false });
+          await get().invalidateAuth();
         }
       },
     }),
@@ -388,13 +381,13 @@ export const useAuthStore = create<AuthState & AuthActions>()(
 
 // Listen for unauthorized events from browser API calls.
 if (Platform.OS !== 'web') {
-  DeviceEventEmitter.addListener('auth:unauthorized', () => {
+  DeviceEventEmitter.addListener('auth:unauthorized', async () => {
     logger.warn('Auth:unauthorized event received - logging out');
-    useAuthStore.getState().logout();
+    await useAuthStore.getState().invalidateAuth();
   });
 } else if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
-  window.addEventListener('auth:unauthorized', () => {
+  window.addEventListener('auth:unauthorized', async () => {
     logger.warn('Auth:unauthorized event received - logging out');
-    useAuthStore.getState().logout();
+    await useAuthStore.getState().invalidateAuth();
   });
 }
