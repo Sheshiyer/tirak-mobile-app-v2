@@ -17,6 +17,11 @@ import PWAHead from '@/components/PWAHead';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { SimpleToast } from '@/components/ui/SimpleToast';
 import { SoundManager } from '@/utils/sound-manager';
+import {
+  consumePendingSceneLink,
+  consumeWarmSceneLink,
+  shouldEnterSplashRoute,
+} from '@/utils/scene-link-consumption';
 
 Sentry.init({
   dsn: 'https://aa0f61b9f2d781f2a2295677370e6749@o4509643523162112.ingest.us.sentry.io/4509643525783552',
@@ -63,6 +68,9 @@ export { default as SplashScreen } from './splash';
 SplashScreen.preventAutoHideAsync();
 
 export default Sentry.wrap(function RootLayout() {
+  const initialSceneLink = useRef(
+    Platform.OS === 'ios' ? Linking.getLinkingURL() : null,
+  );
   const [fontsLoaded] = useFonts({
     // Custom fonts for headings and subheadings only (visual impact)
     'ProximaNova-Regular': require('../assets/images/fonts/ProximaNova-Regular.otf'),
@@ -78,9 +86,11 @@ export default Sentry.wrap(function RootLayout() {
       SoundManager.preloadAll(); // warm up audio after fonts are ready
 
       const rafId = requestAnimationFrame(() => {
-        setTimeout(() => {
-          router.replace('/splash');
-        }, 100);
+        if (shouldEnterSplashRoute(initialSceneLink.current)) {
+          setTimeout(() => {
+            router.replace('/splash');
+          }, 100);
+        }
       });
       
       return () => cancelAnimationFrame(rafId);
@@ -157,15 +167,26 @@ export default Sentry.wrap(function RootLayout() {
 
     // Listen for incoming links when the app is already open
     const subscription = Linking.addEventListener('url', ({ url }) => {
-      handleDeepLink(url);
+      void consumeWarmSceneLink(url, handleDeepLink).catch((error) => {
+        logger.error('Unable to consume warm scene link:', error);
+      });
     });
 
-    // Check if the app was opened by a deep link
-    Linking.getInitialURL().then((url) => {
-      if (url) {
-        handleDeepLink(url);
-      }
-    });
+    // UIScene links stay in the native queue until this handler succeeds and
+    // acknowledges the exact queue item. Fall back for Android and old-style
+    // iOS application launch options, which do not populate that scene queue.
+    void consumePendingSceneLink(handleDeepLink)
+      .then(async (consumed) => {
+        if (!consumed) {
+          const url = await Linking.getInitialURL();
+          if (url) {
+            await handleDeepLink(url);
+          }
+        }
+      })
+      .catch((error) => {
+        logger.error('Unable to consume cold scene link:', error);
+      });
 
     return () => {
       subscription.remove();

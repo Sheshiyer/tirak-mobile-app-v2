@@ -4,19 +4,12 @@ import ReactAppDependencyProvider
 
 @UIApplicationMain
 public class AppDelegate: ExpoAppDelegate {
-  private enum PendingSceneLink {
-    case url(URL, [UIApplication.OpenURLOptionsKey: Any])
-    case userActivity(NSUserActivity)
-  }
-
   var window: UIWindow?
 
   var reactNativeDelegate: ExpoReactNativeFactoryDelegate?
   var reactNativeFactory: RCTReactNativeFactory?
   private var initialLaunchOptions: [UIApplication.LaunchOptionsKey: Any]?
   private var hasStartedReactNative = false
-  private var hasReactContentAppeared = false
-  private var pendingSceneLink: PendingSceneLink?
 
   public override func application(
     _ application: UIApplication,
@@ -30,12 +23,6 @@ public class AppDelegate: ExpoAppDelegate {
     reactNativeFactory = factory
     bindReactNativeFactory(factory)
     initialLaunchOptions = launchOptions
-
-    NotificationCenter.default.addObserver(
-      self,
-      selector: #selector(reactContentDidAppear(_:)),
-      name: Notification.Name("RCTContentDidAppearNotification"),
-      object: nil)
 
     // Expo Dev Launcher observes didFinishLaunching before UIKit connects the
     // first scene and requires the app delegate to already own its window.
@@ -63,15 +50,15 @@ public class AppDelegate: ExpoAppDelegate {
 
   /// UIScene receives cold-start links after `didFinishLaunching`, once the
   /// React Native factory has already captured its launch options. Preserve the
-  /// URL in Expo's initial-link registry immediately, then defer the RN event
-  /// until the first React content has mounted and its linking listener exists.
+  /// URL in Expo's initial-link registry immediately and retain a separate
+  /// bridge-backed copy until JavaScript acknowledges the exact queue item.
   func preserveColdStartURL(
     _ url: URL,
     options: [UIApplication.OpenURLOptionsKey: Any]
   ) {
     _ = super.application(UIApplication.shared, open: url, options: options)
+    TirakSceneLinkRegistry.preserve(url, kind: "custom-scheme")
     debugLogSceneLink("preserved cold custom-scheme")
-    enqueuePendingSceneLink(.url(url, options))
   }
 
   /// Universal-link equivalent of `preserveColdStartURL`.
@@ -80,56 +67,14 @@ public class AppDelegate: ExpoAppDelegate {
       UIApplication.shared,
       continue: userActivity,
       restorationHandler: { _ in })
+    if let url = userActivity.webpageURL {
+      TirakSceneLinkRegistry.preserve(url, kind: "universal-link")
+    }
     debugLogSceneLink("preserved cold universal-link")
-    enqueuePendingSceneLink(.userActivity(userActivity))
-  }
-
-  private func enqueuePendingSceneLink(_ link: PendingSceneLink) {
-    guard pendingSceneLink == nil else {
-      return
-    }
-
-    pendingSceneLink = link
-    deliverPendingSceneLink()
-  }
-
-  @objc private func reactContentDidAppear(_ notification: Notification) {
-    hasReactContentAppeared = true
-    deliverPendingSceneLink()
-  }
-
-  private func deliverPendingSceneLink() {
-    guard hasReactContentAppeared, let link = pendingSceneLink else {
-      return
-    }
-
-    pendingSceneLink = nil
-
-    // React's content notification is posted during native mounting. Deliver
-    // on the following main-loop turn so passive effects can attach Linking's
-    // URL observer before RCTLinkingManager posts its notification.
-    DispatchQueue.main.async {
-      switch link {
-      case let .url(url, options):
-        _ = RCTLinkingManager.application(
-          UIApplication.shared,
-          open: url,
-          options: options)
-        self.debugLogSceneLink("delivered deferred custom-scheme")
-      case let .userActivity(userActivity):
-        _ = RCTLinkingManager.application(
-          UIApplication.shared,
-          continue: userActivity,
-          restorationHandler: { _ in })
-        self.debugLogSceneLink("delivered deferred universal-link")
-      }
-    }
   }
 
   private func debugLogSceneLink(_ message: String) {
-#if DEBUG
     NSLog("[TirakSceneLink] \(message)")
-#endif
   }
 
   // Linking API
@@ -176,6 +121,9 @@ class ReactNativeDelegate: ExpoReactNativeFactoryDelegate {
 
   override func bundleURL() -> URL? {
 #if DEBUG
+    if let embeddedBundle = Bundle.main.url(forResource: "main", withExtension: "jsbundle") {
+      return embeddedBundle
+    }
     return RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: ".expo/.virtual-metro-entry")
 #else
     return Bundle.main.url(forResource: "main", withExtension: "jsbundle")
