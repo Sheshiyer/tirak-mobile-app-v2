@@ -18,6 +18,7 @@ import { ArrowLeft, User, Calendar, Briefcase } from 'lucide-react-native';
 import { usePostHog } from 'posthog-react-native';
 import { useTranslation } from 'react-i18next';
 import { formatBookingDate } from '@/components/booking/booking-format';
+import { isPaymentNavigationLocked, usePaymentStore } from '@/stores/payment-store';
 
 // Import step components (we'll create these next)
 import { ServiceSelectionStep } from './steps/ServiceSelectionStep';
@@ -70,6 +71,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
     setCompanionId,
     resetBooking,
   } = useBookingStore();
+  const paymentNavigationLocked = usePaymentStore((state) => isPaymentNavigationLocked(state));
 
   const currentCompanionId = companionId || (paramCompanionId as string);
 
@@ -93,12 +95,14 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
   };
 
   const handlePrevious = () => {
+    if (paymentNavigationLocked) return;
     if (bookingData.currentStep > 1) {
       prevStep();
     }
   };
 
   const handleClose = () => {
+    if (paymentNavigationLocked) return;
     router.back();
   };
 
@@ -133,6 +137,11 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
               onPress={handleClose}
               accessibilityRole="button"
               accessibilityLabel={t('bookingWizard.backToGuideA11y')}
+              accessibilityHint={paymentNavigationLocked
+                ? t('bookingWizard.paymentNavigationLocked')
+                : undefined}
+              accessibilityState={{ disabled: paymentNavigationLocked }}
+              disabled={paymentNavigationLocked}
             >
               <ArrowLeft size={22} color={designTokens.colors.semantic.text} />
             </TouchableOpacity>

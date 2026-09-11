@@ -96,10 +96,16 @@ describe('payment session isolation', () => {
     useAuthStore.setState({ user: null, isAuthenticated: false, isLoading: false, error: null, onboarded: false });
   });
 
-  test('booking reset removes the prior payment session', () => {
+  test('booking form reset preserves the pending financial session', () => {
     seedPaymentForUserA();
     useBookingStore.getState().resetBooking();
-    expect(usePaymentStore.getState()).toMatchObject({ booking: null, charge: null, selectedMethod: null });
+    expect(usePaymentStore.getState()).toMatchObject({
+      booking: { id: 'booking-a' },
+      charge: pendingCharge,
+      selectedMethod: 'promptpay',
+      phase: 'pending',
+    });
+    expect(useBookingStore.getState().bookingData).toMatchObject({ currentStep: 1, payment: null });
   });
 
   test('logout removes the prior payment session', async () => {

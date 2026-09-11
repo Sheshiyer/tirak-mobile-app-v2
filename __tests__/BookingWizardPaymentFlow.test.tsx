@@ -4,6 +4,7 @@ import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 
 const mockMutateAsync = jest.fn();
 const mockCapture = jest.fn();
+const mockRouterBack = jest.fn();
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
@@ -16,7 +17,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 }));
 
 jest.mock('expo-router', () => ({
-  router: { back: jest.fn(), push: jest.fn() },
+  router: { back: (...args: unknown[]) => mockRouterBack(...args), push: jest.fn() },
   useLocalSearchParams: () => ({}),
 }));
 jest.mock('posthog-react-native', () => ({ usePostHog: () => ({ capture: mockCapture }) }));
@@ -196,4 +197,28 @@ describe('booking wizard payment routing', () => {
     fireEvent.press(screen.getByLabelText('Continue from payment'));
     expect(screen.getByText('CONFIRMATION_STEP')).toBeTruthy();
   });
+
+  test.each(['creating', 'pending', 'indeterminate'] as const)(
+    'blocks wizard close while payment phase is %s',
+    (phase) => {
+      useBookingStore.setState({
+        bookingData: { ...bookingFormData, currentStep: 6 },
+        isLoading: false,
+        error: null,
+      });
+      usePaymentStore.setState({
+        booking: { id: 'booking-1', status: 'confirmed', paymentStatus: 'pending' },
+        selectedMethod: 'promptpay',
+        charge: null,
+        phase,
+        errorKind: phase === 'indeterminate' ? 'indeterminate' : null,
+      });
+      const screen = render(<BookingWizard />);
+
+      fireEvent.press(screen.getByLabelText('bookingWizard.backToGuideA11y'));
+
+      expect(mockRouterBack).not.toHaveBeenCalled();
+      expect(screen.getByLabelText('bookingWizard.backToGuideA11y').props.accessibilityState.disabled).toBe(true);
+    },
+  );
 });

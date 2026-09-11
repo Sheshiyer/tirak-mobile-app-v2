@@ -28,7 +28,7 @@ import { useCreateBooking } from '@/app/api/booking/booking';
 import { useTranslation } from 'react-i18next';
 import { formatOriginalCurrencyContext } from '@/utils/currency';
 import { usePostHog } from 'posthog-react-native';
-import { usePaymentStore } from '@/stores/payment-store';
+import { isPaymentSessionRetained, usePaymentStore } from '@/stores/payment-store';
 import { formatBookingDate, formatBookingTotal } from '@/components/booking/booking-format';
 
 interface BookingSummaryStepProps {
@@ -122,6 +122,9 @@ export const BookingSummaryStep: React.FC<BookingSummaryStepProps> = ({
   const { t, i18n } = useTranslation();
   const language = i18n?.resolvedLanguage || i18n?.language || 'en';
   const setPaymentBooking = usePaymentStore((state) => state.setBooking);
+  const activeFinancialSession = usePaymentStore((state) => (
+    state.booking !== null && isPaymentSessionRetained(state)
+  ));
 
   const companion = bookingData.companionData
     ? {
@@ -148,6 +151,11 @@ export const BookingSummaryStep: React.FC<BookingSummaryStepProps> = ({
     if (!termsAccepted) {
       logger.log('⚠️ Terms not accepted');
       Alert.alert(t('bookingSummary.termsRequired'), t('bookingSummary.termsRequiredDescription'));
+      return;
+    }
+
+    if (activeFinancialSession) {
+      Alert.alert(t('bookingSummary.error'), t('payments.uncertainOutcome'));
       return;
     }
 
@@ -204,14 +212,21 @@ export const BookingSummaryStep: React.FC<BookingSummaryStepProps> = ({
           payment_status: result.data.booking.paymentStatus,
           duration_minutes: result.data.booking.duration,
         });
-        setPaymentBooking({
+        const responseCurrency = result.data.booking.currency;
+        const paymentSessionAccepted = setPaymentBooking({
           id: result.data.booking.id,
           status: result.data.booking.status,
           paymentStatus: result.data.booking.paymentStatus,
+          ...(responseCurrency !== undefined ? { currency: responseCurrency } : {}),
         });
+        if (!paymentSessionAccepted) {
+          throw new Error('An existing payment session must be resolved before starting another booking.');
+        }
         setBookingQuote({
           totalAmount: result.data.booking.totalAmount,
-          currency: 'THB',
+          // The local review flow remains THB-only when the backend omits currency.
+          // Explicit server currency is preserved and controls PromptPay eligibility.
+          currency: responseCurrency ?? 'THB',
         });
         setBookingComplete(true);
         onNext();

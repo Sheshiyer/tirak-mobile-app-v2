@@ -68,7 +68,15 @@ export interface BookingTimelineItem {
 }
 
 export type BookingStatus = "pending" | "confirmed" | "in_progress" | "completed" | "cancelled";
-export type PaymentStatus = "pending" | "paid" | "refunded";
+export type PaymentStatus =
+  | 'pending'
+  | 'processing'
+  | 'paid'
+  | 'failed'
+  | 'refunded'
+  | 'restitution_pending'
+  | 'restituted'
+  | 'restitution_failed';
 
 export interface Booking {
   meetingPoint: string;
@@ -88,6 +96,7 @@ export interface Booking {
   status: BookingStatus;
   totalAmount: number;
   serviceFee: number;
+  currency?: string;
   paymentStatus: PaymentStatus;
   paymentMethod?: PaymentMethod;
   timeline?: BookingTimelineItem[];
@@ -107,6 +116,7 @@ export interface BookingListItem {
   location?: string;
   status: BookingStatus;
   totalAmount: number;
+  currency?: string;
   paymentStatus: PaymentStatus;
   createdAt: string;
 }
@@ -124,6 +134,58 @@ export interface CreateBookingResponse {
     booking: Booking;
   };
   message: string;
+}
+
+const BOOKING_PAYMENT_STATUSES = new Set<PaymentStatus>([
+  'pending',
+  'processing',
+  'paid',
+  'failed',
+  'refunded',
+  'restitution_pending',
+  'restituted',
+  'restitution_failed',
+]);
+
+export function parseCreateBookingResponse(value: unknown): CreateBookingResponse {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('Invalid booking response format');
+  }
+
+  const response = value as Record<string, unknown>;
+  const data = response.data;
+  const booking = data && typeof data === 'object' && !Array.isArray(data)
+    ? (data as Record<string, unknown>).booking
+    : null;
+  if (
+    response.success !== true
+    || !booking
+    || typeof booking !== 'object'
+    || Array.isArray(booking)
+    || typeof (booking as Record<string, unknown>).id !== 'string'
+  ) {
+    throw new Error('Invalid booking response format');
+  }
+
+  const bookingRecord = booking as Record<string, unknown>;
+  if (!BOOKING_PAYMENT_STATUSES.has(bookingRecord.paymentStatus as PaymentStatus)) {
+    throw new Error('Invalid booking payment status');
+  }
+  if (
+    typeof bookingRecord.totalAmount !== 'number'
+    || !Number.isFinite(bookingRecord.totalAmount)
+    || bookingRecord.totalAmount <= 0
+  ) {
+    throw new Error('Invalid booking total');
+  }
+  if (
+    bookingRecord.currency !== undefined
+    && (typeof bookingRecord.currency !== 'string' || bookingRecord.currency.trim().length === 0)
+  ) {
+    throw new Error('Invalid booking currency');
+  }
+
+  return value as CreateBookingResponse;
 }
 
 const createDemoBookingResponse = (bookingData: CreateBookingRequest): CreateBookingResponse => {
@@ -273,6 +335,7 @@ const toBookingListItem = (booking: Booking): BookingListItem => ({
   location: booking.location,
   status: booking.status,
   totalAmount: booking.totalAmount,
+  ...(booking.currency !== undefined ? { currency: booking.currency } : {}),
   paymentStatus: booking.paymentStatus,
   createdAt: booking.createdAt,
 });
@@ -364,10 +427,11 @@ export const createBooking = async (bookingData: CreateBookingRequest): Promise<
 
     // logger.log("Create booking response:", response.data);
     
-    await showBookingCreatedNotification(response.data.data.booking, 'traveler');
-    await scheduleThreeHourBookingReminder(response.data.data.booking, 'traveler');
+    const parsedResponse = parseCreateBookingResponse(response.data);
+    await showBookingCreatedNotification(parsedResponse.data.booking, 'traveler');
+    await scheduleThreeHourBookingReminder(parsedResponse.data.booking, 'traveler');
 
-    return response.data;
+    return parsedResponse;
   } catch (error) {
     if (isUnauthorizedError(error)) {
       throw new Error("Please log in again to create this booking.");
@@ -919,19 +983,12 @@ export const useCreateBooking = () => {
         bookingId: response.data?.data?.booking?.id
       });
 
-      // Validate response format
-      if (!response.data?.success || !response.data?.data?.booking?.id) {
-        console.error("❌ Invalid API response format:", {
-          timestamp: new Date().toISOString(),
-          response: response.data
-        });
-        throw new Error('Invalid API response format');
-      }
+      const parsedResponse = parseCreateBookingResponse(response.data);
       
-      await showBookingCreatedNotification(response.data.data.booking, 'traveler');
-      await scheduleThreeHourBookingReminder(response.data.data.booking, 'traveler');
+      await showBookingCreatedNotification(parsedResponse.data.booking, 'traveler');
+      await scheduleThreeHourBookingReminder(parsedResponse.data.booking, 'traveler');
 
-      return response.data;
+      return parsedResponse;
     },
     onSuccess: (data) => {
       logger.log("✅ Mutation succeeded:", {
