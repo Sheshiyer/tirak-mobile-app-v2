@@ -79,21 +79,19 @@ const MethodCard: React.FC<MethodCardProps> = ({
     style={[
       styles.methodCard,
       selected && styles.methodCardSelected,
-      disabled && styles.methodCardDisabled,
+      disabled && !selected && styles.methodCardDisabled,
     ]}
   >
     <View style={styles.methodHeader}>
-      <View style={[styles.methodIcon, selected && styles.methodIconSelected]}>
+      <View style={styles.methodIcon}>
         <Icon
           size={24}
-          color={selected
-            ? designTokens.colors.semantic.primaryContrast
-            : designTokens.colors.semantic.primary}
+          color={designTokens.colors.semantic.primary}
         />
       </View>
       <View style={styles.methodCopy}>
         <View style={styles.methodTitleRow}>
-          <Text style={[styles.methodTitle, selected && styles.methodTitleSelected]}>
+          <Text style={styles.methodTitle}>
             {title}
           </Text>
           {badge ? (
@@ -102,18 +100,18 @@ const MethodCard: React.FC<MethodCardProps> = ({
             </View>
           ) : null}
         </View>
-        <Text style={[styles.methodBody, selected && styles.methodBodySelected]}>
+        <Text style={styles.methodBody}>
           {body}
         </Text>
         {helper ? (
-          <Text style={[styles.methodHelper, selected && styles.methodBodySelected]}>
+          <Text style={styles.methodHelper}>
             {helper}
           </Text>
         ) : null}
       </View>
       <View style={[styles.radio, selected && styles.radioSelected]}>
         {selected ? (
-          <CheckCircle size={20} color={designTokens.colors.semantic.primaryContrast} />
+          <CheckCircle size={20} color={designTokens.colors.semantic.primary} />
         ) : null}
       </View>
     </View>
@@ -179,6 +177,7 @@ export const PaymentSelectionStep: React.FC<PaymentSelectionStepProps> = ({
   return (
     <View style={styles.container}>
       <ScrollView
+        accessibilityLabel="Payment checkout content"
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
@@ -291,17 +290,17 @@ export const PaymentSelectionStep: React.FC<PaymentSelectionStepProps> = ({
             Cash goes directly to your guide. PromptPay is available only in this local test build and remains pending until server confirmation.
           </Text>
         </Card>
-      </ScrollView>
 
-      <BookingStepFooter
-        onPrevious={onPrevious}
-        onNext={onNext}
-        nextTitle="Continue"
-        nextDisabled={!canContinue}
-        loading={phase === 'creating'}
-        showPrevious
-        showNext
-      />
+        <BookingStepFooter
+          onPrevious={onPrevious}
+          onNext={onNext}
+          nextTitle="Continue"
+          nextDisabled={!canContinue}
+          loading={phase === 'creating'}
+          showPrevious
+          showNext
+        />
+      </ScrollView>
     </View>
   );
 };
@@ -376,10 +375,11 @@ const styles = StyleSheet.create({
   },
   methodCardSelected: {
     borderColor: designTokens.colors.semantic.primary,
-    backgroundColor: designTokens.colors.semantic.primary,
+    backgroundColor: `${designTokens.colors.semantic.primary}0D`,
   },
   methodCardDisabled: {
-    opacity: 0.62,
+    borderColor: designTokens.colors.semantic.textSecondary,
+    backgroundColor: designTokens.colors.semantic.surface,
   },
   methodHeader: {
     flexDirection: 'row',
@@ -394,9 +394,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: `${designTokens.colors.semantic.primary}14`,
   },
-  methodIconSelected: {
-    backgroundColor: 'rgba(255,255,255,0.18)',
-  },
   methodCopy: {
     flex: 1,
   },
@@ -410,20 +407,14 @@ const styles = StyleSheet.create({
     ...designTokens.typography.styles.subheading,
     color: designTokens.colors.semantic.text,
   },
-  methodTitleSelected: {
-    color: designTokens.colors.semantic.primaryContrast,
-  },
   methodBody: {
     ...designTokens.typography.styles.body,
     color: designTokens.colors.semantic.textSecondary,
     marginTop: designTokens.spacing.scale.xs,
   },
-  methodBodySelected: {
-    color: 'rgba(255,255,255,0.88)',
-  },
   methodHelper: {
     ...designTokens.typography.styles.caption,
-    color: designTokens.colors.semantic.info,
+    color: designTokens.colors.semantic.textSecondary,
     marginTop: designTokens.spacing.scale.sm,
   },
   badge: {
@@ -437,7 +428,7 @@ const styles = StyleSheet.create({
     ...designTokens.typography.styles.caption,
     fontSize: designTokens.typography.sizes.small,
     fontWeight: designTokens.typography.weights.semibold,
-    color: designTokens.colors.semantic.primaryContrast,
+    color: designTokens.colors.semantic.text,
   },
   radio: {
     width: 24,
@@ -447,7 +438,7 @@ const styles = StyleSheet.create({
     borderColor: designTokens.colors.semantic.border,
   },
   radioSelected: {
-    borderColor: designTokens.colors.semantic.primaryContrast,
+    borderColor: designTokens.colors.semantic.primary,
   },
   actionCard: {
     marginBottom: designTokens.spacing.scale.xl,
