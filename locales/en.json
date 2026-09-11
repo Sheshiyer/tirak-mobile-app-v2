@@ -638,6 +638,7 @@
     "promptPayMethodA11y": "PromptPay payment method",
     "recommended": "Recommended",
     "localTest": "Local test",
+    "nonThbUnavailable": "PromptPay requires a THB booking total. Choose cash for this booking.",
     "ineligible": "PromptPay becomes available when this booking is confirmed.",
     "createPromptPayQr": "Create PromptPay QR",
     "creatingQr": "Creating QR...",
@@ -650,6 +651,7 @@
     "alreadyPaidState": "This booking is already paid or refunded. Do not pay again.",
     "failedState": "PromptPay payment failed. Choose cash or try PromptPay again.",
     "expiredState": "The PromptPay QR expired. Choose cash or create a new QR.",
+    "retryPromptPay": "Try PromptPay again",
     "restitutionPendingState": "Payment return is pending. Do not pay again or switch methods.",
     "restitutedState": "Payment was returned. Do not pay again; review this booking before choosing another method.",
     "restitutionFailedState": "Payment return needs support. Do not pay again or switch methods.",
@@ -727,6 +729,7 @@
     "payment": "Payment",
     "confirmation": "Confirmation",
     "backToGuideA11y": "Back to guide profile",
+    "paymentNavigationLocked": "Wait for the payment status before leaving this booking.",
     "progressA11y": "Booking progress, step {{current}} of {{total}}"
   },
   "notifications": {

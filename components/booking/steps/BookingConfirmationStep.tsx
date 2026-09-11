@@ -27,7 +27,7 @@ import { useBookingStore } from '@/stores/booking-store';
 import { designTokens } from '@/constants/design-tokens';
 import { CompanionData } from '@/types/companion';
 import { useTranslation } from 'react-i18next';
-import { usePaymentStore } from '@/stores/payment-store';
+import { deriveBookingPaymentPhase, usePaymentStore } from '@/stores/payment-store';
 import {
   formatBookingDate,
   formatBookingTime,
@@ -46,7 +46,14 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
   const [now, setNow] = useState(() => new Date());
   const { t, i18n } = useTranslation();
   const language = i18n?.resolvedLanguage || i18n?.language || 'en';
-  const { booking, selectedMethod, charge, phase, errorKind } = usePaymentStore();
+  const {
+    booking,
+    selectedMethod,
+    charge,
+    phase,
+    errorKind,
+    releasePaymentSessionIfSafe,
+  } = usePaymentStore();
 
   useEffect(() => {
     // Start success animation
@@ -78,11 +85,13 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
   };
 
   const handleViewBookings = () => {
+    releasePaymentSessionIfSafe();
     resetBooking();
     router.push('/bookings');
   };
 
   const handleBackToHome = () => {
+    releasePaymentSessionIfSafe();
     resetBooking();
     router.push('/(app)');
   };
@@ -95,12 +104,11 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
   const payment = bookingData.payment;
   const effectivePaymentMethod = selectedMethod || payment?.method || 'cash';
   const isBookingConfirmed = booking?.status === 'confirmed';
-  const paymentPhase = phase as string;
-  const paymentErrorKind = errorKind as string | null;
+  const bookingPhase = booking ? deriveBookingPaymentPhase(booking.paymentStatus) : 'idle';
+  const paymentPhase = phase === 'idle' && bookingPhase !== 'idle' ? bookingPhase : phase;
+  const paymentErrorKind = errorKind;
   const isPromptPayMethod = effectivePaymentMethod === 'promptpay';
-  const alreadyPaid = paymentPhase === 'paid'
-    || paymentErrorKind === 'already-paid'
-    || ['paid', 'completed', 'refunded'].includes(booking?.paymentStatus || '');
+  const alreadyPaid = paymentPhase === 'paid' || paymentErrorKind === 'already-paid';
   const restitutionLocked = [
     'restitution_pending',
     'restituted',

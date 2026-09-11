@@ -6,7 +6,6 @@ import { createBooking, CreateBookingRequest } from '../app/api/booking/booking'
 import { apiUrl } from '@/constants/api';
 import { convertCurrency } from '@/utils/currency';
 import axios from 'axios';
-import { usePaymentStore } from '@/stores/payment-store';
 
 // Booking form data interfaces
 export interface BookingService {
@@ -69,13 +68,13 @@ export interface BookingPayment {
   amount: number;
   serviceFee: number;
   totalAmount: number;
-  currency: 'THB';
+  currency: string;
   terms: boolean;
 }
 
 export interface BookingQuote {
   totalAmount: number;
-  currency: 'THB';
+  currency: string;
 }
 
 export interface BookingFormData {
@@ -463,7 +462,6 @@ export const useBookingStore = create<BookingState & BookingActions>()(
       },
 
       resetBooking: () => {
-        usePaymentStore.getState().resetPayment();
         set({
           bookingData: initialBookingData,
           isLoading: false,

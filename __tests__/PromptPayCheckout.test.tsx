@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import * as ReactNative from 'react-native';
 import { act, cleanup, fireEvent, render, waitFor, within } from '@testing-library/react-native';
 
 const mockCreatePromptPayCharge = jest.fn();
@@ -81,18 +82,47 @@ jest.mock('@/components/ui/Button', () => {
 
 jest.mock('@/components/booking/BookingStepFooter', () => {
   const ReactRuntime = require('react');
-  const { Text: NativeText, TouchableOpacity: NativeTouchableOpacity } = require('react-native');
+  const { Text: NativeText, TouchableOpacity: NativeTouchableOpacity, View: NativeView } = require('react-native');
   return {
-    BookingStepFooter: ({ onNext, nextTitle, nextDisabled, loading }: { onNext: () => void; nextTitle: string; nextDisabled?: boolean; loading?: boolean }) => ReactRuntime.createElement(
-      NativeTouchableOpacity,
-      {
-        accessibilityRole: 'button',
-        accessibilityLabel: nextTitle,
-        accessibilityState: { disabled: Boolean(nextDisabled || loading) },
-        disabled: nextDisabled || loading,
-        onPress: onNext,
-      },
-      ReactRuntime.createElement(NativeText, null, nextTitle),
+    BookingStepFooter: ({
+      onNext,
+      onPrevious,
+      nextTitle,
+      nextDisabled,
+      previousDisabled,
+      loading,
+    }: {
+      onNext: () => void;
+      onPrevious?: () => void;
+      nextTitle: string;
+      nextDisabled?: boolean;
+      previousDisabled?: boolean;
+      loading?: boolean;
+    }) => ReactRuntime.createElement(
+      NativeView,
+      null,
+      onPrevious ? ReactRuntime.createElement(
+        NativeTouchableOpacity,
+        {
+          accessibilityRole: 'button',
+          accessibilityLabel: 'Back',
+          accessibilityState: { disabled: Boolean(previousDisabled) },
+          disabled: previousDisabled,
+          onPress: onPrevious,
+        },
+        ReactRuntime.createElement(NativeText, null, 'Back'),
+      ) : null,
+      ReactRuntime.createElement(
+        NativeTouchableOpacity,
+        {
+          accessibilityRole: 'button',
+          accessibilityLabel: nextTitle,
+          accessibilityState: { disabled: Boolean(nextDisabled || loading) },
+          disabled: nextDisabled || loading,
+          onPress: onNext,
+        },
+        ReactRuntime.createElement(NativeText, null, nextTitle),
+      ),
     ),
   };
 });
@@ -234,7 +264,7 @@ describe('PromptPay traveler checkout', () => {
     const screen = renderPaymentStep();
     const checkout = within(screen.getByLabelText('Payment checkout content'));
 
-    expect(checkout.getByLabelText('Cash payment method')).toBeTruthy();
+    expect(checkout.getByLabelText(/^Cash payment method/)).toBeTruthy();
     expect(checkout.getByText('Payment safety')).toBeTruthy();
     expect(checkout.getByLabelText('Continue')).toBeTruthy();
   });
@@ -246,7 +276,7 @@ describe('PromptPay traveler checkout', () => {
     expect(screen.getByText('Cash')).toBeTruthy();
     expect(screen.getByText('PromptPay')).toBeTruthy();
     expect(screen.getByText('PromptPay becomes available when this booking is confirmed.')).toBeTruthy();
-    const method = screen.getByLabelText('PromptPay payment method');
+    const method = screen.getByLabelText(/^PromptPay payment method/);
     expect(method.props.accessibilityState.disabled).toBe(true);
     expect(StyleSheet.flatten(method.props.style).opacity).toBe(1);
     expect(StyleSheet.flatten(
@@ -263,14 +293,14 @@ describe('PromptPay traveler checkout', () => {
     seedPayment();
     const screen = renderPaymentStep();
 
-    fireEvent.press(screen.getByLabelText('PromptPay payment method'));
+    fireEvent.press(screen.getByLabelText(/^PromptPay payment method/));
     expect(screen.getByLabelText('Create PromptPay QR')).toBeTruthy();
     fireEvent.press(screen.getByLabelText('Create PromptPay QR'));
     fireEvent.press(screen.getByLabelText('Creating QR...'));
 
     expect(mockCreatePromptPayCharge).toHaveBeenCalledTimes(1);
     expect(screen.getByText('Cash')).toBeTruthy();
-    expect(screen.getByLabelText('Cash payment method').props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByLabelText(/^Cash payment method/).props.accessibilityState.disabled).toBe(true);
 
     await act(async () => resolveCharge(pendingCharge));
   });
@@ -279,10 +309,10 @@ describe('PromptPay traveler checkout', () => {
     seedPayment();
     const screen = renderPaymentStep();
 
-    fireEvent.press(screen.getByLabelText('PromptPay payment method'));
+    fireEvent.press(screen.getByLabelText(/^PromptPay payment method/));
     const checkout = within(screen.getByLabelText('Payment checkout content'));
 
-    expect(checkout.getByLabelText('PromptPay payment method')).toBeTruthy();
+    expect(checkout.getByLabelText(/^PromptPay payment method/)).toBeTruthy();
     expect(checkout.getByLabelText('Create PromptPay QR')).toBeTruthy();
     expect(checkout.getByLabelText('Continue')).toBeTruthy();
   });
@@ -296,7 +326,7 @@ describe('PromptPay traveler checkout', () => {
     const screen = renderPaymentStep();
 
     expect(StyleSheet.flatten(
-      screen.getByLabelText('PromptPay payment method').props.style,
+      screen.getByLabelText(/^PromptPay payment method/).props.style,
     ).opacity).toBe(1);
     expect(StyleSheet.flatten(screen.getByText('PromptPay').props.style).color).toBe('#111827');
     expect(StyleSheet.flatten(
@@ -325,7 +355,7 @@ describe('PromptPay traveler checkout', () => {
     const screen = renderPaymentStep();
 
     expect(screen.getByText('Cash')).toBeTruthy();
-    expect(screen.getByLabelText('Cash payment method').props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByLabelText(/^Cash payment method/).props.accessibilityState.disabled).toBe(true);
     if (phase !== 'pending') {
       expect(screen.getAllByText(
         phase === 'creating'
@@ -340,7 +370,7 @@ describe('PromptPay traveler checkout', () => {
     const screen = renderPaymentStep();
 
     expect(screen.getByText('PromptPay is unavailable in this environment. Choose cash.')).toBeTruthy();
-    expect(screen.getByLabelText('Cash payment method').props.accessibilityState.disabled).toBe(false);
+    expect(screen.getByLabelText(/^Cash payment method/).props.accessibilityState.disabled).toBe(false);
   });
 
   test('an already-paid booking disables every payment action and never renders cash instructions', () => {
@@ -354,8 +384,8 @@ describe('PromptPay traveler checkout', () => {
     const screen = renderPaymentStep();
 
     expect(screen.getByText('This booking is already paid or refunded. Do not pay again.')).toBeTruthy();
-    expect(screen.getByLabelText('Cash payment method').props.accessibilityState.disabled).toBe(true);
-    expect(screen.getByLabelText('PromptPay payment method').props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByLabelText(/^Cash payment method/).props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByLabelText(/^PromptPay payment method/).props.accessibilityState.disabled).toBe(true);
     expect(screen.queryByText('Pay your local guide directly in cash.')).toBeNull();
     expect(screen.queryByText('Pay with a Thai banking app after your guide confirms the booking.')).toBeNull();
     expect(screen.getByLabelText('Continue').props.accessibilityState.disabled).toBe(false);
@@ -369,7 +399,7 @@ describe('PromptPay traveler checkout', () => {
     });
 
     const screen = renderPaymentStep();
-    expect(screen.getByText('This booking is already paid or refunded. Do not pay again.')).toBeTruthy();
+    expect(screen.getByText('Payment confirmed. Do not pay again.')).toBeTruthy();
     expect(screen.queryByText('Pay your local guide directly in cash.')).toBeNull();
     expect(screen.getByLabelText('Continue').props.accessibilityState.disabled).toBe(false);
   });
@@ -401,10 +431,141 @@ describe('PromptPay traveler checkout', () => {
 
     const screen = renderPaymentStep();
     expect(screen.getByText(copy)).toBeTruthy();
-    expect(screen.getByLabelText('Cash payment method').props.accessibilityState.disabled).toBe(true);
-    expect(screen.getByLabelText('PromptPay payment method').props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByLabelText(/^Cash payment method/).props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByLabelText(/^PromptPay payment method/).props.accessibilityState.disabled).toBe(true);
     expect(screen.queryByText('Pay your local guide directly in cash.')).toBeNull();
     expect(screen.getByLabelText('Continue').props.accessibilityState.disabled).toBe(false);
+  });
+
+  test.each([
+    ['processing', 'Payment status is uncertain. Do not pay again or switch methods. Check this booking later.'],
+    ['paid', 'Payment confirmed. Do not pay again.'],
+    ['refunded', 'Payment return is pending. Do not pay again or switch methods.'],
+    ['restitution_pending', 'Payment return is pending. Do not pay again or switch methods.'],
+    ['restituted', 'Payment was returned. Do not pay again; review this booking before choosing another method.'],
+    ['restitution_failed', 'Payment return needs support. Do not pay again or switch methods.'],
+  ] as const)('locks methods and preserves booking-level %s truth', (paymentStatus, copy) => {
+    seedPayment({
+      booking: { id: 'booking-1', status: 'confirmed', paymentStatus },
+      phase: 'idle',
+      selectedMethod: null,
+    });
+
+    const screen = renderPaymentStep();
+
+    expect(screen.getByText(copy)).toBeTruthy();
+    expect(screen.getByRole('radio', { name: /Cash payment method/ }).props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByRole('radio', { name: /PromptPay payment method/ }).props.accessibilityState.disabled).toBe(true);
+  });
+
+  test.each(['failed', 'expired'] as const)('offers a safe same-booking retry for %s', async (phase) => {
+    mockCreatePromptPayCharge.mockResolvedValueOnce(pendingCharge);
+    seedPayment({
+      booking: { id: 'booking-1', status: 'confirmed', paymentStatus: 'failed' },
+      selectedMethod: 'promptpay',
+      phase,
+      charge: { ...pendingCharge, attemptStatus: phase, paymentStatus: 'failed' },
+    });
+
+    const screen = renderPaymentStep();
+    fireEvent.press(screen.getByLabelText('Try PromptPay again'));
+
+    await waitFor(() => expect(usePaymentStore.getState().phase).toBe('pending'));
+    expect(mockCreatePromptPayCharge).toHaveBeenCalledTimes(1);
+  });
+
+  test.each(['pending', 'indeterminate', 'paid', 'restitution_pending', 'restituted', 'restitution_failed'] as const)(
+    'does not expose retry for %s',
+    (phase) => {
+      seedPayment({ selectedMethod: 'promptpay', phase, charge: phase === 'pending' ? pendingCharge : null });
+      const screen = renderPaymentStep();
+
+      expect(screen.queryByLabelText('Try PromptPay again')).toBeNull();
+    },
+  );
+
+  test.each(['creating', 'pending', 'indeterminate'] as const)(
+    'blocks backward navigation for %s',
+    (phase) => {
+      seedPayment({ selectedMethod: 'promptpay', phase, charge: phase === 'pending' ? pendingCharge : null });
+      const screen = renderPaymentStep();
+
+      expect(screen.getByLabelText('Back').props.accessibilityState.disabled).toBe(true);
+    },
+  );
+
+  test('includes local-test and active lock reason in PromptPay accessibility metadata', () => {
+    seedPayment({ selectedMethod: 'promptpay', phase: 'pending', charge: pendingCharge });
+    const screen = renderPaymentStep();
+    const promptPay = screen.getByRole('radio', {
+      name: 'PromptPay payment method. Local test. Wait for payment status before changing methods.',
+    });
+
+    expect(promptPay.props.accessibilityHint).toBe('Wait for payment status before changing methods.');
+  });
+
+  test('fails PromptPay closed when booking response explicitly names a non-THB currency', () => {
+    seedPayment({
+      booking: { id: 'booking-1', status: 'confirmed', paymentStatus: 'pending', currency: 'USD' },
+    });
+    const screen = renderPaymentStep();
+
+    expect(screen.getByRole('radio', { name: /PromptPay payment method/ }).props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByText('PromptPay requires a THB booking total. Choose cash for this booking.')).toBeTruthy();
+  });
+
+  test('moves accessibility focus to payment recovery after a creation error', async () => {
+    const focus = jest.spyOn(ReactNative.AccessibilityInfo, 'setAccessibilityFocus').mockImplementation(() => undefined);
+    const findHandle = jest.spyOn(require('react-native'), 'findNodeHandle').mockReturnValue(42);
+    seedPayment({ selectedMethod: 'promptpay', phase: 'error', errorKind: 'disabled' });
+
+    renderPaymentStep();
+
+    await waitFor(() => expect(focus).toHaveBeenCalledWith(42));
+    findHandle.mockRestore();
+    focus.mockRestore();
+  });
+
+  test('leaving confirmation clears form state but retains a pending payment session', () => {
+    useBookingStore.setState({
+      bookingData: {
+        ...bookingFormData,
+        payment: { method: 'promptpay', amount: 1800, serviceFee: 0, totalAmount: 1800, currency: 'THB', terms: false },
+        currentStep: 7,
+      },
+    });
+    seedPayment({ selectedMethod: 'promptpay', phase: 'pending', charge: pendingCharge });
+    const screen = render(<BookingConfirmationStep onPrevious={jest.fn()} />);
+
+    fireEvent.press(screen.getByLabelText('Bookings'));
+
+    expect(useBookingStore.getState().bookingData).toMatchObject({ currentStep: 1, payment: null });
+    expect(usePaymentStore.getState()).toMatchObject({
+      booking: { id: 'booking-1' },
+      phase: 'pending',
+      charge: pendingCharge,
+    });
+  });
+
+  test('leaving confirmation may release a proved paid payment session', () => {
+    useBookingStore.setState({
+      bookingData: {
+        ...bookingFormData,
+        payment: { method: 'promptpay', amount: 1800, serviceFee: 0, totalAmount: 1800, currency: 'THB', terms: false },
+        currentStep: 7,
+      },
+    });
+    seedPayment({
+      booking: { id: 'booking-1', status: 'confirmed', paymentStatus: 'paid' },
+      selectedMethod: 'promptpay',
+      phase: 'paid',
+      charge: { ...pendingCharge, attemptStatus: 'successful', paymentStatus: 'paid' },
+    });
+    const screen = render(<BookingConfirmationStep onPrevious={jest.fn()} />);
+
+    fireEvent.press(screen.getByLabelText('Back to Home'));
+
+    expect(usePaymentStore.getState()).toMatchObject({ booking: null, phase: 'idle', charge: null });
   });
 
   test('renders only server pending fields and never paid language', () => {
@@ -537,6 +698,9 @@ describe('PromptPay traveler checkout', () => {
     const checkout = renderPaymentStep();
 
     expect(checkout.getByText('คิวอาร์พร้อมเพย์หมดอายุแล้ว เลือกเงินสดหรือสร้างคิวอาร์ใหม่')).toBeTruthy();
+    expect(checkout.getByRole('radio', {
+      name: 'วิธีชำระด้วยพร้อมเพย์. ทดสอบในเครื่อง.',
+    })).toBeTruthy();
     expect(checkout.queryByText('Payment safety')).toBeNull();
     cleanup();
 

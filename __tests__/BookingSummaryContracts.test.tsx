@@ -5,6 +5,8 @@ import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react
 const mockMutateAsync = jest.fn();
 const mockSetPaymentBooking = jest.fn();
 const mockOnNext = jest.fn();
+let mockPaymentBooking: { id: string } | null = null;
+let mockSessionRetained = false;
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
@@ -66,8 +68,14 @@ jest.mock('@/app/api/booking/booking', () => ({
 }));
 
 jest.mock('@/stores/payment-store', () => ({
-  usePaymentStore: (selector: (state: { setBooking: typeof mockSetPaymentBooking }) => unknown) => (
-    selector({ setBooking: mockSetPaymentBooking })
+  isPaymentSessionRetained: () => mockSessionRetained,
+  usePaymentStore: (selector: (state: {
+    booking: { id: string } | null;
+    phase: 'idle';
+    errorKind: null;
+    setBooking: typeof mockSetPaymentBooking;
+  }) => unknown) => (
+    selector({ booking: mockPaymentBooking, phase: 'idle', errorKind: null, setBooking: mockSetPaymentBooking })
   ),
 }));
 
@@ -155,7 +163,10 @@ describe('booking summary contracts', () => {
   beforeEach(() => {
     mockMutateAsync.mockReset();
     mockSetPaymentBooking.mockReset();
+    mockSetPaymentBooking.mockReturnValue(true);
     mockOnNext.mockReset();
+    mockPaymentBooking = null;
+    mockSessionRetained = false;
     useBookingStore.setState({ bookingData, isLoading: false, error: null, services: [] });
   });
 
@@ -196,5 +207,36 @@ describe('booking summary contracts', () => {
 
     await act(async () => resolveBooking(successfulBooking));
     expect(mockSetPaymentBooking).toHaveBeenCalledWith(expect.objectContaining({ id: 'booking-1' }));
+    expect(mockSetPaymentBooking).toHaveBeenCalledWith(expect.not.objectContaining({ currency: expect.anything() }));
+    expect(useBookingStore.getState().bookingData.bookingQuote).toEqual({ totalAmount: 1800, currency: 'THB' });
+  });
+
+  test('refuses a new booking submission while a financial session must be retained', () => {
+    mockPaymentBooking = { id: 'booking-live' };
+    mockSessionRetained = true;
+    const screen = render(<BookingSummaryStep onNext={mockOnNext} onPrevious={jest.fn()} />);
+
+    fireEvent.press(screen.getByRole('checkbox'));
+    fireEvent.press(screen.getByLabelText('Confirm'));
+
+    expect(mockMutateAsync).not.toHaveBeenCalled();
+    expect(mockSetPaymentBooking).not.toHaveBeenCalled();
+  });
+
+  test('propagates explicit server currency into the payment session and booking quote', async () => {
+    mockMutateAsync.mockResolvedValue({
+      ...successfulBooking,
+      data: { booking: { ...successfulBooking.data.booking, currency: 'USD' } },
+    });
+    const screen = render(<BookingSummaryStep onNext={mockOnNext} onPrevious={jest.fn()} />);
+
+    fireEvent.press(screen.getByRole('checkbox'));
+    await act(async () => fireEvent.press(screen.getByLabelText('Confirm')));
+
+    expect(mockSetPaymentBooking).toHaveBeenCalledWith(expect.objectContaining({ currency: 'USD' }));
+    expect(useBookingStore.getState().bookingData.bookingQuote).toEqual({
+      totalAmount: 1800,
+      currency: 'USD',
+    });
   });
 });
