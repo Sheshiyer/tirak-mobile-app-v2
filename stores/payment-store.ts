@@ -3,6 +3,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 
 import {
   createPromptPayCharge,
+  parsePromptPayCharge,
   PaymentClientError,
   type PaymentErrorKind,
   type PromptPayCharge,
@@ -10,7 +11,18 @@ import {
 import { secureStorage } from '@/utils/secure-storage';
 
 export type PaymentMethod = 'cash' | 'promptpay';
-export type PaymentPhase = 'idle' | 'creating' | 'pending' | 'error';
+export type PaymentPhase =
+  | 'idle'
+  | 'creating'
+  | 'pending'
+  | 'indeterminate'
+  | 'paid'
+  | 'failed'
+  | 'expired'
+  | 'restitution_pending'
+  | 'restituted'
+  | 'restitution_failed'
+  | 'error';
 
 export interface PaymentBooking {
   id: string;
@@ -28,6 +40,7 @@ interface PaymentState {
   selectMethod: (method: PaymentMethod) => void;
   createCharge: () => Promise<PromptPayCharge>;
   resetPayment: () => void;
+  clearPaymentSession: () => Promise<void>;
 }
 
 const initialPaymentState = {
@@ -46,6 +59,31 @@ const securePersistStorage = {
 
 let inFlightCharge: Promise<PromptPayCharge> | null = null;
 let paymentSessionVersion = 0;
+
+export function derivePaymentPhase(charge: PromptPayCharge): Exclude<PaymentPhase, 'idle' | 'error'> {
+  const pair = `${charge.attemptStatus}:${charge.paymentStatus}`;
+  switch (pair) {
+    case 'creating:processing': return 'creating';
+    case 'indeterminate:processing': return 'indeterminate';
+    case 'pending:pending': return 'pending';
+    case 'successful:paid': return 'paid';
+    case 'successful:restitution_pending': return 'restitution_pending';
+    case 'successful:restituted': return 'restituted';
+    case 'successful:restitution_failed': return 'restitution_failed';
+    case 'failed:failed': return 'failed';
+    case 'expired:failed': return 'expired';
+    default: throw new PaymentClientError('unknown');
+  }
+}
+
+const terminalBookingPaymentStatuses = new Set([
+  'paid',
+  'completed',
+  'refunded',
+  'restitution_pending',
+  'restituted',
+  'restitution_failed',
+]);
 
 export const usePaymentStore = create<PaymentState>()(
   persist(
@@ -69,6 +107,10 @@ export const usePaymentStore = create<PaymentState>()(
         if (inFlightCharge) return inFlightCharge;
 
         const booking = get().booking;
+        if (booking && terminalBookingPaymentStatuses.has(booking.paymentStatus.trim().toLowerCase())) {
+          set({ charge: null, phase: 'paid', errorKind: 'already-paid' });
+          return Promise.reject(new PaymentClientError('already-paid'));
+        }
         if (!booking || booking.status !== 'confirmed') {
           return Promise.reject(new PaymentClientError('booking-not-payable'));
         }
@@ -83,11 +125,10 @@ export const usePaymentStore = create<PaymentState>()(
             ) {
               return charge;
             }
-            const pending = ['creating', 'indeterminate', 'pending'].includes(charge.attemptStatus);
             set({
               charge,
-              phase: pending ? 'pending' : 'error',
-              errorKind: pending ? null : 'unknown',
+              phase: derivePaymentPhase(charge),
+              errorKind: null,
             });
             return charge;
           })
@@ -97,7 +138,12 @@ export const usePaymentStore = create<PaymentState>()(
               requestSessionVersion === paymentSessionVersion &&
               get().booking?.id === booking.id
             ) {
-              set({ charge: null, phase: 'error', errorKind });
+              const phase: PaymentPhase = errorKind === 'already-paid'
+                ? 'paid'
+                : errorKind === 'indeterminate'
+                  ? 'indeterminate'
+                  : 'error';
+              set({ charge: null, phase, errorKind });
             }
             throw error instanceof PaymentClientError ? error : new PaymentClientError('unknown');
           });
@@ -116,6 +162,11 @@ export const usePaymentStore = create<PaymentState>()(
         inFlightCharge = null;
         set(initialPaymentState);
       },
+
+      clearPaymentSession: async () => {
+        get().resetPayment();
+        await usePaymentStore.persist.clearStorage();
+      },
     }),
     {
       name: 'tirak-payment-session',
@@ -127,14 +178,37 @@ export const usePaymentStore = create<PaymentState>()(
       }),
       merge: (persistedState, currentState) => {
         const persisted = persistedState as Partial<PaymentState>;
-        return {
-          ...currentState,
-          booking: persisted.booking ?? null,
-          selectedMethod: persisted.selectedMethod ?? null,
-          charge: persisted.charge ?? null,
-          phase: persisted.charge ? 'pending' : 'idle',
-          errorKind: null,
-        };
+        if (!persisted.charge) {
+          return {
+            ...currentState,
+            booking: persisted.booking ?? null,
+            selectedMethod: persisted.selectedMethod ?? null,
+            charge: null,
+            phase: 'idle',
+            errorKind: null,
+          };
+        }
+
+        try {
+          const charge = parsePromptPayCharge(persisted.charge);
+          return {
+            ...currentState,
+            booking: persisted.booking ?? null,
+            selectedMethod: persisted.selectedMethod ?? null,
+            charge,
+            phase: derivePaymentPhase(charge),
+            errorKind: null,
+          };
+        } catch {
+          return {
+            ...currentState,
+            booking: persisted.booking ?? null,
+            selectedMethod: persisted.selectedMethod ?? null,
+            charge: null,
+            phase: 'error',
+            errorKind: 'unknown',
+          };
+        }
       },
     },
   ),
