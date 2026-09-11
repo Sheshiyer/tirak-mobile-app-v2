@@ -1,6 +1,6 @@
 import React from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
-import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { act, cleanup, fireEvent, render, waitFor, within } from '@testing-library/react-native';
 
 const mockCreatePromptPayCharge = jest.fn();
 
@@ -251,6 +251,17 @@ describe('PromptPay traveler checkout', () => {
     expect(screen.queryByText('PromptPay')).toBeNull();
   });
 
+  test('keeps the complete cash checkout in one reachable scroll region', () => {
+    process.env.EXPO_PUBLIC_PROMPTPAY_ENABLED = 'false';
+    seedPayment({ selectedMethod: 'cash' });
+    const screen = renderPaymentStep();
+    const checkout = within(screen.getByLabelText('Payment checkout content'));
+
+    expect(checkout.getByLabelText('Cash payment method')).toBeTruthy();
+    expect(checkout.getByText('Payment safety')).toBeTruthy();
+    expect(checkout.getByLabelText('Continue')).toBeTruthy();
+  });
+
   test('shows cash plus an ineligible PromptPay method for an unconfirmed booking', () => {
     seedPayment({ booking: { id: 'booking-1', status: 'pending', paymentStatus: 'pending' } });
     const screen = renderPaymentStep();
@@ -258,7 +269,15 @@ describe('PromptPay traveler checkout', () => {
     expect(screen.getByText('Cash')).toBeTruthy();
     expect(screen.getByText('PromptPay')).toBeTruthy();
     expect(screen.getByText('PromptPay becomes available when this booking is confirmed.')).toBeTruthy();
-    expect(screen.getByLabelText('PromptPay payment method').props.accessibilityState.disabled).toBe(true);
+    const method = screen.getByLabelText('PromptPay payment method');
+    expect(method.props.accessibilityState.disabled).toBe(true);
+    expect(StyleSheet.flatten(method.props.style).opacity).toBe(1);
+    expect(StyleSheet.flatten(
+      screen.getByText('Pay with a Thai banking app after your guide confirms the booking.').props.style,
+    ).color).toBe('#6B7280');
+    expect(StyleSheet.flatten(
+      screen.getByText('PromptPay becomes available when this booking is confirmed.').props.style,
+    ).color).toBe('#6B7280');
   });
 
   test('a confirmed booking exposes one guarded Create PromptPay QR action', async () => {
@@ -277,6 +296,39 @@ describe('PromptPay traveler checkout', () => {
     expect(screen.getByLabelText('Cash payment method').props.accessibilityState.disabled).toBe(true);
 
     await act(async () => resolveCharge(pendingCharge));
+  });
+
+  test('keeps the confirmed pre-request action and footer reachable in the checkout scroll region', () => {
+    seedPayment();
+    const screen = renderPaymentStep();
+
+    fireEvent.press(screen.getByLabelText('PromptPay payment method'));
+    const checkout = within(screen.getByLabelText('Payment checkout content'));
+
+    expect(checkout.getByLabelText('PromptPay payment method')).toBeTruthy();
+    expect(checkout.getByLabelText('Create PromptPay QR')).toBeTruthy();
+    expect(checkout.getByLabelText('Continue')).toBeTruthy();
+  });
+
+  test('keeps selected locked PromptPay copy high contrast without dimming the card', () => {
+    seedPayment({
+      selectedMethod: 'promptpay',
+      phase: 'pending',
+      charge: pendingCharge,
+    });
+    const screen = renderPaymentStep();
+
+    expect(StyleSheet.flatten(
+      screen.getByLabelText('PromptPay payment method').props.style,
+    ).opacity).toBe(1);
+    expect(StyleSheet.flatten(screen.getByText('PromptPay').props.style).color).toBe('#111827');
+    expect(StyleSheet.flatten(
+      screen.getByText('Pay with a Thai banking app after your guide confirms the booking.').props.style,
+    ).color).toBe('#6B7280');
+    expect(screen.getAllByText('Wait for payment status before changing methods.').every(
+      (copy) => StyleSheet.flatten(copy.props.style).color === '#6B7280',
+    )).toBe(true);
+    expect(StyleSheet.flatten(screen.getByText('Local test').props.style).color).toBe('#111827');
   });
 
   test.each([
