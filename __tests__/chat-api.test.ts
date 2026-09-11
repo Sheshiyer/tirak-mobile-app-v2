@@ -67,25 +67,26 @@ describe('chat-api service', () => {
     );
   });
 
-  test('falls back to review chat rooms when backend has no rooms', async () => {
+  test('preserves an authenticated empty room list', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ success: true, data: { items: [] } }),
     });
 
-    const rooms = await getRooms();
-
-    expect(rooms.length).toBeGreaterThan(0);
-    expect(rooms.some((room: any) => room.id === 'demo_room_test_companion')).toBe(true);
+    await expect(getRooms()).resolves.toEqual([]);
   });
 
-  test('does not call the backend without an auth token and still exposes review rooms', async () => {
+  test('does not fabricate rooms when authentication is missing', async () => {
     mockGetItemAsync.mockResolvedValueOnce(null);
 
-    const rooms = await getRooms();
-
+    await expect(getRooms()).resolves.toEqual([]);
     expect(mockFetch).not.toHaveBeenCalled();
-    expect(rooms.some((room: any) => room.id === 'demo_room_test_companion')).toBe(true);
+  });
+
+  test('does not fabricate rooms when the transport fails', async () => {
+    mockFetch.mockRejectedValueOnce(new Error('offline'));
+
+    await expect(getRooms()).resolves.toEqual([]);
   });
 
   test('creates backend rooms for real users', async () => {
@@ -108,30 +109,45 @@ describe('chat-api service', () => {
     );
   });
 
-  test('routes review companions to deterministic demo rooms', async () => {
-    await expect(createOrGetRoom('30c6d267-22d1-4cd0-8bdc-46993c14c143')).resolves.toBe(
-      'demo_room_test_companion',
+  test('routes every companion through the authenticated backend', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: true, data: { roomId: 'room-review', existed: true } }),
+    });
+
+    await expect(
+      createOrGetRoom('30c6d267-22d1-4cd0-8bdc-46993c14c143'),
+    ).resolves.toBe('room-review');
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://chat.test/api/chat/rooms',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          otherUserId: '30c6d267-22d1-4cd0-8bdc-46993c14c143',
+        }),
+      }),
     );
-    await expect(createOrGetRoom('companion_001')).resolves.toBe('demo_room_001');
-    expect(mockFetch).not.toHaveBeenCalled();
   });
 
-  test('loads demo room detail and appends sent demo messages', async () => {
-    const before = await getRoomDetail('demo_room_test_companion');
-
-    const sent = await sendMessage('demo_room_test_companion', 'Can we meet at 10?');
-    const after = await getRoomDetail('demo_room_test_companion');
-
-    expect(sent).toMatchObject({
-      senderId: 'user_current',
-      senderName: 'You',
-      type: 'text',
-      content: 'Can we meet at 10?',
-      isOwn: true,
+  test('does not load demo-looking rooms from client fixtures', async () => {
+    const detail = {
+      id: 'demo_room_test_companion',
+      status: 'active',
+      otherParty: { id: 'server-user', name: 'Server User', image: null, type: 'supplier' },
+      messages: [],
+      pagination: { page: 1, limit: 50, total: 0, totalPages: 0 },
+      createdAt: '2026-05-20T07:00:00.000Z',
+    };
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: true, data: detail }),
     });
-    expect(after?.messages).toHaveLength((before?.messages.length ?? 0) + 1);
-    expect(after?.messages.at(-1)).toMatchObject({ content: 'Can we meet at 10?' });
-    expect(mockFetch).not.toHaveBeenCalled();
+
+    await expect(getRoomDetail('demo_room_test_companion')).resolves.toEqual(detail);
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://chat.test/api/chat/rooms/demo_room_test_companion',
+      { headers: { Authorization: 'Bearer token-123' } },
+    );
   });
 
   test('posts real room messages to the backend', async () => {
@@ -163,6 +179,25 @@ describe('chat-api service', () => {
         },
         body: JSON.stringify({ roomId: 'room-real', messageType: 'text', content: 'Hello' }),
       },
+    );
+  });
+
+  test('does not fake persistence for demo-looking room IDs', async () => {
+    mockFetch.mockRejectedValueOnce(new Error('offline'));
+
+    await expect(
+      sendMessage('demo_room_test_companion', 'Can we meet at 10?'),
+    ).resolves.toBeNull();
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://chat.test/api/chat/rooms/demo_room_test_companion/messages',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          roomId: 'demo_room_test_companion',
+          messageType: 'text',
+          content: 'Can we meet at 10?',
+        }),
+      }),
     );
   });
 });

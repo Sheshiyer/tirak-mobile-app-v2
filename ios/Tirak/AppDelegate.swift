@@ -4,12 +4,19 @@ import ReactAppDependencyProvider
 
 @UIApplicationMain
 public class AppDelegate: ExpoAppDelegate {
+  private enum PendingSceneLink {
+    case url(URL, [UIApplication.OpenURLOptionsKey: Any])
+    case userActivity(NSUserActivity)
+  }
+
   var window: UIWindow?
 
   var reactNativeDelegate: ExpoReactNativeFactoryDelegate?
   var reactNativeFactory: RCTReactNativeFactory?
   private var initialLaunchOptions: [UIApplication.LaunchOptionsKey: Any]?
   private var hasStartedReactNative = false
+  private var hasReactContentAppeared = false
+  private var pendingSceneLink: PendingSceneLink?
 
   public override func application(
     _ application: UIApplication,
@@ -23,6 +30,12 @@ public class AppDelegate: ExpoAppDelegate {
     reactNativeFactory = factory
     bindReactNativeFactory(factory)
     initialLaunchOptions = launchOptions
+
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(reactContentDidAppear(_:)),
+      name: Notification.Name("RCTContentDidAppearNotification"),
+      object: nil)
 
     // Expo Dev Launcher observes didFinishLaunching before UIKit connects the
     // first scene and requires the app delegate to already own its window.
@@ -48,13 +61,90 @@ public class AppDelegate: ExpoAppDelegate {
       launchOptions: initialLaunchOptions)
   }
 
+  /// UIScene receives cold-start links after `didFinishLaunching`, once the
+  /// React Native factory has already captured its launch options. Preserve the
+  /// URL in Expo's initial-link registry immediately, then defer the RN event
+  /// until the first React content has mounted and its linking listener exists.
+  func preserveColdStartURL(
+    _ url: URL,
+    options: [UIApplication.OpenURLOptionsKey: Any]
+  ) {
+    _ = super.application(UIApplication.shared, open: url, options: options)
+    debugLogSceneLink("preserved cold custom-scheme")
+    enqueuePendingSceneLink(.url(url, options))
+  }
+
+  /// Universal-link equivalent of `preserveColdStartURL`.
+  func preserveColdStartUserActivity(_ userActivity: NSUserActivity) {
+    _ = super.application(
+      UIApplication.shared,
+      continue: userActivity,
+      restorationHandler: { _ in })
+    debugLogSceneLink("preserved cold universal-link")
+    enqueuePendingSceneLink(.userActivity(userActivity))
+  }
+
+  private func enqueuePendingSceneLink(_ link: PendingSceneLink) {
+    guard pendingSceneLink == nil else {
+      return
+    }
+
+    pendingSceneLink = link
+    deliverPendingSceneLink()
+  }
+
+  @objc private func reactContentDidAppear(_ notification: Notification) {
+    hasReactContentAppeared = true
+    deliverPendingSceneLink()
+  }
+
+  private func deliverPendingSceneLink() {
+    guard hasReactContentAppeared, let link = pendingSceneLink else {
+      return
+    }
+
+    pendingSceneLink = nil
+
+    // React's content notification is posted during native mounting. Deliver
+    // on the following main-loop turn so passive effects can attach Linking's
+    // URL observer before RCTLinkingManager posts its notification.
+    DispatchQueue.main.async {
+      switch link {
+      case let .url(url, options):
+        _ = RCTLinkingManager.application(
+          UIApplication.shared,
+          open: url,
+          options: options)
+        self.debugLogSceneLink("delivered deferred custom-scheme")
+      case let .userActivity(userActivity):
+        _ = RCTLinkingManager.application(
+          UIApplication.shared,
+          continue: userActivity,
+          restorationHandler: { _ in })
+        self.debugLogSceneLink("delivered deferred universal-link")
+      }
+    }
+  }
+
+  private func debugLogSceneLink(_ message: String) {
+#if DEBUG
+    NSLog("[TirakSceneLink] \(message)")
+#endif
+  }
+
   // Linking API
   public override func application(
     _ app: UIApplication,
     open url: URL,
     options: [UIApplication.OpenURLOptionsKey: Any] = [:]
   ) -> Bool {
-    return super.application(app, open: url, options: options) || RCTLinkingManager.application(app, open: url, options: options)
+    let expoHandled = super.application(app, open: url, options: options)
+    let reactNativeHandled = RCTLinkingManager.application(
+      app,
+      open: url,
+      options: options)
+    debugLogSceneLink("delivered warm custom-scheme")
+    return expoHandled || reactNativeHandled
   }
 
   // Universal Links
@@ -63,8 +153,16 @@ public class AppDelegate: ExpoAppDelegate {
     continue userActivity: NSUserActivity,
     restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void
   ) -> Bool {
-    let result = RCTLinkingManager.application(application, continue: userActivity, restorationHandler: restorationHandler)
-    return super.application(application, continue: userActivity, restorationHandler: restorationHandler) || result
+    let expoHandled = super.application(
+      application,
+      continue: userActivity,
+      restorationHandler: restorationHandler)
+    let reactNativeHandled = RCTLinkingManager.application(
+      application,
+      continue: userActivity,
+      restorationHandler: restorationHandler)
+    debugLogSceneLink("delivered warm universal-link")
+    return expoHandled || reactNativeHandled
   }
 }
 
