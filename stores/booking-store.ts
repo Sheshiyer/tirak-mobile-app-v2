@@ -73,6 +73,11 @@ export interface BookingPayment {
   terms: boolean;
 }
 
+export interface BookingQuote {
+  totalAmount: number;
+  currency: 'THB';
+}
+
 export interface BookingFormData {
   companionId: string;
   companionData: CompanionData | null;
@@ -81,6 +86,7 @@ export interface BookingFormData {
   location: BookingLocation | null;
   requests: BookingRequests;
   payment: BookingPayment | null;
+  bookingQuote?: BookingQuote | null;
   currentStep: number;
   isComplete: boolean;
   errors: Record<string, string>;
@@ -101,6 +107,7 @@ const initialBookingData: BookingFormData = {
     groupComposition: '',
   },
   payment: null,
+  bookingQuote: null,
   currentStep: 1,
   isComplete: false,
   errors: {},
@@ -134,6 +141,7 @@ interface BookingActions {
   updateLocation: (location: BookingLocation) => void;
   updateRequests: (requests: Partial<BookingRequests>) => void;
   updatePayment: (payment: BookingPayment) => void;
+  setBookingQuote: (quote: BookingQuote) => void;
   
   // Form management
   setCompanionId: (companionId: string) => void;
@@ -207,6 +215,8 @@ export const useBookingStore = create<BookingState & BookingActions>()(
           bookingData: {
             ...state.bookingData,
             service,
+            bookingQuote: null,
+            payment: null,
           },
         }));
       },
@@ -216,6 +226,8 @@ export const useBookingStore = create<BookingState & BookingActions>()(
           bookingData: {
             ...state.bookingData,
             dateTime,
+            bookingQuote: null,
+            payment: null,
           },
         }));
       },
@@ -225,6 +237,8 @@ export const useBookingStore = create<BookingState & BookingActions>()(
           bookingData: {
             ...state.bookingData,
             location,
+            bookingQuote: null,
+            payment: null,
           },
         }));
       },
@@ -246,6 +260,15 @@ export const useBookingStore = create<BookingState & BookingActions>()(
           bookingData: {
             ...state.bookingData,
             payment,
+          },
+        }));
+      },
+
+      setBookingQuote: (bookingQuote: BookingQuote) => {
+        set((state) => ({
+          bookingData: {
+            ...state.bookingData,
+            bookingQuote,
           },
         }));
       },
@@ -352,6 +375,7 @@ export const useBookingStore = create<BookingState & BookingActions>()(
         const { bookingData } = get();
         if (!bookingData.service) return 0;
 
+        if (bookingData.bookingQuote) return bookingData.bookingQuote.totalAmount;
         return Math.round(convertCurrency(bookingData.service.price, bookingData.service.currency, 'THB'));
       },
 

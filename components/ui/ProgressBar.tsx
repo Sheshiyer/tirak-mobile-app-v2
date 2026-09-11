@@ -9,6 +9,7 @@ interface ProgressBarProps {
   labels?: string[];
   showLabels?: boolean;
   variant?: 'default' | 'gradient';
+  accessibilityLabel?: string;
 }
 
 export const ProgressBar: React.FC<ProgressBarProps> = ({
@@ -17,6 +18,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   labels = [],
   showLabels = false,
   variant = 'gradient',
+  accessibilityLabel,
 }) => {
   const animationValues = useRef(
     Array.from({ length: totalSteps }, () => new Animated.Value(0))
@@ -107,8 +109,19 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   }, [currentStep]);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.progressContainer}>
+    <View
+      style={styles.container}
+      accessible
+      accessibilityRole="progressbar"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityValue={{ min: 1, max: totalSteps, now: currentStep }}
+    >
+      <View
+        style={styles.progressContainer}
+        accessible={false}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      >
         {Array.from({ length: totalSteps }).map((_, index) => {
           const isActive = index + 1 <= currentStep;
           const isCurrent = index + 1 === currentStep;
@@ -191,7 +204,12 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
       </View>
 
       {showLabels && labels.length > 0 && (
-        <View style={styles.labelsContainer}>
+        <View
+          style={styles.labelsContainer}
+          accessible={false}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        >
           {labels.map((label, index) => (
             <Text
               key={index}

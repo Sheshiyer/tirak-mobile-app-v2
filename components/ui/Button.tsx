@@ -52,6 +52,9 @@ export const Button: React.FC<ButtonProps> = ({
   maxFontSizeMultiplier,
   onPressIn: externalPressIn,
   onPressOut: externalPressOut,
+  accessibilityRole = 'button',
+  accessibilityLabel = title,
+  accessibilityState,
   ...props
 }) => {
   const { fontScale } = useWindowDimensions();
@@ -107,6 +110,12 @@ export const Button: React.FC<ButtonProps> = ({
   const isText = variant === 'text';
   const isWhite = variant === 'white';
   const isGhost = variant === 'ghost';
+  const isUnavailable = disabled || loading;
+  const mergedAccessibilityState = {
+    ...accessibilityState,
+    disabled: isUnavailable,
+    busy: loading,
+  };
 
   const getButtonStyle = () => {
     const baseStyle = {
@@ -230,10 +239,13 @@ export const Button: React.FC<ButtonProps> = ({
             styles.button,
             getButtonStyle(),
             fullWidth && styles.fullWidth,
-            disabled && styles.disabled,
+            isUnavailable && styles.disabled,
             Platform.OS === 'web' && styles.webButton,
           ]}
-          disabled={disabled || loading}
+          disabled={isUnavailable}
+          accessibilityRole={accessibilityRole}
+          accessibilityLabel={accessibilityLabel}
+          accessibilityState={mergedAccessibilityState}
           activeOpacity={1}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
@@ -264,10 +276,13 @@ export const Button: React.FC<ButtonProps> = ({
           styles.button,
           getButtonStyle(),
           fullWidth && styles.fullWidth,
-          disabled && styles.disabled,
+          isUnavailable && styles.disabled,
           Platform.OS === 'web' && styles.webButton,
         ]}
-        disabled={disabled || loading}
+        disabled={isUnavailable}
+        accessibilityRole={accessibilityRole}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityState={mergedAccessibilityState}
         activeOpacity={1}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
