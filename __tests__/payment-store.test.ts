@@ -290,35 +290,48 @@ describe('payment session store', () => {
     },
   );
 
-  test('rehydrates charge-less indeterminate state without losing booking identity', async () => {
-    const previousOptions = usePaymentStore.persist.getOptions();
-    usePaymentStore.persist.setOptions({
-      storage: {
-        getItem: async () => ({
-          state: {
-            booking: { id: 'booking-a', status: 'confirmed', paymentStatus: 'pending' },
-            selectedMethod: 'promptpay' as const,
-            charge: null,
-            phase: 'indeterminate' as const,
-            errorKind: 'indeterminate' as const,
-          },
-        }),
-        setItem: async () => undefined,
-        removeItem: async () => undefined,
-      },
-    });
-
-    try {
-      await usePaymentStore.persist.rehydrate();
-      expect(usePaymentStore.getState()).toMatchObject({
-        booking: { id: 'booking-a' },
-        phase: 'indeterminate',
-        errorKind: 'indeterminate',
+  test.each(['creating', 'indeterminate'] as const)(
+    'rehydrates charge-less %s as locked uncertainty and rejects duplicate or replacement charges',
+    async (persistedPhase) => {
+      const previousOptions = usePaymentStore.persist.getOptions();
+      usePaymentStore.persist.setOptions({
+        storage: {
+          getItem: async () => ({
+            state: {
+              booking: { id: 'booking-a', status: 'confirmed', paymentStatus: 'pending' },
+              selectedMethod: 'promptpay' as const,
+              charge: null,
+              phase: persistedPhase,
+              errorKind: persistedPhase === 'indeterminate' ? 'indeterminate' as const : null,
+            },
+          }),
+          setItem: async () => undefined,
+          removeItem: async () => undefined,
+        },
       });
-    } finally {
-      usePaymentStore.persist.setOptions(previousOptions);
-    }
-  });
+
+      try {
+        await usePaymentStore.persist.rehydrate();
+        expect(usePaymentStore.getState()).toMatchObject({
+          booking: { id: 'booking-a' },
+          phase: 'indeterminate',
+          errorKind: 'indeterminate',
+        });
+        await expect(usePaymentStore.getState().createCharge()).rejects.toMatchObject({
+          kind: 'indeterminate',
+        });
+        expect(mockCreatePromptPayCharge).not.toHaveBeenCalled();
+        expect(usePaymentStore.getState().setBooking({
+          id: 'booking-b',
+          status: 'confirmed',
+          paymentStatus: 'pending',
+        })).toBe(false);
+        expect(usePaymentStore.getState().booking).toMatchObject({ id: 'booking-a' });
+      } finally {
+        usePaymentStore.persist.setOptions(previousOptions);
+      }
+    },
+  );
 
   test('exposes no local successful or paid mutation', () => {
     const actions = usePaymentStore.getState() as unknown as Record<string, unknown>;

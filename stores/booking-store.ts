@@ -6,6 +6,7 @@ import { createBooking, CreateBookingRequest } from '../app/api/booking/booking'
 import { apiUrl } from '@/constants/api';
 import { convertCurrency } from '@/utils/currency';
 import axios from 'axios';
+import { usePaymentStore } from '@/stores/payment-store';
 
 // Booking form data interfaces
 export interface BookingService {
@@ -462,6 +463,7 @@ export const useBookingStore = create<BookingState & BookingActions>()(
       },
 
       resetBooking: () => {
+        usePaymentStore.getState().releasePaymentSessionIfSafe();
         set({
           bookingData: initialBookingData,
           isLoading: false,

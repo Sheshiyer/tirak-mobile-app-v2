@@ -96,17 +96,49 @@ describe('payment session isolation', () => {
     useAuthStore.setState({ user: null, isAuthenticated: false, isLoading: false, error: null, onboarded: false });
   });
 
-  test('booking form reset preserves the pending financial session', () => {
-    seedPaymentForUserA();
-    useBookingStore.getState().resetBooking();
-    expect(usePaymentStore.getState()).toMatchObject({
-      booking: { id: 'booking-a' },
-      charge: pendingCharge,
+  test('booking form reset releases a safely settled payment session', () => {
+    usePaymentStore.setState({
+      booking: { id: 'booking-a', status: 'confirmed', paymentStatus: 'paid' },
       selectedMethod: 'promptpay',
-      phase: 'pending',
+      charge: { ...pendingCharge, attemptStatus: 'successful', paymentStatus: 'paid' },
+      phase: 'paid',
+      errorKind: null,
+    });
+
+    useBookingStore.getState().resetBooking();
+
+    expect(usePaymentStore.getState()).toMatchObject({
+      booking: null,
+      charge: null,
+      selectedMethod: null,
+      phase: 'idle',
+      errorKind: null,
     });
     expect(useBookingStore.getState().bookingData).toMatchObject({ currentStep: 1, payment: null });
   });
+
+  test.each(['creating', 'pending', 'indeterminate'] as const)(
+    'booking form reset retains the original %s financial session',
+    (phase) => {
+      usePaymentStore.setState({
+        booking: { id: 'booking-a', status: 'confirmed', paymentStatus: 'pending' },
+        selectedMethod: 'promptpay',
+        charge: phase === 'pending' ? pendingCharge : null,
+        phase,
+        errorKind: phase === 'indeterminate' ? 'indeterminate' : null,
+      });
+
+      useBookingStore.getState().resetBooking();
+
+      expect(usePaymentStore.getState()).toMatchObject({
+        booking: { id: 'booking-a' },
+        charge: phase === 'pending' ? pendingCharge : null,
+        selectedMethod: 'promptpay',
+        phase,
+      });
+      expect(useBookingStore.getState().bookingData).toMatchObject({ currentStep: 1, payment: null });
+    },
+  );
 
   test('logout removes the prior payment session', async () => {
     const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);

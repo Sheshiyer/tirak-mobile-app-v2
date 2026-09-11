@@ -180,7 +180,18 @@ export const usePaymentStore = create<PaymentState>()(
       createCharge: () => {
         if (inFlightCharge) return inFlightCharge;
 
-        const booking = get().booking;
+        const currentState = get();
+        if (currentState.phase === 'creating' || currentState.phase === 'indeterminate') {
+          if (currentState.phase === 'creating') {
+            set({ phase: 'indeterminate', errorKind: 'indeterminate' });
+          }
+          return Promise.reject(new PaymentClientError('indeterminate'));
+        }
+        if (currentState.phase === 'pending') {
+          return Promise.reject(new PaymentClientError('in-progress'));
+        }
+
+        const booking = currentState.booking;
         if (booking) {
           const bookingPhase = deriveBookingPaymentPhase(booking.paymentStatus);
           if (bookingPhase === 'indeterminate') {
@@ -290,8 +301,10 @@ export const usePaymentStore = create<PaymentState>()(
           const bookingPhase = persisted.booking
             ? deriveBookingPaymentPhase(persisted.booking.paymentStatus)
             : 'idle';
-          const persistedPhase = persisted.phase === 'indeterminate'
-            || (persisted.phase === 'error'
+          const persistedPhase = persisted.phase === 'creating'
+            || persisted.phase === 'indeterminate'
+            ? 'indeterminate'
+            : (persisted.phase === 'error'
               && persisted.errorKind !== null
               && persisted.errorKind !== undefined
               && UNCERTAIN_ERROR_KINDS.has(persisted.errorKind))
