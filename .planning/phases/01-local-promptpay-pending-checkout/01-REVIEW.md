@@ -1,11 +1,15 @@
 ---
 phase: 01-local-promptpay-pending-checkout
-reviewed: 2026-09-11T18:23:18Z
-depth: standard
-files_reviewed: 30
+reviewed: 2026-09-11T19:22:44Z
+depth: deep
+files_reviewed: 36
 files_reviewed_list:
+  - __tests__/BookingAccessibility.test.tsx
+  - __tests__/BookingSummaryContracts.test.tsx
   - __tests__/BookingWizardPaymentFlow.test.tsx
   - __tests__/PromptPayCheckout.test.tsx
+  - __tests__/booking-format.test.ts
+  - __tests__/chat-api.test.ts
   - __tests__/payment-api.test.ts
   - __tests__/payment-capabilities.test.ts
   - __tests__/payment-session-reset.test.ts
@@ -14,6 +18,7 @@ files_reviewed_list:
   - app/api/payment/payment.ts
   - components/booking/BookingStepFooter.tsx
   - components/booking/BookingWizard.tsx
+  - components/booking/booking-format.ts
   - components/booking/payment/PromptPayPendingCard.tsx
   - components/booking/steps/BookingConfirmationStep.tsx
   - components/booking/steps/BookingSummaryStep.tsx
@@ -26,6 +31,7 @@ files_reviewed_list:
   - ios/Tirak/Info.plist
   - ios/Tirak/SceneDelegate.swift
   - ios/scripts/verify-scene-lifecycle.sh
+  - ios/scripts/verify-scene-link-runtime.sh
   - jest.config.js
   - locales/en.json
   - locales/th.json
@@ -35,148 +41,125 @@ files_reviewed_list:
   - stores/payment-store.ts
   - utils/chat-api.ts
 findings:
-  critical: 3
-  warning: 8
+  critical: 2
+  warning: 4
   info: 0
-  total: 11
+  total: 6
 status: issues_found
 ---
 
 # Phase 01: Code Review Report
 
-**Reviewed:** 2026-09-11T18:23:18Z  
-**Depth:** standard  
-**Files Reviewed:** 30  
+**Reviewed:** 2026-09-11T19:22:44Z
+**Depth:** deep
+**Files Reviewed:** 36
+**Diff:** `6b378929^..7941235`
 **Status:** issues_found
 
 ## Narrative Findings (AI reviewer)
 
 ## Summary
 
-The supplied receipts show 8/8 Jest suites and 67/67 tests passing, a clean TypeScript check, parseable locale JSON, a passing scene-lifecycle shell check, and a successful Xcode 27/iOS 27 simulator build. Those automated receipts do not exercise several contract and state transitions below, and they are not human visual or accessibility approval.
+This review traced the complete Phase 01 source diff and the current payment, booking, authentication, persistence, chat, accessibility, localization, and iOS link-delivery call chains. The integrated head materially resolves most of the original report: strict payment decoding, request timeout handling, charge-level state-matrix derivation and rehydration, centralized auth invalidation, synchronous booking-submit deduplication, localized copy, shared-control accessibility semantics, and removal of fabricated chat data are now supported by source and tests.
 
-The implementation has three blockers: an already-paid booking can be downgraded into cash-payment instructions, terminal server payment truth is collapsed into an unknown/pending state, and unrelated production chat behavior was changed to fabricate conversations. Eight additional correctness, robustness, localization, accessibility, and lifecycle warnings should be repaired before acceptance.
+Two financial-state blockers remain. Canonical booking-level payment states are not represented consistently and can still unlock cash or be collapsed to `paid`; separately, a pending or indeterminate attempt can be abandoned and erased through normal wizard navigation. Four warnings remain around quote currency authority, terminal retry behavior, method-card accessibility/error focus, and the lack of a reliable JS-readiness boundary for cold scene links.
+
+The supplied integrated receipts are: 11/11 Jest suites and 140/140 tests passing; `npx tsc --noEmit`, locale parsing, `git diff --check`, and the static scene contract passing; an Xcode 27/iOS 27 Debug build passing; and terminated plus warm custom-scheme native receipts passing. These receipts do not establish human visual/Dynamic Type/VoiceOver acceptance. Universal-link runtime remains explicitly unexecuted because this target has no Associated Domains entitlement or real test URL.
+
+## Prior Finding Disposition
+
+- **CR-01 — partially resolved.** The API now recognizes an already-paid response and the UI locks known `paid`/`completed`/`refunded` bookings. Booking-level processing and restitution states remain inconsistent; see CR-04.
+- **CR-02 — partially resolved.** Charge responses and persisted charges now derive all nine frozen matrix phases through one function. Booking-level status handling still collapses distinct restitution states; see CR-04.
+- **CR-03 — resolved.** `utils/chat-api.ts` no longer contains demo rooms/messages or fake-send behavior; authenticated empty results remain empty.
+- **WR-01 — resolved.** The charge decoder validates version, positive safe-integer amount, exact THB display total, legal state pairs, and ISO expiry.
+- **WR-02 — resolved.** Charge creation has a bounded timeout and maps ambiguous timeout/network outcomes conservatively.
+- **WR-03 — resolved.** Missing, corrupt, expired, unauthorized, logout, and identity-change paths use centralized auth invalidation and clear the payment session.
+- **WR-04 — resolved.** Booking submit now has a same-render synchronous latch plus disabled/loading UI coverage.
+- **WR-05 — partially resolved.** The visible summary no longer invents group/add-on prices, but the returned booking currency is still absent and locally relabeled as THB; see WR-05 below.
+- **WR-06 — resolved in source.** Phase copy and accessibility strings are present in English and Thai and date/amount formatting uses the active locale. Human translation and visual acceptance remain a gate, not a source finding.
+- **WR-07 — partially resolved.** Button, progress, terms checkbox, and radio state semantics are implemented. Method-card accessible names and error focus remain incomplete; see WR-10.
+- **WR-08 — open.** Native preservation and delivery receipts improve evidence, but delivery is still synchronized to native mount rather than JS listener readiness; see WR-08.
 
 ## Critical Issues
 
-### CR-01: Already-paid bookings are treated as safe to pay again in cash
+### CR-04: Booking-level payment truth can unlock cash and collapse restitution into paid
 
-**Classification:** BLOCKER  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/app/api/payment/payment.ts:152-154`  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/components/booking/steps/PaymentSelectionStep.tsx:47-52`  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/components/booking/steps/PaymentSelectionStep.tsx:143-172`  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/components/booking/steps/BookingConfirmationStep.tsx:107-120`  
-**Issue:** The backend uses the same 409 `Booking is not payable` error label both when a booking is unconfirmed and when its `payment_status` is already `paid`, `completed`, or `refunded`; the latter response includes `This booking has already been paid`. The client collapses every such response into `booking-not-payable`, categorizes it as a definite no-charge outcome, unlocks cash, permits continuation, and then renders cash-payment instructions. A traveler can therefore be told to pay the guide again after the server explicitly reported that the booking was already paid.
+**Classification:** BLOCKER
+**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/app/api/booking/booking.ts:70-92`
+**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/stores/payment-store.ts:79-86`
+**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/stores/payment-store.ts:109-113`
+**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/components/booking/steps/PaymentSelectionStep.tsx:151-166`
+**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/components/booking/steps/PaymentSelectionStep.tsx:238-276`
+**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/__tests__/payment-store.test.ts:142-149`
+**Issue:** The booking API type admits only `pending | paid | refunded`, while the payment store accepts arbitrary booking payment strings. Checkout locks booking-level `paid`, `completed`, and `refunded`, but ignores `processing`, `restitution_pending`, `restituted`, and `restitution_failed` until a charge attempt is made. A confirmed booking in one of those states can therefore select cash and continue. If PromptPay is selected instead, `createCharge` maps all three restitution outcomes to `phase: 'paid'` plus `already-paid`, destroying whether money is being returned, was returned, or restitution failed. The parameterized test codifies that collapse instead of preserving the financial state.
 
-**Fix:** Introduce a stable backend/client reason such as `already-paid` (prefer a machine-readable backend code rather than message parsing). Treat it as an authoritative terminal booking-state change: disable all alternate payment actions, refresh the booking, and render paid/restitution-aware copy. Only unlock cash after a response that unambiguously proves no charge exists and the booking remains unpaid.
+**Fix:** Define one canonical booking payment-status union shared with the backend contract. Derive booking-level lock and presentation state before rendering or creating a charge: `processing` must remain uncertain/locked, and each restitution state must remain distinct. Never translate restitution to paid. Add UI/store tests for every public booking status, including assertions that cash cannot be selected for processing or restitution states and that each status survives unchanged.
 
-### CR-02: Successful server payment truth is collapsed into error and later resurrected as pending
+### CR-05: Normal wizard navigation can erase a financially live or unknown attempt
 
-**Classification:** BLOCKER  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/app/api/payment/payment.ts:66-83`  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/stores/payment-store.ts:13-29`  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/stores/payment-store.ts:78-91`  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/stores/payment-store.ts:128-136`  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/components/booking/steps/BookingConfirmationStep.tsx:107-120`  
-**Issue:** The API parser deliberately accepts the contract's terminal `successful`, `failed`, and `expired` attempt states and `paid`/failure payment states. The payment store has no terminal phases: anything other than creating/indeterminate/pending becomes `phase: 'error'` with `errorKind: 'unknown'`. On rehydration, any persisted charge— including a successful, failed, or expired one—is unconditionally restored as `phase: 'pending'`. The confirmation UI then labels every PromptPay selection as pending or uncertain. This discards authoritative financial state returned by the server and can indefinitely lock method switching or misrepresent a paid/failed charge.
+**Classification:** BLOCKER
+**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/components/booking/steps/PaymentSelectionStep.tsx:353-360`
+**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/components/booking/BookingWizard.tsx:95-103`
+**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/components/booking/steps/BookingConfirmationStep.tsx:80-87`
+**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/stores/booking-store.ts:465-471`
+**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/stores/payment-store.ts:93-99`
+**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/stores/payment-store.ts:160-168`
+**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/__tests__/payment-session-reset.test.ts:99-103`
+**Issue:** The payment footer never disables Previous, including while a charge is `creating`, `pending`, or `indeterminate`. Returning to summary permits another booking submission; assigning its different booking ID resets the previous payment state. Continuing to confirmation and choosing either exit action calls `resetBooking`, which unconditionally clears the persisted payment session even when the UI says the booking should be checked later. The current reset test requires this unconditional deletion. A charge that exists or may exist can consequently lose its recovery identity, and the user can start a second booking/payment attempt.
 
-**Fix:** Derive the store phase from the validated `(attemptStatus, paymentStatus)` pair and add explicit terminal states, for example `paid`, `failed`, `expired`, and restitution states. Rehydrate through the same derivation function instead of `persisted.charge ? 'pending' : 'idle'`. Add store/UI tests for every pair in `tirak-payments-v1/state-matrix.json`, especially a successful response returned by the idempotent POST endpoint.
-
-### CR-03: Empty or failed chat requests now fabricate conversations and fake successful sends
-
-**Classification:** BLOCKER  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/utils/chat-api.ts:21-45`  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/utils/chat-api.ts:128-198`  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/utils/chat-api.ts:356-360`  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/utils/chat-api.ts:386-440`  
-**Issue:** `apiGet` returns `null` for missing authentication, network errors, non-2xx responses, and unsuccessful envelopes. `getRooms` now substitutes the same mutable `demoRooms` collection for all of those failures and for a legitimate authenticated `{ items: [] }` inbox. Opening one of those rooms returns fabricated messages, and `sendMessage` reports success while mutating only in-memory demo data. This unrelated change is outside the Phase 01 traveler-payment scope and causes production users to see conversations that never happened and messages that were never delivered.
-
-**Fix:** Restore `getRooms` to return the server's array, including an empty array, and surface transport/auth failures separately. If Apple-review fixtures are still required, gate them behind an explicit, fail-closed review capability plus an identified demo account; never infer demo mode from empty data or an error. Keep demo message mutation in a separate adapter that cannot be selected by normal production requests.
+**Fix:** Separate wizard-form cleanup from payment-attempt retention. Block backward navigation while creation is in flight or the outcome is pending/unknown; preserve a booking-keyed financial session when leaving confirmation; and clear it only after a proved no-charge result, a safely settled/restituted lifecycle, or explicit account isolation. Add end-to-end store/screen tests proving pending and indeterminate attempts survive exit/relaunch and cannot be replaced by a new booking.
 
 ## Warnings
 
-### WR-01: The payment boundary accepts contract-invalid currency and amount combinations
+### WR-05: The booking response still has no authoritative currency and is relabeled as THB
 
-**Classification:** WARNING  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/app/api/payment/payment.ts:88-123`  
-**Issue:** `parseCharge` accepts any non-empty string currency, does not require the frozen contract's `THB`, and independently accepts positive `amountSatang` and `displayTotalThb` values even when they disagree. It also accepts impossible attempt/payment pairs such as `successful` plus `pending`. Those values are persisted and rendered as server truth, so a malformed or drifted response can display a materially wrong amount/status while still passing validation.
+**Classification:** WARNING
+**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/app/api/booking/booking.ts:73-95`
+**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/components/booking/steps/BookingSummaryStep.tsx:194-215`
+**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/stores/booking-store.ts:67-79`
+**Issue:** The improvement to use the server's `totalAmount` removes the earlier local add-on/group arithmetic mismatch, but the booking response contains no currency and the client hard-codes `currency: 'THB'` without runtime validation. Any non-THB service total—or malformed response total—will be stored and rendered as THB, while the PromptPay contract correctly rejects non-THB charges. The current THB fixture does not prove the general booking boundary.
 
-**Fix:** Validate `currency === 'THB'`, require `displayTotalThb === amountSatang / 100`, validate `expiresAt` as a finite ISO timestamp when present, and enforce the state-matrix pairings. Put these checks in one schema/decoder and add rejection tests for mismatched amounts, currencies, dates, and status pairs.
+**Fix:** This requires backend-authority coordination: include an explicit currency in the canonical create-booking response, decode both amount and currency at runtime, and persist that quote unchanged. Fail PromptPay closed unless the authoritative currency is THB; do not infer THB locally. Add malformed, missing-currency, and non-THB response tests.
 
-### WR-02: A stalled charge request can leave checkout locked forever
+### WR-08: Deferred cold links are released before JS listener readiness is established
 
-**Classification:** WARNING  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/app/api/payment/payment.ts:158-179`  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/components/booking/steps/PaymentSelectionStep.tsx:143-172`  
-**Issue:** The Axios POST has no timeout or cancellation. A loopback fixture, network stack, or server that accepts the connection without responding leaves the store in `creating`, keeps cash and method switching locked, and never reaches the mapped `network`/indeterminate recovery state.
+**Classification:** WARNING
+**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/ios/Tirak/AppDelegate.swift:34-38`
+**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/ios/Tirak/AppDelegate.swift:87-126`
+**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/ios/Tirak/SceneDelegate.swift:18-30`
+**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/ios/scripts/verify-scene-link-runtime.sh:17-57`
+**Issue:** Cold scene links are now preserved until `RCTContentDidAppearNotification`, then emitted one main-queue turn later. That notification proves native React content mounted, not that the JS `Linking.addEventListener` effect is registered. The verifier only observes native “preserved” and “delivered” log lines; it never asserts that JS received the URL or navigated to the intended route. A slow JS bundle/effect can therefore still miss the one-shot event even though the new native receipt passes.
 
-**Fix:** Supply a bounded Axios timeout and an abort signal tied to the screen/session. Map timeout/abort-after-send conservatively to `indeterminate` or `network` according to whether the request may have reached the server, and provide an explicit status-recovery path rather than an endless spinner.
+**Fix:** Use an explicit JS-ready handshake or a bridge-backed initial-URL queue that retains the scene link until JS consumes it, then acknowledge and clear it. Extend the runtime verifier to assert a JS-side URL/route receipt for terminated and warm launches. Once Associated Domains and a real URL exist, run the same assertion for universal links; that missing external prerequisite is tracked as an acceptance gap rather than a code defect.
 
-### WR-03: Authentication invalidation does not clear the persisted payment session
+### WR-09: Failed and expired PromptPay states advertise retry but provide no retry transition
 
-**Classification:** WARNING  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/stores/auth-store.ts:338-373`  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/stores/payment-store.ts:121-136`  
-**Issue:** `validateToken` resets payment only when it parses a valid stored user whose ID differs. Missing credentials, malformed credentials, and secure-storage failures set `isAuthenticated: false` but leave the separately persisted booking, charge ID, QR URL, and amount intact; the payment store will rehydrate any such charge as pending. The isolation tests cover explicit logout and user-ID mutation, but not the normal invalid-token startup paths.
+**Classification:** WARNING
+**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/components/booking/steps/PaymentSelectionStep.tsx:185-210`
+**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/components/booking/steps/PaymentSelectionStep.tsx:280-341`
+**Issue:** `failed` and `expired` render terminal copy that tells the user to try PromptPay again or create a new QR, but the create button is rendered only for `idle` and the retry button only for `error`. Switching to cash and back does not reset the store phase. The user can choose cash and continue, but cannot perform the retry the screen promises.
 
-**Fix:** Centralize an awaitable auth-invalidation routine that clears user state, auth/refresh credentials, and `tirak-payment-session`, and invoke it from the parse-error, no-token, exception, unauthorized-event, and explicit logout paths. Add rehydration tests for missing/corrupt credentials with a previously persisted charge.
+**Fix:** Add an explicit safe retry action for `failed`/`expired` that clears only the obsolete charge and returns the same booking to `idle`, then invokes idempotent charge creation. Alternatively change the copy to omit retry. Add interaction tests that exercise the button and prove a second request is impossible for pending, indeterminate, paid, or restitution states.
 
-### WR-04: The booking submit guard still permits a same-render double submission
+### WR-10: Method accessible names omit critical status/reason text and errors receive no focus
 
-**Classification:** WARNING  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/components/booking/steps/BookingSummaryStep.tsx:130-172`  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/components/booking/steps/BookingSummaryStep.tsx:515-522`  
-**Issue:** The handler checks the render-captured `createBookingMutation.isPending`, but the footer remains enabled and is not given a loading state. Two presses before React commits the pending-state rerender can both pass the guard and issue two non-idempotent booking mutations. That can create duplicate bookings before the payment step even though charge creation itself is deduplicated.
+**Classification:** WARNING
+**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/components/booking/steps/PaymentSelectionStep.tsx:35-45`
+**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/components/booking/steps/PaymentSelectionStep.tsx:68-118`
+**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/components/booking/steps/PaymentSelectionStep.tsx:238-276`
+**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/components/booking/steps/PaymentSelectionStep.tsx:307-323`
+**Issue:** The real radio controls now expose role, selected, and disabled state, but their explicit accessible labels contain only the method name. That suppresses the visible PromptPay “local test” badge and the helper explaining why a method is unavailable/locked from the control's accessible name. When charge creation fails, the live region announces changed text but focus is not moved to the error/recovery action, so screen-reader users can remain at the triggering button without reliable recovery context.
 
-**Fix:** Add a synchronous `useRef` submission latch set before any `await`, clear it in `finally`, and pass both `nextDisabled={... || isPending}` and `loading={isPending}` to the footer. The server request should also carry an idempotency key. Add a test that invokes the handler twice before the first mutation settles and asserts one booking call.
+**Fix:** Compose localized method labels/hints from method, local-test status, and the active availability/lock reason. Give the error heading a ref and programmatically focus it after failure (or implement an equivalent tested focus contract). Exercise the real component with Thai and English accessibility-name/state assertions plus an error-focus test.
 
-### WR-05: Summary, cash checkout, and server booking amounts can describe different purchases
+## Acceptance and Authority Gates (not counted as findings)
 
-**Classification:** WARNING  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/components/booking/steps/BookingSummaryStep.tsx:242-255`  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/components/booking/steps/BookingSummaryStep.tsx:470-487`  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/stores/booking-store.ts:351-356`  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/stores/booking-store.ts:489-503`  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/components/booking/steps/PaymentSelectionStep.tsx:148-163`  
-**Issue:** The summary multiplies service price by group size and adds hard-coded add-on prices. `calculateTotal` returns only one base service price, and `prepareBookingRequest` sends neither group size nor add-ons. Payment selection stores that smaller base price for cash, while PromptPay eventually switches to the backend-derived booking amount. For a group/add-on selection, the app can therefore show three incompatible totals and confirm the wrong cash amount.
-
-**Fix:** Define one authoritative booking quote contract. Send the selected priced customizations to the booking API if they are real purchase inputs, persist the returned booking total/currency, and use that value for cash and pre-charge display. If customizations are not bookable, remove their prices from the total instead of presenting them as payable line items.
-
-### WR-06: New checkout and confirmation content bypasses localization
-
-**Classification:** WARNING  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/components/booking/steps/PaymentSelectionStep.tsx:180-212`  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/components/booking/steps/PaymentSelectionStep.tsx:235-297`  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/components/booking/steps/BookingConfirmationStep.tsx:84-99`  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/components/booking/steps/BookingConfirmationStep.tsx:126-155`  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/components/booking/steps/BookingConfirmationStep.tsx:202-219`  
-**Issue:** Large parts of the new flow are hard-coded in English (`Payment summary`, `Recommended`, safety/retry/continue copy, countdown units, calendar alerts and event text), accessibility labels append English text, and confirmation forces `en-US` date/time formatting. The added Thai locale entries therefore do not produce a Thai checkout or confirmation experience.
-
-**Fix:** Move every user-visible and accessibility string into the locale files, use interpolation/pluralization for countdown values, and format dates/times with the active i18n locale. Add a Thai rendering test that rejects fallback English in the Phase 01 screens.
-
-### WR-07: Core wizard controls and progress lack required accessibility semantics
-
-**Classification:** WARNING  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/components/ui/Button.tsx:223-277`  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/components/ui/ProgressBar.tsx:109-210`  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/components/booking/steps/BookingSummaryStep.tsx:491-511`  
-**Issue:** The shared `Button` does not default to `accessibilityRole="button"` and does not expose disabled/busy state; the progress UI has no `progressbar` role or current/min/max value; and the terms control is a visual checkbox with neither checkbox role nor checked state. Component tests replace the real Button with an accessible mock, so the green suite masks the shipped semantics. Screen-reader users cannot reliably identify checkout actions, loading/disabled state, current wizard progress, or whether terms are accepted.
-
-**Fix:** Default Button to role `button` and merge `accessibilityState={{ disabled: disabled || loading, busy: loading }}` with caller state. Give ProgressBar an accessible label/value (`min: 1`, `max: totalSteps`, `now: currentStep`) and hide decorative children. Give the terms touchable `accessibilityRole="checkbox"`, a localized label, and `accessibilityState={{ checked: termsAccepted }}`. Exercise the real components in accessibility tests instead of mocking them away.
-
-### WR-08: Cold-start scene URLs can be emitted before React Native can receive them
-
-**Classification:** WARNING  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/ios/Tirak/AppDelegate.swift:11-49`  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/ios/Tirak/SceneDelegate.swift:18-29`  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/ios/Tirak/SceneDelegate.swift:32-60`  
-**File:** `/Volumes/madara/2026/Projects/thoughtseed/tirak/.worktrees/tirak-mobile-phase1-clean/ios/scripts/verify-scene-lifecycle.sh:12-31`  
-**Issue:** React Native is started with AppDelegate launch options before the scene connects. A cold-start URL or universal-link activity arrives in `UIScene.ConnectionOptions`, not those saved launch options, and SceneDelegate immediately forwards it as an `RCTLinkingManager` notification. React Native 0.79's linking manager stores no pending notification: `getInitialURL` reads only bridge launch options, while URL events are delivered only to an already-registered observer ([upstream source](https://github.com/facebook/react-native/blob/v0.79.5/packages/react-native/Libraries/LinkingIOS/RCTLinkingManager.mm#L15-L20)). The event can therefore be lost during JS startup. The shell script checks only strings and deployment target, so it cannot detect this lifecycle failure.
-
-**Fix:** Preserve the first scene URL/activity and provide it through the bridge's actual initial-link path, or queue it until React Native's linking observer is ready; do not fire a one-shot notification during bridge startup. Add a native integration test that cold-launches the terminated app through both the custom scheme and a universal link and asserts the intended route, plus warm-link coverage.
+- Human visual review, Dynamic Type review, Thai-language quality review, and VoiceOver traversal/focus approval have not occurred. Automated semantics and locale parity do not replace those gates.
+- Universal-link runtime verification is skipped because the app has no Associated Domains entitlement and no real test URL. This external prerequisite must be supplied before universal-link acceptance can close.
+- No provider, staging, deployment, release, or backend contract mutation is authorized or evidenced by this local Phase 01 review. WR-05 specifically requires a canonical backend response change before the mobile boundary can be complete.
 
 ---
 
-_Reviewed: 2026-09-11T18:23:18Z_  
-_Reviewer: the agent (gsd-code-reviewer)_  
-_Depth: standard_
+_Reviewed: 2026-09-11T19:22:44Z_
+_Reviewer: the agent (gsd-code-reviewer)_
+_Depth: deep_
