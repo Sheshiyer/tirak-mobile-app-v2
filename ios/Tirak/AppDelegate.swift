@@ -8,6 +8,8 @@ public class AppDelegate: ExpoAppDelegate {
 
   var reactNativeDelegate: ExpoReactNativeFactoryDelegate?
   var reactNativeFactory: RCTReactNativeFactory?
+  private var initialLaunchOptions: [UIApplication.LaunchOptionsKey: Any]?
+  private var hasStartedReactNative = false
 
   public override func application(
     _ application: UIApplication,
@@ -20,16 +22,30 @@ public class AppDelegate: ExpoAppDelegate {
     reactNativeDelegate = delegate
     reactNativeFactory = factory
     bindReactNativeFactory(factory)
+    initialLaunchOptions = launchOptions
 
-#if os(iOS) || os(tvOS)
-    window = UIWindow(frame: UIScreen.main.bounds)
+    // Expo Dev Launcher observes didFinishLaunching before UIKit connects the
+    // first scene and requires the app delegate to already own its window.
+    // SceneDelegate attaches this same window to the UIWindowScene before use.
+    let bootstrapWindow = UIWindow(frame: UIScreen.main.bounds)
+    window = bootstrapWindow
+    startReactNative(in: bootstrapWindow)
+
+    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  func startReactNative(in window: UIWindow) {
+    guard !hasStartedReactNative, let factory = reactNativeFactory else {
+      return
+    }
+
+    hasStartedReactNative = true
+    self.window = window
+
     factory.startReactNative(
       withModuleName: "main",
       in: window,
-      launchOptions: launchOptions)
-#endif
-
-    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+      launchOptions: initialLaunchOptions)
   }
 
   // Linking API
