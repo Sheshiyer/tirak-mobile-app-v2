@@ -21,11 +21,12 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     window.makeKeyAndVisible()
     appDelegate.startReactNative(in: window)
 
-    if !connectionOptions.urlContexts.isEmpty {
-      self.scene(scene, openURLContexts: connectionOptions.urlContexts)
-    }
-    if let userActivity = connectionOptions.userActivities.first {
-      self.scene(scene, continue: userActivity)
+    if let context = connectionOptions.urlContexts.first {
+      appDelegate.preserveColdStartURL(
+        context.url,
+        options: applicationOpenOptions(from: context))
+    } else if let userActivity = connectionOptions.userActivities.first {
+      appDelegate.preserveColdStartUserActivity(userActivity)
     }
   }
 
@@ -37,15 +38,10 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
       return
     }
 
-    var options: [UIApplication.OpenURLOptionsKey: Any] = [
-      .openInPlace: context.options.openInPlace,
-    ]
-    options[.sourceApplication] = context.options.sourceApplication
-    options[.annotation] = context.options.annotation
     _ = appDelegate.application(
       UIApplication.shared,
       open: context.url,
-      options: options)
+      options: applicationOpenOptions(from: context))
   }
 
   func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
@@ -57,5 +53,16 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
       UIApplication.shared,
       continue: userActivity,
       restorationHandler: { _ in })
+  }
+
+  private func applicationOpenOptions(
+    from context: UIOpenURLContext
+  ) -> [UIApplication.OpenURLOptionsKey: Any] {
+    var options: [UIApplication.OpenURLOptionsKey: Any] = [
+      .openInPlace: context.options.openInPlace,
+    ]
+    options[.sourceApplication] = context.options.sourceApplication
+    options[.annotation] = context.options.annotation
+    return options
   }
 }
