@@ -23,12 +23,12 @@ key-files:
 
 key-decisions:
   - "The client sends only bookingId and method; amount, currency, and provider authority remain server-owned."
-  - "Reset increments a session version so a stale asynchronous charge response cannot restore another booking or user's state."
+  - "Authentication invalidation increments a session version so stale asynchronous responses cannot restore another user's state; unresolved financial truth remains bound to its original booking."
   - "Only booking, selected method, and allowlisted charge fields are persisted through secure storage."
 
 patterns-established:
   - "Server-owned payment truth: the store has no public paid or successful mutation."
-  - "Cross-session isolation: booking reset, logout, and authenticated-user changes invalidate payment state and stale requests."
+  - "Cross-session isolation: logout and user changes invalidate payment state; safe booking resets clear, while unresolved sessions remain identity-bound until resolution."
 
 requirements-completed: [PAY-01, PAY-02, PAY-03, PAY-04, SAFE-01, SAFE-02, TEST-01]
 
@@ -52,7 +52,7 @@ completed: 2026-09-01
 
 - Froze the mobile request to `{ bookingId, method: 'promptpay' }` and allowlisted the nine `tirak-payments-v1` response fields.
 - Added confirmed-booking eligibility, one-promise duplicate-submit protection, safe error kinds, and no local paid/success action.
-- Cleared payment state across booking reset, logout, and user identity changes, including a regression for late responses from invalidated sessions.
+- Cleared payment state across logout and user identity changes, cleared safe booking sessions, and retained unresolved sessions only under their original identity, including regressions for late responses and replacement attempts.
 
 ## Task Commits
 

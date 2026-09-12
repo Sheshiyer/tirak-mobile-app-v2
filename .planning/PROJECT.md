@@ -14,16 +14,20 @@ Expose the existing server-authoritative Omise test-sandbox PromptPay workflow i
 
 ## Current Truth
 
-- The traveler booking flow presents cash only; the PromptPay definition in `components/booking/steps/PaymentSelectionStep.tsx` is commented out.
-- The wizard declares seven steps but its current switch routes Step 6 to confirmation and never renders the imported payment-selection step.
+- Phase 1 is complete on the isolated clean recovery branch with 8/8 human UAT checks and 11/11 plan-time threats closed.
+- The traveler booking flow preserves cash and adds PromptPay only for the exact development loopback capability.
+- Step 6 renders payment selection and Step 7 renders separate booking/payment confirmation truth.
+- Confirmed local bookings can request one server-issued pending charge; the UI renders validated server amount, currency, expiry, reference, and QR fields.
+- Creating, pending, indeterminate, paid, failed, expired, and restitution states retain distinct behavior without a public local paid mutation.
+- Live or uncertain payment sessions persist across navigation and relaunch and cannot be replaced by another booking or user.
 - `app/supplier/signup/payment.tsx` is an unrelated supplier-signup mock and is not a source or target for this integration.
 - The frozen backend contract is `../backend/tirak-backend-alpha01/contracts/tirak-payments-v1/payment-api.json`.
 - Charge creation accepts only `bookingId` and `method: "promptpay"`.
-- Successful charge responses are wrapped as `{ success: true, data: charge }`; charge ID and QR URL may be null, and expiry may be omitted.
 - The server derives amount and currency from an authenticated, owned, confirmed booking.
 - QR display represents a pending attempt, never successful payment.
 - The disposable local worker enables PromptPay. Staging and production keep `promptPayEnabled: false`.
-- The current Git checkout contains pre-existing iOS dependency edits in `ios/Podfile` and `ios/Podfile.lock`; this planning work must not rewrite or discard them.
+- iOS 27 custom-scheme cold/warm delivery is proven; universal links remain unclaimed without entitlement and URL authority.
+- The original authoring checkout and its pre-existing iOS dependency edits remain preserved outside the clean recovery branch.
 
 ## Requirements
 
@@ -35,11 +39,15 @@ Expose the existing server-authoritative Omise test-sandbox PromptPay workflow i
 - Payment status shown to the traveler comes from the backend response.
 - Local iOS Simulator evidence is required before any external acceptance activity.
 
+### Completed locally
+
+- Phase 1 source, tests, iOS runtime evidence, visual evidence, UAT, and security verification are committed locally on the isolated recovery branch.
+- The complete suite passes 13/13 suites and 216/216 tests; TypeScript and locale parsing pass.
+
 ### Planned and held
 
-- Parser-readable `.planning/` artifacts, the approved UI contract, and two test-first Phase 1 plans are prepared.
-- Source implementation and the Git commit policy require separate authorization before either execution plan runs.
-- Missing GSD UI-agent runtime registration remains a separate authorization gate.
+- Phase 2 status refresh and indeterminate recovery are not yet planned or implemented.
+- Backend currency, stable already-paid code, universal-link entitlement, provider/staging activity, deployment, merge, and release remain separate authority gates.
 
 ## Safety Boundary
 
@@ -71,6 +79,10 @@ Expose the existing server-authoritative Omise test-sandbox PromptPay workflow i
 | 2026-08-31 | Cash remains visible; method switching locks whenever a PromptPay charge may exist | Preserve the cash path without creating double-payment risk |
 | 2026-08-31 | Missing GSD UI agents are not registered in this Codex runtime during the planning pass | Runtime installation/registration remains a separate authorization gate; bundled planner/checker instructions exist but their registered runner was unavailable |
 | 2026-08-31 | Planning approval does not authorize source execution or commits | The default GSD execution workflow creates commits, so execution policy must be explicit |
+| 2026-09-12 | Retain any live or uncertain payment session across navigation and relaunch | Discarding or replacing unresolved financial truth could create duplicate-payment risk |
+| 2026-09-12 | Separate booking confirmation from payment confirmation and settlement | A confirmed booking and a visible QR do not prove payment or settlement |
+| 2026-09-12 | Claim custom-scheme runtime only; keep universal links unclaimed | Associated Domains and an authorized real URL do not yet exist |
+| 2026-09-12 | Complete Phase 1 from local evidence only | Human UAT and security verification passed without provider, staging, deployment, or release actions |
 
 ---
-*Last updated: 2026-08-31 after product-owner design approval*
+*Last updated: 2026-09-12 after Phase 1 completion*

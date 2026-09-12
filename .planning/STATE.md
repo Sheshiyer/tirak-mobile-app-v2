@@ -2,24 +2,24 @@
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-08-31)
+See: `.planning/PROJECT.md` (updated 2026-09-12)
 
 **Core value:** Travelers can see a truthful PromptPay checkout state without giving the mobile app payment authority.
-**Current focus:** Phase 1 - Local PromptPay pending checkout
+**Current focus:** Phase 2 — payment status and recovery
 
 ## Current Position
 
-Phase: 1 of 3 (Local PromptPay pending checkout)
-Plan: 0 of 2 in current phase
-Status: Ready for isolated execution - Phase 1 source changes and commits authorized
-Last activity: 2026-08-31 - Product owner authorized Tirak-mobile Phase 1 source changes and Git commits; external gates remain held.
+Phase: 2 of 3 (payment status and recovery)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-09-12 - Phase 1 completed with 8/8 UAT checks and 11/11 threats closed.
 
-Progress: [..........] 0%
+Progress: [███████░░░░░░░░░░░░░] 1/3 phases (33%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
+- Total plans completed: 2
 - Average duration: n/a
 - Total execution time: 0 hours
 
@@ -27,31 +27,32 @@ Progress: [..........] 0%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 1. Local PromptPay pending checkout | 0 | 2 | n/a |
+| 1. Local PromptPay pending checkout | 2 | 2 | multi-session recovery |
 
-**Recent Trend:** No execution data yet.
+**Recent Trend:** Phase 1 completed locally; Phase 2 remains unplanned.
 
 ## Accumulated Context
 
 ### Decisions
 
-- Phase 1 is a vertical local pending-checkout slice, not a horizontal client-only layer.
-- Tirak mobile is the sole code target; Tirak Plus and supplier signup remain untouched.
-- Cash stays visible; switching to it locks whenever a PromptPay charge may already exist.
-- Charge creation requires an owned confirmed booking and sends no amount or currency.
-- GSD agent installation, deployment, provider activity, and staging enablement remain separate authorization gates.
-- Phase 1 source changes and Git commits are authorized; no merge, deploy, provider, backend, Tirak Plus, or runtime-install action is authorized.
+- Phase 1 is a local-only vertical checkout slice; Tirak Plus and supplier signup remain untouched.
+- Cash remains visible, and payment-method switching locks whenever a PromptPay charge may exist.
+- Booking status, charge attempt, payment status, settlement, and restitution remain distinct server-owned truths.
+- Live or uncertain payment sessions survive navigation and relaunch and cannot be replaced or retried unsafely.
+- Custom-scheme cold/warm delivery is proven; universal links remain explicitly unclaimed.
 
 ### Pending Todos
 
-None yet.
+- Discuss and plan Phase 2 server-authoritative status refresh and indeterminate recovery.
 
 ### Blockers/Concerns
 
-- Bundled GSD agent instruction files exist, but the UI researcher/checker are not registered in this Codex runtime. Planner/checker were not invoked through a registered GSD agent runner; an independent read-only plan audit ran instead.
-- Staging and production have PromptPay creation disabled and are not Phase 1 targets.
-- Preserve pre-existing user changes in `ios/Podfile` and `ios/Podfile.lock`.
-- External Advisor review remains unavailable because its OAuth session is expired; do not change credentials or broaden authority to bypass it.
+- Production booking creation must expose authoritative currency before PromptPay broadens beyond the exact loopback THB fixture.
+- The backend needs a stable `BOOKING_ALREADY_PAID` machine code before staging/production pairing.
+- Universal links require an Associated Domains entitlement and a real authorized URL; custom-scheme evidence does not satisfy that gate.
+- Staging and production keep PromptPay creation disabled; provider, deployment, release, and backend mutation remain separately owner-gated.
+- The original authoring checkout and its user-owned iOS dependency diffs remain preserved outside this clean recovery branch.
+- GSD specialist registration and external Advisor availability remain runtime concerns, not reasons to weaken completion evidence.
 
 ## Deferred Items
 
@@ -62,6 +63,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-31
-Stopped at: Phase 1 execution authorized; create isolated worktree and begin 01-01-PLAN.md.
-Resume file: `.planning/phases/01-local-promptpay-pending-checkout/01-01-PLAN.md`
+Last session: 2026-09-12
+Stopped at: Phase 1 complete; Phase 2 ready for discussion and planning.
+Resume file: None

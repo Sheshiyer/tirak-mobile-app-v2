@@ -63,14 +63,14 @@ completed: 2026-09-12
 
 1. **Tests and base checkout integration** — `13ff180`, `c92a12b`, `b2ce3f5`, `6997c7d`
 2. **iOS 27 scene lifecycle and runtime linking** — `97972cb`, `7941235`, `bdd43b9`
-3. **Payment truth, lifecycle, accessibility, and isolation remediation** — `1bb7a89`, `467c5a7`, `048b9e9`
+3. **Payment truth, lifecycle, accessibility, and isolation remediation** — `1bb7a89`, `467c5a7`, `048b9e9`, `16af95a`
 4. **Independent convergence reviews** — `d6a5a8b`, `fbaa7c5`, `b505fe7`
 
 Evidence, UAT, this summary, and security verification are committed only after the human checkpoint.
 
 ## Verification Evidence
 
-- Full Jest: 13/13 suites and 212/212 tests passed on the integrated source.
+- Full Jest: 13/13 suites and 216/216 tests passed on the integrated source.
 - TypeScript, locale JSON parsing, static scene lifecycle/acknowledgement, and `git diff --check` passed.
 - Xcode 27 produced an iOS 27 Release simulator build with embedded JavaScript.
 - One process recorded terminated-cold and warm custom-scheme delivery through native preservation and exact JavaScript acknowledgement.

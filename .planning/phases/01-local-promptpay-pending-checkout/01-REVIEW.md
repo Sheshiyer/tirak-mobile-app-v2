@@ -1,6 +1,6 @@
 ---
 phase: 01-local-promptpay-pending-checkout
-reviewed: 2026-09-11T20:28:32Z
+reviewed: 2026-09-12T00:08:03Z
 depth: deep
 files_reviewed: 43
 files_reviewed_list:
@@ -57,19 +57,19 @@ status: clean
 
 # Phase 01: Code Review Report
 
-**Reviewed:** 2026-09-11T20:28:32Z
+**Reviewed:** 2026-09-12T00:08:03Z
 **Depth:** deep
 **Files Reviewed:** 43
-**Diff:** `6b378929^..bdd43b9`
+**Diff:** `6b378929^..16af95adcd0cfe0a5d5212a489e75829b941de18`
 **Status:** clean
 
 ## Narrative Findings (AI reviewer)
 
 ## Summary
 
-The final integrated Phase 01 source diff was reviewed at deep cross-file depth across the booking response boundary, payment state matrix, persisted session lifecycle, navigation, authentication isolation, localization, accessibility, chat transport, and iOS scene-link bridge. Every prior Critical and Warning finding now has current source evidence of remediation. No remaining Phase 01 code defect was found.
+The final integrated Phase 01 source diff, including the four-file SAFE-02 closure at exact HEAD `16af95adcd0cfe0a5d5212a489e75829b941de18`, was reviewed at deep cross-file depth across the booking response boundary, payment state matrix, persisted session lifecycle, direct reset and confirmation exits, duplicate/replacement guards, navigation, authentication isolation, localization, accessibility, chat transport, and iOS scene-link bridge. Every prior Critical and Warning finding has current source evidence of remediation. No remaining Phase 01 code defect was found.
 
-All reviewed files meet the Phase 01 quality and safety standards. The supplied integrated receipts report 13/13 Jest suites and 212/212 tests passing; `npx tsc --noEmit`, locale parsing, the static scene verifier, and `git diff --check` passing; an Xcode 27/iOS 27 Release build with an embedded JavaScript bundle and loopback `EXPO_PUBLIC_API_URL` passing; and terminated-cold plus warm custom-scheme native and JavaScript-consumption receipts in one process.
+All reviewed files meet the Phase 01 quality and safety standards. Exact-HEAD receipts report 13/13 Jest suites and 216/216 tests passing, including the focused SAFE-02/security run at 4/4 suites and 150/150 tests; `npx tsc --noEmit`, locale parsing, the static scene verifier, and `git diff --check` passing; an Xcode 27/iOS 27 Release build with an embedded JavaScript bundle and loopback `EXPO_PUBLIC_API_URL` passing; terminated-cold plus warm custom-scheme native and JavaScript-consumption receipts in one process; 18/18 verifier must-haves satisfied; 11/11 plan-time threats closed; and 8/8 human UAT checks accepted.
 
 ## Finding Disposition
 
@@ -96,16 +96,25 @@ All reviewed files meet the Phase 01 quality and safety standards. The supplied 
 - **WR-09 — resolved.** Failed and expired attempts expose a same-booking retry that clears only obsolete charge state. Retry is refused for creating, pending, indeterminate, paid, and restitution phases.
 - **WR-10 — resolved in source.** Localized accessible names include method, local-test status, and active lock/unavailability reason; errors receive programmatic accessibility focus; English/Thai semantics are covered by component tests.
 
+### Final SAFE-02 re-review
+
+- **SAFE-02 / D-14 direct-reset gap — resolved.** `resetBooking()` now invokes the shared state-derived release policy before clearing booking-form data. Paid, failed, expired, restituted, and definite-no-charge sessions may release; creating, pending, indeterminate, uncertain-error, and unresolved restitution sessions remain bound to the original booking.
+- **Restored creating uncertainty — resolved.** Persistence maps a charge-less `creating` snapshot to `indeterminate` while retaining booking identity. `createCharge()` rejects restored creating/indeterminate and pending phases before transport, so relaunch cannot issue a duplicate request.
+- **Replacement and auth isolation — resolved.** `setBooking()` refuses a different booking while any unresolved session is retained. Authentication invalidation and user-identity changes still clear payment memory and persisted storage, preventing one user's retained financial state from crossing to another user.
+- **Regression scan — clean.** The final four-file change does not reopen CR-01 through CR-05 or WR-01 through WR-10. The reset matrix, rehydration matrix, duplicate/replacement guards, and existing checkout/auth tests exercise the changed call paths.
+
 ## External Authority and Acceptance Gates (not findings)
 
 - **Booking-response currency:** the production backend still omits authoritative currency from the create-booking response. Phase 01 remains truthful because PromptPay is available only against the exact authorized loopback fixture and the server validates the charge amount/currency. A canonical response currency is required before broadening this UI to staging or production.
 - **Already-paid machine code:** the production backend still lacks a stable `BOOKING_ALREADY_PAID` code. The client supports the current response text and future code, but staging/production enablement must remain held until the backend makes the reason contractual and the client/backend pair is re-verified.
 - **Universal links:** no Associated Domains entitlement or real test URL exists, so universal-link runtime is explicitly unclaimed. Custom-scheme proof does not satisfy this gate.
-- **Human acceptance:** no human visual, Dynamic Type, Thai-language quality, or VoiceOver traversal/focus approval is recorded. Automated semantics and receipts do not substitute for those approvals.
+- **Human acceptance:** Phase 01 visual, Accessibility Large, and VoiceOver checks are recorded as 8/8 accepted in `01-UAT.md`. This local acceptance does not imply provider, staging, production, release, or settlement approval.
 - **Lifecycle authority:** no provider, staging, production, deployment, release, or backend mutation is authorized or evidenced by this mobile review.
+- **Mobile HTTP E2E:** screenshot evidence uses real components and store state, while the independent loopback POST proves only the fixture contract. No in-app mobile-process POST receipt exists, so mobile HTTP E2E remains explicitly unclaimed.
+- **Phase 2 recovery:** authenticated status refresh, terminal transitions, expiry, and indeterminate recovery remain Phase 2 responsibilities; their absence is not a Phase 01 local source defect.
 
 ---
 
-_Reviewed: 2026-09-11T20:28:32Z_
+_Reviewed: 2026-09-12T00:08:03Z_
 _Reviewer: the agent (gsd-code-reviewer)_
 _Depth: deep_

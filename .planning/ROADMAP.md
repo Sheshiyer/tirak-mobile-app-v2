@@ -6,7 +6,7 @@ Deliver PromptPay as three vertical traveler outcomes: first a safe local pendin
 
 ## Phases
 
-- [ ] **Phase 1: Local PromptPay pending checkout** - A confirmed local test booking can create and display a server-issued pending PromptPay QR while cash remains available.
+- [x] **Phase 1: Local PromptPay pending checkout** - A confirmed local test booking can create and display a server-issued pending PromptPay QR while cash remains available. (completed 2026-09-12)
 - [ ] **Phase 2: Payment status and recovery** - The traveler sees server-authoritative transitions, terminal outcomes, and indeterminate recovery.
 - [ ] **Phase 3: Owner-gated staging acceptance** - A release owner may authorize one controlled staging proof after backend prerequisites are recorded.
 
@@ -25,10 +25,10 @@ Deliver PromptPay as three vertical traveler outcomes: first a safe local pendin
 **Plans**: 2 plans
 
 Plans:
-- [ ] 01-01: Add the contract-safe payment client and persisted server-owned charge session with test-first proofs.
-- [ ] 01-02: Integrate the local capability-gated cash/PromptPay UI and verify the pending journey on iOS Simulator.
+- [x] 01-01: Add the contract-safe payment client and persisted server-owned charge session with test-first proofs.
+- [x] 01-02: Integrate the local capability-gated cash/PromptPay UI and verify the pending journey on iOS Simulator.
 
-**Wave 2** *(blocked on Wave 1 completion)*
+**Wave 2** *(executed after Wave 1 completion)*
 
 Cross-cutting constraints:
 - The mobile app never sends amount, currency, card data, or provider credentials.
@@ -70,6 +70,6 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Local PromptPay pending checkout | 0/2 | Planned - execution authorization held | - |
+| 1. Local PromptPay pending checkout | 2/2 | Complete | 2026-09-12 |
 | 2. Payment status and recovery | 0/2 | Not started | - |
 | 3. Owner-gated staging acceptance | 0/1 | Blocked on owner authorization | - |
