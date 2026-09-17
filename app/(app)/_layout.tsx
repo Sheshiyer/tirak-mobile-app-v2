@@ -24,6 +24,7 @@ import { useNotifications } from "@/app/api/notifications/notifications";
 import { useTranslation } from 'react-i18next';
 import { SoundManager } from '@/utils/sound-manager';
 import { registerForBookingPushNotifications } from '@/utils/booking-notifications';
+import { isReviewAccountUser } from '@/constants/review-mode';
 
 const { width } = Dimensions.get("window");
 const DRAWER_WIDTH = width * 0.8;
@@ -143,7 +144,7 @@ export default function AppLayout() {
   }, [isHydrated, user]);
 
   useEffect(() => {
-    if (isHydrated && user) {
+    if (isHydrated && user && !isReviewAccountUser(user)) {
       registerForBookingPushNotifications(user).catch((error) => {
         logger.warn('[AppLayout] Failed to register for push notifications:', error);
       });

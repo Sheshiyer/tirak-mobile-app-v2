@@ -1,0 +1,72 @@
+name: Publish EAS Update
+
+on:
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: Existing EAS Update channel to publish to
+        required: true
+        type: choice
+        options:
+          - preview
+          - review
+          - production
+      message:
+        description: Optional release note prefix
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eas-update-${{ inputs.channel }}
+  cancel-in-progress: false
+
+jobs:
+  update:
+    name: Verify and publish ${{ inputs.channel }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EXPO_PUBLIC_PROMPTPAY_ENABLED: "false"
+      EXPO_PUBLIC_REVIEW_MODE: ${{ inputs.channel == 'review' && 'true' || 'false' }}
+      UPDATE_NOTE: ${{ inputs.message }}
+    steps:
+      - name: Require main for production
+        if: inputs.channel == 'production' && github.ref != 'refs/heads/main'
+        run: |
+          echo "Production updates must be dispatched from the main branch."
+          exit 1
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.5
+
+      - name: Set up Expo and EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: 24.7.0
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Run full Jest suite
+        run: bun run test:ci
+
+      - name: Publish update
+        run: |
+          release_note="${UPDATE_NOTE:-Manual OTA update} | ${GITHUB_REF_NAME}@${GITHUB_SHA}"
+          eas update \
+            --channel "${{ inputs.channel }}" \
+            --message "$release_note" \
+            --non-interactive

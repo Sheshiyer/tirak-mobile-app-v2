@@ -2,14 +2,16 @@ interface LocalPromptPayCapabilityInput {
   flag: string | undefined;
   apiBaseUrl: string;
   isDev: boolean;
+  reviewMode?: boolean;
 }
 
 export function isLocalPromptPayEnabled({
   flag,
   apiBaseUrl,
   isDev,
+  reviewMode = false,
 }: LocalPromptPayCapabilityInput): boolean {
-  if (!isDev || flag !== 'true') return false;
+  if (reviewMode || !isDev || flag !== 'true') return false;
 
   try {
     const url = new URL(apiBaseUrl);

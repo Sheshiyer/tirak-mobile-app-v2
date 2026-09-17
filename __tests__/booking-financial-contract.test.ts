@@ -10,7 +10,8 @@ jest.mock('@tanstack/react-query', () => ({
 jest.mock('@/utils/secure-storage', () => ({
   secureStorage: { getItemAsync: jest.fn(), setItemAsync: jest.fn() },
 }));
-jest.mock('@/stores/auth-store', () => ({ useAuthStore: { getState: () => ({ user: null }) } }));
+const mockAuthState: { user: null | { id: string } } = { user: null };
+jest.mock('@/stores/auth-store', () => ({ useAuthStore: { getState: () => mockAuthState } }));
 jest.mock('@/utils/booking-notifications', () => ({
   scheduleThreeHourBookingReminder: jest.fn(),
   showBookingCreatedNotification: jest.fn(),
@@ -21,7 +22,9 @@ jest.mock('@/constants/payment-capabilities', () => ({ isLocalPromptPayEnabled: 
 jest.mock('@/utils/companion-display', () => ({ isTestCompanionId: jest.fn() }));
 jest.mock('@/constants/api', () => ({ API_BASE_URL: 'http://127.0.0.1:8787', apiUrl: (path: string) => path }));
 
-import { parseCreateBookingResponse } from '@/app/api/booking/booking';
+import axios from 'axios';
+import { createBooking, parseCreateBookingResponse } from '@/app/api/booking/booking';
+import { useReviewBookingFixtureStore } from '@/stores/review-booking-fixture-store';
 
 const responseWith = (paymentStatus: string, currency?: string) => ({
   success: true,
@@ -38,6 +41,49 @@ const responseWith = (paymentStatus: string, currency?: string) => ({
 });
 
 describe('booking financial response contract', () => {
+  const originalReviewMode = process.env.EXPO_PUBLIC_REVIEW_MODE;
+
+  afterEach(() => {
+    process.env.EXPO_PUBLIC_REVIEW_MODE = originalReviewMode;
+    mockAuthState.user = null;
+    useReviewBookingFixtureStore.getState().reset();
+    jest.clearAllMocks();
+  });
+
+  test('review checkout creates the shared cross-role booking without a network call', async () => {
+    process.env.EXPO_PUBLIC_REVIEW_MODE = 'true';
+    mockAuthState.user = { id: 'demo_customer_001' };
+
+    const response = await createBooking({
+      companionId: 'demo_companion_001',
+      serviceId: 'review_experience_bangkok_001',
+      date: '2099-11-20',
+      startTime: '10:00',
+      endTime: '13:00',
+      duration: 180,
+      location: 'Bangkok Old Town',
+    });
+
+    expect(response).toMatchObject({
+      success: true,
+      data: {
+        booking: {
+          id: 'review_booking_bangkok_001',
+          status: 'pending',
+          paymentStatus: 'pending',
+          paymentMethod: { type: 'cash' },
+        },
+      },
+    });
+    expect(useReviewBookingFixtureStore.getState().booking).toMatchObject({
+      id: 'review_booking_bangkok_001',
+      customerId: 'demo_customer_001',
+      guideId: 'demo_companion_001',
+      payment: { status: 'not_charged', authority: 'review_fixture' },
+    });
+    expect(axios.post).not.toHaveBeenCalled();
+  });
+
   test.each([
     'pending',
     'processing',

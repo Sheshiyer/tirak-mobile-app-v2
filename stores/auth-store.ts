@@ -7,8 +7,15 @@ import { User, UserRole } from '@/types/auth';
 import { secureStorage } from '@/utils/secure-storage';
 import { posthog } from '@/utils/posthog';
 import { usePaymentStore } from '@/stores/payment-store';
+import { useBookingStore } from '@/stores/booking-store';
 import { API_BASE_URL } from '@/constants/api';
 import { isLocalPromptPayEnabled } from '@/constants/payment-capabilities';
+import {
+  getReviewAccount,
+  isReviewAccountUser,
+  isReviewModeEnabled,
+  type ReviewAccountKey,
+} from '@/constants/review-mode';
 
 interface AuthState {
   user: User | null;
@@ -22,6 +29,7 @@ interface AuthActions {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string, userType: UserRole, contactNumber?: string, dateOfBirth?: Date, gender?: string) => Promise<void>;
   demoLogin: (userType: UserRole) => Promise<void>;
+  switchReviewAccount: (account: ReviewAccountKey) => Promise<void>;
   logout: () => Promise<void>;
   setOnboarded: (value: boolean) => void;
   clearError: () => void;
@@ -38,6 +46,12 @@ const formatDateLocal = (date?: Date): string | undefined => {
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 };
+
+async function clearAccountScopedState(): Promise<void> {
+  await usePaymentStore.getState().clearPaymentSession();
+  useBookingStore.getState().resetBooking();
+  await useBookingStore.persist.clearStorage();
+}
 
 export const useAuthStore = create<AuthState & AuthActions>()(
   persist(
@@ -303,6 +317,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
               flag: process.env.EXPO_PUBLIC_PROMPTPAY_ENABLED,
               apiBaseUrl: API_BASE_URL,
               isDev: __DEV__,
+              reviewMode: isReviewModeEnabled(),
             })
           ) {
             await secureStorage.setItemAsync('authToken', 'tirak-local-fixture-token');
@@ -314,6 +329,42 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           const errorMessage = 'Demo login failed';
           set({ error: errorMessage, isLoading: false });
           throw new Error(errorMessage); // Throw error so UI can catch it
+        }
+      },
+
+      switchReviewAccount: async (accountKey: ReviewAccountKey) => {
+        set({ isLoading: true, error: null });
+
+        if (!isReviewModeEnabled()) {
+          const errorMessage = 'App review accounts are not enabled in this build';
+          set({ isLoading: false, error: errorMessage });
+          throw new Error(errorMessage);
+        }
+
+        try {
+          const reviewAccount = getReviewAccount(accountKey);
+          const reviewUser = { ...reviewAccount.user };
+
+          await clearAccountScopedState();
+          await Promise.all([
+            secureStorage.deleteItemAsync('authToken'),
+            secureStorage.deleteItemAsync('refreshToken'),
+          ]);
+          await secureStorage.setItemAsync('userCredentials', JSON.stringify(reviewUser));
+
+          set({
+            user: reviewUser,
+            isAuthenticated: true,
+            onboarded: true,
+            isLoading: false,
+            error: null,
+          });
+        } catch (error) {
+          const errorMessage = error && typeof error === 'object' && 'message' in error
+            ? String(error.message)
+            : 'Unable to switch app review account';
+          set({ isLoading: false, error: errorMessage });
+          throw new Error(errorMessage);
         }
       },
 
@@ -338,11 +389,17 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           // logger.log('Token validation - token exists:', !!token);
           // logger.log('Token validation - credentials exist:', !!userCredentials);
           
-          if (token && userCredentials) {
+          if (userCredentials) {
             try {
               const userData = JSON.parse(userCredentials);
               if (!userData || typeof userData !== 'object' || typeof userData.id !== 'string' || !userData.id) {
                 throw new Error('Stored user credentials are invalid');
+              }
+              const isEnabledReviewAccount = isReviewModeEnabled() && isReviewAccountUser(userData);
+              if (!token && !isEnabledReviewAccount) {
+                await get().invalidateAuth();
+                logger.log('No valid token found - user not authenticated');
+                return;
               }
               if (get().user?.id !== userData.id) usePaymentStore.getState().resetPayment();
               // If we have both token and user data, consider user authenticated

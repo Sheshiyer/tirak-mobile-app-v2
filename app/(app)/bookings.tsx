@@ -41,6 +41,12 @@ import {
   Timer
 } from 'lucide-react-native';
 import { router } from 'expo-router';
+import { isReviewModeEnabled, REVIEW_ACCOUNTS, type ReviewAccountKey } from '@/constants/review-mode';
+import {
+  REVIEW_BOOKING_ID,
+  reviewBookingToListItem,
+  useReviewBookingFixtureStore,
+} from '@/stores/review-booking-fixture-store';
 
 const { width } = Dimensions.get('window');
 
@@ -149,6 +155,15 @@ export default function BookingsScreen() {
   
   const { user, isAuthenticated } = useAuthStore();
   const isCompanion = user?.userType === 'companion' || user?.userType === 'supplier';
+  const reviewAccountKey: ReviewAccountKey | null = isReviewModeEnabled()
+    ? user?.id === REVIEW_ACCOUNTS.customer.user.id
+      ? 'customer'
+      : user?.id === REVIEW_ACCOUNTS.guide.user.id
+        ? 'guide'
+        : null
+    : null;
+  const reviewBooking = useReviewBookingFixtureStore((state) => state.booking);
+  const acceptReviewBooking = useReviewBookingFixtureStore((state) => state.acceptAsGuide);
   const [selectedTab, setSelectedTab] = useState<'upcoming' | 'past' | 'all'>('upcoming');
   const [refreshing, setRefreshing] = useState(false);
   const [sortBy, setSortBy] = useState<'date' | 'price' | 'status'>('date');
@@ -160,7 +175,7 @@ export default function BookingsScreen() {
 
   // Fetch bookings from API
   const { data: bookingsData, isLoading, error, refetch } = useBookingsQuery({}, {
-    enabled: isAuthenticated
+    enabled: isAuthenticated && reviewAccountKey === null
   });
 
   // Animation values
@@ -168,9 +183,13 @@ export default function BookingsScreen() {
   const slideAnim = useRef(new Animated.Value(50)).current;
 
   // Get bookings data - only use API data
-  const allBookings = isAuthenticated && bookingsData?.success 
-    ? bookingsData?.data?.items || []
-    : [];
+  const allBookings = reviewAccountKey
+    ? reviewBooking
+      ? [reviewBookingToListItem(reviewBooking)]
+      : []
+    : isAuthenticated && bookingsData?.success
+      ? bookingsData?.data?.items || []
+      : [];
 
   // Debug: Log the actual bookings array to inspect companion data
   // logger.log('Bookings list items:', allBookings);
@@ -250,13 +269,14 @@ export default function BookingsScreen() {
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      await refetch();
+      if (reviewAccountKey === null) await refetch();
     } finally {
       setRefreshing(false);
     }
   };
 
   const getPaymentDisplayText = (booking: BookingListItem) => {
+    if (booking.id === REVIEW_BOOKING_ID) return 'Cash — no provider charge';
     if (isCompanion) {
       if (booking.status === 'pending') return 'Pending approval';
       if (booking.paymentStatus === 'paid') return 'Paid';
@@ -270,6 +290,14 @@ export default function BookingsScreen() {
 
   const handleCompanionStatusUpdate = async (booking: BookingListItem, status: 'confirmed' | 'cancelled') => {
     try {
+      if (booking.id === REVIEW_BOOKING_ID) {
+        if (reviewAccountKey !== 'guide' || status !== 'confirmed') {
+          throw new Error('The review fixture supports guide approval only.');
+        }
+        acceptReviewBooking();
+        Alert.alert('Booking approved', 'The traveler review account now sees this booking as confirmed.');
+        return;
+      }
       await updateBookingStatus.mutateAsync({
         id: booking.id,
         statusData: {
@@ -305,7 +333,7 @@ export default function BookingsScreen() {
   };
 
   // Show loading state
-  if (isLoading && isAuthenticated) {
+  if (isLoading && isAuthenticated && reviewAccountKey === null) {
     return (
       <RadialGradient variant="appBackground" style={styles.container}>
         <View style={styles.header}>
@@ -494,24 +522,28 @@ export default function BookingsScreen() {
               {/* <TouchableOpacity style={styles.actionButton}>
                 <MessageCircle size={18} color={designTokens.colors.semantic.primary} />
               </TouchableOpacity> */}
-              <TouchableOpacity style={styles.actionButton} onPress={() => router.push(`/(app)/booking/${booking.id}` as any)}>
-                <Eye size={18} color={designTokens.colors.semantic.primary} />
-              </TouchableOpacity>
+              {booking.id !== REVIEW_BOOKING_ID && (
+                <TouchableOpacity style={styles.actionButton} onPress={() => router.push(`/(app)/booking/${booking.id}` as any)}>
+                  <Eye size={18} color={designTokens.colors.semantic.primary} />
+                </TouchableOpacity>
+              )}
             </View>
           </View>
 
           {isCompanion && booking.status === 'pending' && (
             <View style={styles.approvalActions}>
-              <TouchableOpacity
-                style={[styles.approvalButton, styles.rejectApprovalButton]}
-                onPress={() => handleRejectBooking(booking)}
-                disabled={updateBookingStatus.isPending}
-                accessibilityRole="button"
-                accessibilityLabel="Reject booking request"
-              >
-                <XCircle size={17} color={designTokens.colors.semantic.error} />
-                <Text style={styles.rejectApprovalText}>Reject</Text>
-              </TouchableOpacity>
+              {booking.id !== REVIEW_BOOKING_ID && (
+                <TouchableOpacity
+                  style={[styles.approvalButton, styles.rejectApprovalButton]}
+                  onPress={() => handleRejectBooking(booking)}
+                  disabled={updateBookingStatus.isPending}
+                  accessibilityRole="button"
+                  accessibilityLabel="Reject booking request"
+                >
+                  <XCircle size={17} color={designTokens.colors.semantic.error} />
+                  <Text style={styles.rejectApprovalText}>Reject</Text>
+                </TouchableOpacity>
+              )}
               <TouchableOpacity
                 style={[styles.approvalButton, styles.approveApprovalButton]}
                 onPress={() => handleCompanionStatusUpdate(booking, 'confirmed')}

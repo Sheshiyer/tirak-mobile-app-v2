@@ -24,6 +24,7 @@ import { Card } from '@/components/ui/Card';
 import { API_BASE_URL } from '@/constants/api';
 import { designTokens } from '@/constants/design-tokens';
 import { isLocalPromptPayEnabled } from '@/constants/payment-capabilities';
+import { isReviewModeEnabled } from '@/constants/review-mode';
 import { useBookingStore, type BookingPayment } from '@/stores/booking-store';
 import {
   deriveBookingPaymentPhase,
@@ -153,6 +154,7 @@ export const PaymentSelectionStep: React.FC<PaymentSelectionStepProps> = ({
     flag: process.env.EXPO_PUBLIC_PROMPTPAY_ENABLED,
     apiBaseUrl: API_BASE_URL,
     isDev: __DEV__,
+    reviewMode: isReviewModeEnabled(),
   });
   const bookingPhase = booking ? deriveBookingPaymentPhase(booking.paymentStatus) : 'idle';
   const paymentPhase = phase === 'idle' && bookingPhase !== 'idle' ? bookingPhase : phase;

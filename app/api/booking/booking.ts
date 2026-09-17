@@ -4,6 +4,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { secureStorage } from '@/utils/secure-storage';
 import { API_BASE_URL, apiUrl } from '@/constants/api';
 import { isLocalPromptPayEnabled } from '@/constants/payment-capabilities';
+import { isReviewModeEnabled, REVIEW_ACCOUNTS } from '@/constants/review-mode';
+import {
+  reviewBookingToBooking,
+  useReviewBookingFixtureStore,
+} from '@/stores/review-booking-fixture-store';
 import { isTestCompanionId } from '@/utils/companion-display';
 import { handleApiError, isUnauthorizedError } from '@/utils/api-errors';
 import { useAuthStore } from '@/stores/auth-store';
@@ -300,6 +305,11 @@ const isDemoPreviewBookingRequest = (bookingData: CreateBookingRequest): boolean
   );
 };
 
+const canUseLocalDemoBookingFallback = (bookingData: CreateBookingRequest): boolean => (
+  isDemoPreviewBookingRequest(bookingData)
+  && (__DEV__ || isReviewModeEnabled())
+);
+
 const isLocalPromptPayReviewBooking = (bookingData: CreateBookingRequest): boolean => (
   isDemoPreviewBookingRequest(bookingData)
   && isLocalPromptPayEnabled({
@@ -315,6 +325,20 @@ const createAndStoreDemoBookingResponse = async (bookingData: CreateBookingReque
   await showBookingCreatedNotification(response.data.booking, 'traveler');
   await scheduleThreeHourBookingReminder(response.data.booking, 'traveler');
   return response;
+};
+
+const isReviewCustomerSession = (): boolean => (
+  isReviewModeEnabled()
+  && useAuthStore.getState().user?.id === REVIEW_ACCOUNTS.customer.user.id
+);
+
+const createReviewBookingResponse = (bookingData: CreateBookingRequest): CreateBookingResponse => {
+  const fixture = useReviewBookingFixtureStore.getState().createAsCustomer(bookingData);
+  return {
+    success: true,
+    message: 'Review booking created without a network or provider call',
+    data: { booking: reviewBookingToBooking(fixture) },
+  };
 };
 
 const toBookingListItem = (booking: Booking): BookingListItem => ({
@@ -384,14 +408,17 @@ const getAuthToken = async (): Promise<string | null> => {
 // Create a new booking
 export const createBooking = async (bookingData: CreateBookingRequest): Promise<CreateBookingResponse> => {
   try {
-    const token = await getAuthToken();
-    
-    const url = apiUrl('/api/bookings');
-    
     // Validate required fields
     if (!bookingData.companionId || !bookingData.date || !bookingData.startTime || !bookingData.duration) {
       throw new Error('Missing required booking fields');
     }
+
+    if (isReviewCustomerSession()) {
+      return createReviewBookingResponse(bookingData);
+    }
+
+    const token = await getAuthToken();
+    const url = apiUrl('/api/bookings');
     
     // Clean up optional arrays to prevent sending empty arrays
     const cleanedData = {
@@ -414,7 +441,7 @@ export const createBooking = async (bookingData: CreateBookingRequest): Promise<
         },
       });
     } catch (error) {
-      if (axios.isAxiosError(error) && isDemoPreviewBookingRequest(bookingData)) {
+      if (axios.isAxiosError(error) && canUseLocalDemoBookingFallback(bookingData)) {
         logger.warn('[Booking] Live booking endpoint unavailable for explicit demo booking; using local review fallback.', {
           status: error.response?.status,
           serviceId: bookingData.serviceId,
@@ -929,15 +956,18 @@ export const useCreateBooking = () => {
         }
       });
       
-      const token = await getAuthToken();
-      
-      const url = apiUrl('/api/bookings');
-      
       // Validate required fields
       if (!bookingData.companionId || !bookingData.date || !bookingData.startTime || !bookingData.duration) {
         // console.error('❌ Validation failed: Missing required booking fields'); 
         throw new Error('Missing required booking fields');
       }
+
+      if (isReviewCustomerSession()) {
+        return createReviewBookingResponse(bookingData);
+      }
+
+      const token = await getAuthToken();
+      const url = apiUrl('/api/bookings');
 
       // Clean up optional arrays to prevent sending empty arrays
       const cleanedData = {
@@ -964,7 +994,7 @@ export const useCreateBooking = () => {
           },
         });
       } catch (error) {
-        if (axios.isAxiosError(error) && isDemoPreviewBookingRequest(bookingData)) {
+        if (axios.isAxiosError(error) && canUseLocalDemoBookingFallback(bookingData)) {
           logger.warn('[Booking] Live booking endpoint unavailable for explicit demo booking; using local review fallback.', {
             status: error.response?.status,
             serviceId: bookingData.serviceId,

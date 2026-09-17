@@ -18,6 +18,7 @@ describe('local PromptPay capability', () => {
     [{ flag: 'true', apiBaseUrl: 'http://127.0.0.1:8787/api', isDev: true }, 'extra path'],
     [{ flag: 'true', apiBaseUrl: 'http://127.0.0.1:8787?mode=test', isDev: true }, 'query parameters'],
     [{ flag: 'true', apiBaseUrl: 'http://127.0.0.1:8787', isDev: false }, 'production mode'],
+    [{ flag: 'true', apiBaseUrl: 'http://127.0.0.1:8787', isDev: true, reviewMode: true }, 'app review mode'],
   ])('fails closed for $1', (input, _label) => {
     expect(isLocalPromptPayEnabled(input)).toBe(false);
   });
