@@ -2,7 +2,13 @@ import { logger } from '@/utils/logger';
 import axios from "axios";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { secureStorage } from '@/utils/secure-storage';
-import { apiUrl } from '@/constants/api';
+import { API_BASE_URL, apiUrl } from '@/constants/api';
+import { isLocalPromptPayEnabled } from '@/constants/payment-capabilities';
+import { isReviewModeEnabled, REVIEW_ACCOUNTS } from '@/constants/review-mode';
+import {
+  reviewBookingToBooking,
+  useReviewBookingFixtureStore,
+} from '@/stores/review-booking-fixture-store';
 import { isTestCompanionId } from '@/utils/companion-display';
 import { handleApiError, isUnauthorizedError } from '@/utils/api-errors';
 import { useAuthStore } from '@/stores/auth-store';
@@ -67,7 +73,15 @@ export interface BookingTimelineItem {
 }
 
 export type BookingStatus = "pending" | "confirmed" | "in_progress" | "completed" | "cancelled";
-export type PaymentStatus = "pending" | "paid" | "refunded";
+export type PaymentStatus =
+  | 'pending'
+  | 'processing'
+  | 'paid'
+  | 'failed'
+  | 'refunded'
+  | 'restitution_pending'
+  | 'restituted'
+  | 'restitution_failed';
 
 export interface Booking {
   meetingPoint: string;
@@ -87,6 +101,7 @@ export interface Booking {
   status: BookingStatus;
   totalAmount: number;
   serviceFee: number;
+  currency?: string;
   paymentStatus: PaymentStatus;
   paymentMethod?: PaymentMethod;
   timeline?: BookingTimelineItem[];
@@ -106,6 +121,7 @@ export interface BookingListItem {
   location?: string;
   status: BookingStatus;
   totalAmount: number;
+  currency?: string;
   paymentStatus: PaymentStatus;
   createdAt: string;
 }
@@ -123,6 +139,58 @@ export interface CreateBookingResponse {
     booking: Booking;
   };
   message: string;
+}
+
+const BOOKING_PAYMENT_STATUSES = new Set<PaymentStatus>([
+  'pending',
+  'processing',
+  'paid',
+  'failed',
+  'refunded',
+  'restitution_pending',
+  'restituted',
+  'restitution_failed',
+]);
+
+export function parseCreateBookingResponse(value: unknown): CreateBookingResponse {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('Invalid booking response format');
+  }
+
+  const response = value as Record<string, unknown>;
+  const data = response.data;
+  const booking = data && typeof data === 'object' && !Array.isArray(data)
+    ? (data as Record<string, unknown>).booking
+    : null;
+  if (
+    response.success !== true
+    || !booking
+    || typeof booking !== 'object'
+    || Array.isArray(booking)
+    || typeof (booking as Record<string, unknown>).id !== 'string'
+  ) {
+    throw new Error('Invalid booking response format');
+  }
+
+  const bookingRecord = booking as Record<string, unknown>;
+  if (!BOOKING_PAYMENT_STATUSES.has(bookingRecord.paymentStatus as PaymentStatus)) {
+    throw new Error('Invalid booking payment status');
+  }
+  if (
+    typeof bookingRecord.totalAmount !== 'number'
+    || !Number.isFinite(bookingRecord.totalAmount)
+    || bookingRecord.totalAmount <= 0
+  ) {
+    throw new Error('Invalid booking total');
+  }
+  if (
+    bookingRecord.currency !== undefined
+    && (typeof bookingRecord.currency !== 'string' || bookingRecord.currency.trim().length === 0)
+  ) {
+    throw new Error('Invalid booking currency');
+  }
+
+  return value as CreateBookingResponse;
 }
 
 const createDemoBookingResponse = (bookingData: CreateBookingRequest): CreateBookingResponse => {
@@ -166,7 +234,7 @@ const createDemoBookingResponse = (bookingData: CreateBookingRequest): CreateBoo
         location: bookingData.location,
         meetingPoint: bookingData.meetingPoint || '',
         specialRequests: bookingData.specialRequests,
-        status: 'pending',
+        status: isLocalPromptPayReviewBooking(bookingData) ? 'confirmed' : 'pending',
         totalAmount: servicePrice,
         serviceFee: 0,
         paymentStatus: 'pending',
@@ -237,12 +305,40 @@ const isDemoPreviewBookingRequest = (bookingData: CreateBookingRequest): boolean
   );
 };
 
+const canUseLocalDemoBookingFallback = (bookingData: CreateBookingRequest): boolean => (
+  isDemoPreviewBookingRequest(bookingData)
+  && (__DEV__ || isReviewModeEnabled())
+);
+
+const isLocalPromptPayReviewBooking = (bookingData: CreateBookingRequest): boolean => (
+  isDemoPreviewBookingRequest(bookingData)
+  && isLocalPromptPayEnabled({
+    flag: process.env.EXPO_PUBLIC_PROMPTPAY_ENABLED,
+    apiBaseUrl: API_BASE_URL,
+    isDev: __DEV__,
+  })
+);
+
 const createAndStoreDemoBookingResponse = async (bookingData: CreateBookingRequest): Promise<CreateBookingResponse> => {
   const response = createDemoBookingResponse(bookingData);
   await upsertStoredDemoBooking(response.data.booking);
   await showBookingCreatedNotification(response.data.booking, 'traveler');
   await scheduleThreeHourBookingReminder(response.data.booking, 'traveler');
   return response;
+};
+
+const isReviewCustomerSession = (): boolean => (
+  isReviewModeEnabled()
+  && useAuthStore.getState().user?.id === REVIEW_ACCOUNTS.customer.user.id
+);
+
+const createReviewBookingResponse = (bookingData: CreateBookingRequest): CreateBookingResponse => {
+  const fixture = useReviewBookingFixtureStore.getState().createAsCustomer(bookingData);
+  return {
+    success: true,
+    message: 'Review booking created without a network or provider call',
+    data: { booking: reviewBookingToBooking(fixture) },
+  };
 };
 
 const toBookingListItem = (booking: Booking): BookingListItem => ({
@@ -263,6 +359,7 @@ const toBookingListItem = (booking: Booking): BookingListItem => ({
   location: booking.location,
   status: booking.status,
   totalAmount: booking.totalAmount,
+  ...(booking.currency !== undefined ? { currency: booking.currency } : {}),
   paymentStatus: booking.paymentStatus,
   createdAt: booking.createdAt,
 });
@@ -311,14 +408,17 @@ const getAuthToken = async (): Promise<string | null> => {
 // Create a new booking
 export const createBooking = async (bookingData: CreateBookingRequest): Promise<CreateBookingResponse> => {
   try {
-    const token = await getAuthToken();
-    
-    const url = apiUrl('/api/bookings');
-    
     // Validate required fields
     if (!bookingData.companionId || !bookingData.date || !bookingData.startTime || !bookingData.duration) {
       throw new Error('Missing required booking fields');
     }
+
+    if (isReviewCustomerSession()) {
+      return createReviewBookingResponse(bookingData);
+    }
+
+    const token = await getAuthToken();
+    const url = apiUrl('/api/bookings');
     
     // Clean up optional arrays to prevent sending empty arrays
     const cleanedData = {
@@ -341,7 +441,7 @@ export const createBooking = async (bookingData: CreateBookingRequest): Promise<
         },
       });
     } catch (error) {
-      if (axios.isAxiosError(error) && isDemoPreviewBookingRequest(bookingData)) {
+      if (axios.isAxiosError(error) && canUseLocalDemoBookingFallback(bookingData)) {
         logger.warn('[Booking] Live booking endpoint unavailable for explicit demo booking; using local review fallback.', {
           status: error.response?.status,
           serviceId: bookingData.serviceId,
@@ -354,10 +454,11 @@ export const createBooking = async (bookingData: CreateBookingRequest): Promise<
 
     // logger.log("Create booking response:", response.data);
     
-    await showBookingCreatedNotification(response.data.data.booking, 'traveler');
-    await scheduleThreeHourBookingReminder(response.data.data.booking, 'traveler');
+    const parsedResponse = parseCreateBookingResponse(response.data);
+    await showBookingCreatedNotification(parsedResponse.data.booking, 'traveler');
+    await scheduleThreeHourBookingReminder(parsedResponse.data.booking, 'traveler');
 
-    return response.data;
+    return parsedResponse;
   } catch (error) {
     if (isUnauthorizedError(error)) {
       throw new Error("Please log in again to create this booking.");
@@ -855,15 +956,18 @@ export const useCreateBooking = () => {
         }
       });
       
-      const token = await getAuthToken();
-      
-      const url = apiUrl('/api/bookings');
-      
       // Validate required fields
       if (!bookingData.companionId || !bookingData.date || !bookingData.startTime || !bookingData.duration) {
         // console.error('❌ Validation failed: Missing required booking fields'); 
         throw new Error('Missing required booking fields');
       }
+
+      if (isReviewCustomerSession()) {
+        return createReviewBookingResponse(bookingData);
+      }
+
+      const token = await getAuthToken();
+      const url = apiUrl('/api/bookings');
 
       // Clean up optional arrays to prevent sending empty arrays
       const cleanedData = {
@@ -890,7 +994,7 @@ export const useCreateBooking = () => {
           },
         });
       } catch (error) {
-        if (axios.isAxiosError(error) && isDemoPreviewBookingRequest(bookingData)) {
+        if (axios.isAxiosError(error) && canUseLocalDemoBookingFallback(bookingData)) {
           logger.warn('[Booking] Live booking endpoint unavailable for explicit demo booking; using local review fallback.', {
             status: error.response?.status,
             serviceId: bookingData.serviceId,
@@ -909,19 +1013,12 @@ export const useCreateBooking = () => {
         bookingId: response.data?.data?.booking?.id
       });
 
-      // Validate response format
-      if (!response.data?.success || !response.data?.data?.booking?.id) {
-        console.error("❌ Invalid API response format:", {
-          timestamp: new Date().toISOString(),
-          response: response.data
-        });
-        throw new Error('Invalid API response format');
-      }
+      const parsedResponse = parseCreateBookingResponse(response.data);
       
-      await showBookingCreatedNotification(response.data.data.booking, 'traveler');
-      await scheduleThreeHourBookingReminder(response.data.data.booking, 'traveler');
+      await showBookingCreatedNotification(parsedResponse.data.booking, 'traveler');
+      await scheduleThreeHourBookingReminder(parsedResponse.data.booking, 'traveler');
 
-      return response.data;
+      return parsedResponse;
     },
     onSuccess: (data) => {
       logger.log("✅ Mutation succeeded:", {

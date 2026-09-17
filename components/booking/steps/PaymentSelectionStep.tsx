@@ -1,297 +1,424 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
+  AccessibilityInfo,
   ScrollView,
+  StyleSheet,
+  Text,
   TouchableOpacity,
-  Alert,
+  View,
 } from 'react-native';
-import { 
-  CreditCard, 
-  Banknote, 
-  Smartphone, 
+import {
   AlertCircle,
+  Banknote,
   CheckCircle,
-  Info,
+  CreditCard,
+  LockKeyhole,
+  Smartphone,
 } from 'lucide-react-native';
-import { Card } from '@/components/ui/Card';
+import { useTranslation } from 'react-i18next';
+
+import { PromptPayPendingCard } from '@/components/booking/payment/PromptPayPendingCard';
+import { BookingStepFooter } from '@/components/booking/BookingStepFooter';
 import { Button } from '@/components/ui/Button';
-import { BookingStepFooter } from '../BookingStepFooter';
-import { useBookingStore, BookingPayment } from '@/stores/booking-store';
-import { designTokens, componentTokens } from '@/constants/design-tokens';
-import { formatTravelerCurrency } from '@/utils/currency';
+import { Card } from '@/components/ui/Card';
+import { API_BASE_URL } from '@/constants/api';
+import { designTokens } from '@/constants/design-tokens';
+import { isLocalPromptPayEnabled } from '@/constants/payment-capabilities';
+import { isReviewModeEnabled } from '@/constants/review-mode';
+import { useBookingStore, type BookingPayment } from '@/stores/booking-store';
+import {
+  deriveBookingPaymentPhase,
+  isPaymentMethodLocked,
+  isPaymentNavigationLocked,
+  usePaymentStore,
+  type PaymentMethod,
+} from '@/stores/payment-store';
+import { formatBookingTotal } from '@/components/booking/booking-format';
 
 interface PaymentSelectionStepProps {
   onNext: () => void;
   onPrevious: () => void;
 }
 
-const PAYMENT_METHODS = [
-  {
-    id: 'cash',
-    name: 'Cash Payment',
-    description: 'Pay directly to your local guide in cash',
-    icon: Banknote,
-    recommended: true,
-    details: [
-      'Most flexible payment method',
-      'No additional fees',
-      'Immediate transaction',
-      'Widely accepted everywhere',
-    ],
-    steps: [
-      'Note the total amount shown above',
-      'Prepare exact change or small bills before your experience',
-      'Pay your guide at the start of the experience',
-      'Ask for a receipt or written confirmation if needed',
-    ],
-    instructions: 'Bring exact amount or small bills for easy transaction.',
-  },
-  // {
-  //   id: 'promptpay',
-  //   name: 'PromptPay QR',
-  //   description: 'Scan QR code to pay via Thai banking app',
-  //   icon: Smartphone,
-  //   recommended: false,
-  //   details: [
-  //     'Instant digital payment',
-  //     'Secure bank transfer',
-  //     'No cash handling needed',
-  //     'Transaction record available',
-  //   ],
-  //   instructions: 'QR code will be provided by your companion at meeting.',
-  // },
-  // {
-  //   id: 'bank_transfer',
-  //   name: 'Bank Transfer',
-  //   description: 'Direct transfer to companion\'s bank account',
-  //   icon: CreditCard,
-  //   recommended: false,
-  //   details: [
-  //     'Secure bank-to-bank transfer',
-  //     'Full transaction record',
-  //     'No cash required',
-  //     'May take time to process',
-  //   ],
-  //   instructions: 'Bank details will be shared after booking confirmation.',
-  // },
-];
+interface MethodCardProps {
+  id: PaymentMethod;
+  title: string;
+  body: string;
+  accessibilityLabel: string;
+  accessibilityHint?: string;
+  selected: boolean;
+  disabled: boolean;
+  onPress: () => void;
+  icon: React.ComponentType<{ size: number; color: string }>;
+  badge?: string;
+  helper?: string;
+}
+
+const DEFINITE_NO_CHARGE_ERRORS = new Set([
+  'disabled',
+  'unauthorized',
+  'booking-not-found',
+  'booking-not-payable',
+]);
+
+const UNCERTAIN_ERRORS = new Set([
+  'in-progress',
+  'indeterminate',
+  'network',
+  'unknown',
+]);
+
+const MethodCard: React.FC<MethodCardProps> = ({
+  id,
+  title,
+  body,
+  accessibilityLabel,
+  accessibilityHint,
+  selected,
+  disabled,
+  onPress,
+  icon: Icon,
+  badge,
+  helper,
+}) => (
+  <TouchableOpacity
+    accessibilityRole="radio"
+    accessibilityLabel={accessibilityLabel}
+    accessibilityHint={accessibilityHint}
+    accessibilityState={{ selected, disabled }}
+    activeOpacity={disabled ? 1 : 0.8}
+    disabled={disabled}
+    onPress={onPress}
+    style={[
+      styles.methodCard,
+      selected && styles.methodCardSelected,
+      disabled && !selected && styles.methodCardDisabled,
+    ]}
+  >
+    <View style={styles.methodHeader}>
+      <View style={styles.methodIcon}>
+        <Icon
+          size={24}
+          color={designTokens.colors.semantic.primary}
+        />
+      </View>
+      <View style={styles.methodCopy}>
+        <View style={styles.methodTitleRow}>
+          <Text style={styles.methodTitle}>
+            {title}
+          </Text>
+          {badge ? (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{badge}</Text>
+            </View>
+          ) : null}
+        </View>
+        <Text style={styles.methodBody}>
+          {body}
+        </Text>
+        {helper ? (
+          <Text style={styles.methodHelper}>
+            {helper}
+          </Text>
+        ) : null}
+      </View>
+      <View style={[styles.radio, selected && styles.radioSelected]}>
+        {selected ? (
+          <CheckCircle size={20} color={designTokens.colors.semantic.primary} />
+        ) : null}
+      </View>
+    </View>
+  </TouchableOpacity>
+);
 
 export const PaymentSelectionStep: React.FC<PaymentSelectionStepProps> = ({
   onNext,
   onPrevious,
 }) => {
+  const { t, i18n } = useTranslation();
+  const language = i18n?.resolvedLanguage || i18n?.language || 'en';
   const { bookingData, updatePayment, calculateTotal } = useBookingStore();
-  const [selectedMethod, setSelectedMethod] = useState<string>(
-    bookingData.payment?.method || ''
-  );
+  const {
+    booking,
+    selectedMethod,
+    charge,
+    phase,
+    errorKind,
+    selectMethod,
+    createCharge,
+    retryCharge,
+  } = usePaymentStore();
+  const errorTextRef = useRef<Text>(null);
 
+  const promptPayVisible = isLocalPromptPayEnabled({
+    flag: process.env.EXPO_PUBLIC_PROMPTPAY_ENABLED,
+    apiBaseUrl: API_BASE_URL,
+    isDev: __DEV__,
+    reviewMode: isReviewModeEnabled(),
+  });
+  const bookingPhase = booking ? deriveBookingPaymentPhase(booking.paymentStatus) : 'idle';
+  const paymentPhase = phase === 'idle' && bookingPhase !== 'idle' ? bookingPhase : phase;
+  const paymentErrorKind = errorKind;
+  const explicitCurrency = booking?.currency;
+  const promptPayCurrencyEligible = explicitCurrency === undefined
+    || explicitCurrency.trim().toUpperCase() === 'THB';
+  const promptPayEligible = booking?.status === 'confirmed' && promptPayCurrencyEligible;
+  const alreadyPaid = paymentPhase === 'paid' || paymentErrorKind === 'already-paid';
+  const restitutionLocked = paymentPhase === 'restitution_pending'
+    || paymentPhase === 'restituted'
+    || paymentPhase === 'restitution_failed';
+  const financiallyClosed = alreadyPaid || restitutionLocked;
+  const uncertain = paymentPhase === 'indeterminate'
+    || (paymentPhase === 'error'
+      && paymentErrorKind !== null
+      && UNCERTAIN_ERRORS.has(paymentErrorKind));
+  const definiteNoCharge = paymentPhase === 'error'
+    && errorKind !== null
+    && DEFINITE_NO_CHARGE_ERRORS.has(errorKind);
+  const methodSwitchLocked = isPaymentMethodLocked({ phase: paymentPhase, errorKind: paymentErrorKind });
+  const navigationLocked = isPaymentNavigationLocked({ phase: paymentPhase, errorKind: paymentErrorKind });
   const totalAmount = calculateTotal();
-  const serviceFee = 0;
-  const baseAmount = totalAmount;
+  const paymentCurrency = explicitCurrency ?? bookingData.bookingQuote?.currency ?? 'THB';
+  const cashHelper = financiallyClosed
+    ? t('payments.paymentLockedHelper')
+    : methodSwitchLocked
+      ? t('payments.lockedCashHelper')
+      : undefined;
+  const promptPayHelper = !promptPayCurrencyEligible
+    ? t('payments.nonThbUnavailable')
+    : booking?.status !== 'confirmed'
+      ? t('payments.ineligible')
+      : financiallyClosed
+        ? t('payments.paymentLockedHelper')
+        : methodSwitchLocked
+          ? t('payments.lockedCashHelper')
+          : undefined;
+  const accessibleDescription = (...parts: Array<string | undefined>) => {
+    const text = parts
+      .filter((part): part is string => Boolean(part))
+      .map((part) => part.replace(/[.。]\s*$/, ''))
+      .join('. ');
+    return text ? `${text}.` : '';
+  };
 
-  const handleMethodSelect = (methodId: string) => {
-    setSelectedMethod(methodId);
-    
+  const recoveryVisible = selectedMethod === 'promptpay'
+    && (paymentPhase === 'error'
+      || paymentPhase === 'indeterminate'
+      || paymentPhase === 'failed'
+      || paymentPhase === 'expired');
+
+  useEffect(() => {
+    if (!recoveryVisible) return;
+    const node = require('react-native').findNodeHandle(errorTextRef.current) as number | null;
+    if (node !== null && node !== undefined) {
+      AccessibilityInfo.setAccessibilityFocus(node);
+    }
+  }, [recoveryVisible, paymentPhase, paymentErrorKind]);
+
+  const saveMethod = (method: PaymentMethod) => {
+    if (methodSwitchLocked) return;
+    if (method === 'promptpay' && !promptPayEligible) return;
+
+    selectMethod(method);
     const paymentData: BookingPayment = {
-      method: methodId as 'cash' | 'promptpay' | 'bank_transfer',
-      amount: baseAmount,
-      serviceFee: serviceFee,
-      totalAmount: totalAmount,
-      currency: 'THB',
+      method,
+      amount: totalAmount,
+      serviceFee: 0,
+      totalAmount,
+      currency: paymentCurrency,
       terms: false,
     };
-    
     updatePayment(paymentData);
   };
 
-  const handleNext = () => {
-    if (!selectedMethod) {
-      Alert.alert('Payment Method Required', 'Please select a payment method to continue.');
-      return;
-    }
-    onNext();
+  const handleCreateQr = () => {
+    if (selectedMethod !== 'promptpay' || !promptPayEligible || paymentPhase === 'creating' || financiallyClosed) return;
+    void createCharge().catch(() => undefined);
   };
 
-  const PaymentMethodCard: React.FC<{ method: typeof PAYMENT_METHODS[0] }> = ({ method }) => {
-    const isSelected = selectedMethod === method.id;
-    const IconComponent = method.icon;
-
-    return (
-      <TouchableOpacity
-        style={[
-          styles.paymentMethodCard,
-          isSelected && styles.selectedPaymentMethodCard,
-        ]}
-        onPress={() => handleMethodSelect(method.id)}
-      >
-        <View style={styles.methodHeader}>
-          <View style={styles.methodIcon}>
-            <IconComponent 
-              size={24} 
-              color={isSelected 
-                ? designTokens.colors.semantic.surface 
-                : designTokens.colors.semantic.primary
-              } 
-            />
-          </View>
-          
-          <View style={styles.methodInfo}>
-            <View style={styles.methodTitleRow}>
-              <Text style={[
-                styles.methodName,
-                isSelected && styles.selectedMethodName,
-              ]}>
-                {method.name}
-              </Text>
-              {method.recommended && (
-                <View style={styles.recommendedBadge}>
-                  <Text style={styles.recommendedText}>Recommended</Text>
-                </View>
-              )}
-            </View>
-            <Text style={[
-              styles.methodDescription,
-              isSelected && styles.selectedMethodDescription,
-            ]}>
-              {method.description}
-            </Text>
-          </View>
-
-          <View style={[
-            styles.selectionIndicator,
-            isSelected && styles.selectedIndicator,
-          ]}>
-            {isSelected && (
-              <CheckCircle size={20} color={designTokens.colors.semantic.surface} />
-            )}
-          </View>
-        </View>
-
-        {isSelected && (
-          <View style={styles.methodDetails}>
-            <View style={styles.detailsList}>
-              {method.details.map((detail, index) => (
-                <View key={index} style={styles.detailItem}>
-                  <Text style={styles.detailBullet}>•</Text>
-                  <Text style={styles.detailText}>{detail}</Text>
-                </View>
-              ))}
-            </View>
-            
-            <View style={styles.instructionsContainer}>
-              <View style={styles.instructionsHeader}>
-                <Info size={16} color={designTokens.colors.semantic.accent} />
-                <Text style={styles.instructionsTitle}>How to pay:</Text>
-              </View>
-              {'steps' in method && (method as any).steps ? (
-                (method as any).steps.map((step: string, i: number) => (
-                  <View key={i} style={styles.instructionStep}>
-                    <View style={styles.stepNumber}>
-                      <Text style={styles.stepNumberText}>{i + 1}</Text>
-                    </View>
-                    <Text style={styles.stepText}>{step}</Text>
-                  </View>
-                ))
-              ) : (
-                <Text style={styles.instructionsText}>{method.instructions}</Text>
-              )}
-            </View>
-          </View>
-        )}
-      </TouchableOpacity>
-    );
+  const handleRetryQr = () => {
+    if (paymentPhase !== 'failed' && paymentPhase !== 'expired') return;
+    void retryCharge().catch(() => undefined);
   };
+
+  const canContinue = financiallyClosed
+    || (!financiallyClosed && selectedMethod === 'cash')
+    || (selectedMethod === 'promptpay' && (paymentPhase === 'pending' || uncertain || financiallyClosed));
+  const actionTitle = paymentPhase === 'creating'
+    ? t('payments.creatingQr')
+    : t('payments.createPromptPayQr');
+  const terminalStateCopy = paymentPhase === 'restitution_pending'
+    ? t('payments.restitutionPendingState')
+    : paymentPhase === 'restituted'
+      ? t('payments.restitutedState')
+      : paymentPhase === 'restitution_failed'
+        ? t('payments.restitutionFailedState')
+        : paymentErrorKind === 'already-paid' || (alreadyPaid && paymentPhase !== 'paid')
+          ? t('payments.alreadyPaidState')
+          : paymentPhase === 'paid'
+            ? t('payments.paidState')
+            : paymentPhase === 'failed'
+              ? t('payments.failedState')
+              : paymentPhase === 'expired'
+                ? t('payments.expiredState')
+                : t('payments.uncertainOutcome');
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        accessibilityLabel={t('payments.checkoutA11y')}
+        style={styles.content}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
-          <Text style={styles.title}>Choose Payment Method</Text>
+          <Text style={styles.title}>{t('payments.stepHeading')}</Text>
           <Text style={styles.subtitle}>
-            Select how you'd like to pay your local guide
+            {t('payments.stepBody')}
           </Text>
         </View>
 
-        {/* Payment Amount Summary */}
         <Card style={styles.amountCard} padding={16}>
           <View style={styles.amountHeader}>
             <CreditCard size={20} color={designTokens.colors.semantic.primary} />
-            <Text style={styles.amountTitle}>Payment Summary</Text>
+            <Text style={styles.sectionTitle}>{t('payments.summaryHeading')}</Text>
           </View>
-          
-          <View style={styles.amountDetails}>
-            <View style={styles.amountRow}>
-              <Text style={styles.amountLabel}>Service Amount</Text>
-              <Text style={styles.amountValue}>{formatTravelerCurrency(baseAmount, 'THB')}</Text>
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.totalAmountRow}>
-              <Text style={styles.totalAmountLabel}>Total to Pay</Text>
-              <Text style={styles.totalAmountValue}>{formatTravelerCurrency(totalAmount, 'THB')}</Text>
-            </View>
+          <View style={styles.amountRow}>
+            <Text style={styles.amountLabel}>{t('payments.guideRate')}</Text>
+            <Text style={styles.amountValue}>{formatBookingTotal(totalAmount, language)}</Text>
           </View>
         </Card>
 
-        {/* Payment Methods */}
-        <View style={styles.methodsContainer}>
-          {PAYMENT_METHODS.map((method) => (
-            <PaymentMethodCard key={method.id} method={method} />
-          ))}
+        <View style={styles.methods} accessibilityRole="radiogroup">
+          <MethodCard
+            id="cash"
+            title={t('payments.cashTitle')}
+            body={financiallyClosed ? t('payments.alternatePaymentUnavailablePaid') : t('payments.cashBody')}
+            accessibilityLabel={accessibleDescription(t('payments.cashMethodA11y'), cashHelper)}
+            accessibilityHint={cashHelper}
+            selected={selectedMethod === 'cash'}
+            disabled={methodSwitchLocked}
+            onPress={() => saveMethod('cash')}
+            icon={Banknote}
+            badge={t('payments.recommended')}
+            helper={cashHelper}
+          />
+
+          {promptPayVisible ? (
+            <MethodCard
+              id="promptpay"
+              title={t('payments.promptPayTitle')}
+              body={financiallyClosed
+                ? t('payments.alternatePaymentUnavailablePaid')
+                : t('payments.promptPayBody')}
+              accessibilityLabel={accessibleDescription(
+                t('payments.promptPayMethodA11y'),
+                t('payments.localTest'),
+                promptPayHelper,
+              )}
+              accessibilityHint={promptPayHelper}
+              selected={selectedMethod === 'promptpay'}
+              disabled={!promptPayEligible || methodSwitchLocked}
+              onPress={() => saveMethod('promptpay')}
+              icon={Smartphone}
+              badge={t('payments.localTest')}
+              helper={promptPayHelper}
+            />
+          ) : null}
         </View>
 
-        {/* Payment Security Notice */}
-        <Card style={styles.securityCard} padding={16}>
-          <View style={styles.securityHeader}>
+        {selectedMethod === 'promptpay' && paymentPhase === 'idle' ? (
+          <Card style={styles.actionCard} padding={16}>
+            <View style={styles.noticeRow}>
+              <LockKeyhole size={20} color={designTokens.colors.semantic.info} />
+              <Text style={styles.noticeText}>
+                {t('payments.serverChargeNotice')}
+              </Text>
+            </View>
+            <Button
+              title={actionTitle}
+              onPress={handleCreateQr}
+              disabled={!promptPayEligible}
+              fullWidth
+            />
+          </Card>
+        ) : null}
+
+        {selectedMethod === 'promptpay' && paymentPhase === 'creating' ? (
+          <Card style={styles.actionCard} padding={16}>
+            <View style={styles.noticeRow} accessibilityLiveRegion="polite">
+              <Smartphone size={20} color={designTokens.colors.semantic.primary} />
+              <Text style={styles.noticeText}>{t('payments.creatingQr')}</Text>
+            </View>
+            <Button title={actionTitle} onPress={handleCreateQr} loading disabled fullWidth />
+          </Card>
+        ) : null}
+
+        {selectedMethod === 'promptpay' && paymentPhase === 'error' && !financiallyClosed ? (
+          <Card style={styles.errorCard} padding={16}>
+            <View style={styles.noticeRow} accessibilityLiveRegion="polite">
+              <AlertCircle size={20} color={designTokens.colors.semantic.error} />
+              <Text ref={errorTextRef} style={styles.errorText}>
+                {uncertain
+                  ? t('payments.uncertainOutcome')
+                  : errorKind === 'disabled'
+                    ? t('payments.disabledError')
+                    : t('payments.noChargeError')}
+              </Text>
+            </View>
+            {definiteNoCharge && errorKind !== 'disabled' ? (
+              <Button title={t('common.tryAgain')} onPress={handleCreateQr} variant="outline" fullWidth />
+            ) : null}
+          </Card>
+        ) : null}
+
+        {selectedMethod === 'promptpay' && paymentPhase === 'pending' && charge ? (
+          <PromptPayPendingCard charge={charge} />
+        ) : null}
+
+        {(financiallyClosed || paymentPhase === 'indeterminate' || (selectedMethod === 'promptpay'
+          && ['failed', 'expired'].includes(paymentPhase))) ? (
+          <Card style={alreadyPaid ? styles.successCard : styles.errorCard} padding={16}>
+            <View style={styles.noticeRow} accessibilityLiveRegion="polite">
+              {alreadyPaid
+                ? <CheckCircle size={20} color={designTokens.colors.semantic.success} />
+                : <AlertCircle size={20} color={designTokens.colors.semantic.error} />}
+              <Text ref={errorTextRef} style={alreadyPaid ? styles.noticeText : styles.errorText}>
+                {terminalStateCopy}
+              </Text>
+            </View>
+            {(paymentPhase === 'failed' || paymentPhase === 'expired') ? (
+              <Button
+                title={t('payments.retryPromptPay')}
+                onPress={handleRetryQr}
+                variant="outline"
+                fullWidth
+              />
+            ) : null}
+          </Card>
+        ) : null}
+
+        {!financiallyClosed ? <Card style={styles.securityCard} padding={16}>
+          <View style={styles.noticeRow}>
             <AlertCircle size={20} color={designTokens.colors.semantic.accent} />
-            <Text style={styles.securityTitle}>Payment Security</Text>
+            <Text style={styles.sectionTitle}>{t('payments.safetyHeading')}</Text>
           </View>
-          
-          <View style={styles.securityContent}>
-            <Text style={styles.securityText}>
-              • All payments are handled directly between you and your local guide
-            </Text>
-            <Text style={styles.securityText}>
-              • We do not store or process your payment information
-            </Text>
-            <Text style={styles.securityText}>
-              • For disputes, please contact our support team
-            </Text>
-            <Text style={styles.securityText}>
-              • Always verify the amount before making payment
-            </Text>
-          </View>
-        </Card>
+          <Text style={styles.securityText}>
+            {t('payments.safetyBody')}
+          </Text>
+        </Card> : null}
 
-        {/* Payment Terms */}
-        <Card style={styles.termsCard} padding={16}>
-          <Text style={styles.termsTitle}>Payment Terms</Text>
-          <View style={styles.termsContent}>
-            <Text style={styles.termsText}>
-              • Payment is due at the start of your service
-            </Text>
-            <Text style={styles.termsText}>
-              • Cancellation policy applies as per terms and conditions
-            </Text>
-            <Text style={styles.termsText}>
-              • Refunds are processed according to our refund policy
-            </Text>
-            <Text style={styles.termsText}>
-              • Additional expenses (meals, transport, etc.) are separate
-            </Text>
-          </View>
-        </Card>
+        <BookingStepFooter
+          onPrevious={onPrevious}
+          onNext={onNext}
+          nextTitle={t('payments.continue')}
+          nextDisabled={!canContinue}
+          previousDisabled={navigationLocked}
+          loading={paymentPhase === 'creating'}
+          showPrevious
+          showNext
+        />
       </ScrollView>
-
-      <BookingStepFooter
-        onPrevious={onPrevious}
-        onNext={handleNext}
-        nextTitle="Continue"
-        nextDisabled={!selectedMethod}
-        showPrevious={true}
-        showNext={true}
-      />
     </View>
   );
 };
@@ -305,29 +432,27 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: designTokens.spacing.scale.lg,
   },
+  contentContainer: {
+    paddingBottom: designTokens.spacing.scale.xl,
+  },
   header: {
-    paddingVertical: designTokens.spacing.scale.xl,
     alignItems: 'center',
+    paddingVertical: designTokens.spacing.scale.xl,
   },
   title: {
     ...designTokens.typography.styles.heading,
     color: designTokens.colors.semantic.text,
     textAlign: 'center',
-    marginBottom: designTokens.spacing.scale.sm,
   },
   subtitle: {
     ...designTokens.typography.styles.body,
     color: designTokens.colors.semantic.textSecondary,
     textAlign: 'center',
-    lineHeight: designTokens.typography.lineHeights.normal * designTokens.typography.sizes.body,
+    marginTop: designTokens.spacing.scale.sm,
   },
   amountCard: {
     marginBottom: designTokens.spacing.scale.xl,
     backgroundColor: designTokens.colors.semantic.surface,
-    borderRadius: designTokens.borderRadius.components.card,
-    borderWidth: 1,
-    borderColor: designTokens.colors.semantic.primary + '20',
-    ...designTokens.shadows.md,
   },
   amountHeader: {
     flexDirection: 'row',
@@ -335,274 +460,142 @@ const styles = StyleSheet.create({
     gap: designTokens.spacing.scale.sm,
     marginBottom: designTokens.spacing.scale.md,
   },
-  amountTitle: {
+  sectionTitle: {
     ...designTokens.typography.styles.subheading,
     color: designTokens.colors.semantic.text,
   },
-  amountDetails: {
-    gap: designTokens.spacing.scale.sm,
-  },
   amountRow: {
+    minHeight: 44,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    minHeight: 32, // Better touch target
+    justifyContent: 'space-between',
+    gap: designTokens.spacing.scale.md,
   },
   amountLabel: {
-    ...designTokens.typography.styles.caption,
+    ...designTokens.typography.styles.body,
     color: designTokens.colors.semantic.textSecondary,
   },
   amountValue: {
-    ...designTokens.typography.styles.caption,
-    fontWeight: designTokens.typography.weights.medium,
-    color: designTokens.colors.semantic.text,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: designTokens.colors.semantic.border,
-    marginVertical: designTokens.spacing.scale.md,
-  },
-  totalAmountRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: designTokens.spacing.scale.sm,
-    minHeight: 44, // Better touch target
-  },
-  totalAmountLabel: {
     ...designTokens.typography.styles.subheading,
     color: designTokens.colors.semantic.text,
-    fontSize: designTokens.typography.sizes.body,
   },
-  totalAmountValue: {
-    ...designTokens.typography.styles.heading,
-    color: designTokens.colors.semantic.primary,
-    fontSize: designTokens.typography.sizes.large,
-  },
-  methodsContainer: {
+  methods: {
     gap: designTokens.spacing.scale.lg,
     marginBottom: designTokens.spacing.scale.xl,
   },
-  paymentMethodCard: {
+  methodCard: {
+    minHeight: 80,
+    padding: designTokens.spacing.scale.lg,
     borderWidth: 2,
     borderColor: designTokens.colors.semantic.border,
     borderRadius: designTokens.borderRadius.components.card,
     backgroundColor: designTokens.colors.semantic.surface,
-    overflow: 'hidden',
-    minHeight: 44, // Accessibility touch target
-    ...designTokens.shadows.sm,
   },
-  selectedPaymentMethodCard: {
+  methodCardSelected: {
     borderColor: designTokens.colors.semantic.primary,
-    backgroundColor: designTokens.colors.semantic.primary,
-    ...designTokens.shadows.md,
-    transform: [{ scale: 1.02 }],
+    backgroundColor: `${designTokens.colors.semantic.primary}0D`,
+  },
+  methodCardDisabled: {
+    borderColor: designTokens.colors.semantic.textSecondary,
+    backgroundColor: designTokens.colors.semantic.surface,
   },
   methodHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
-    padding: designTokens.spacing.scale.lg,
-    minHeight: 80, // Better touch target for payment methods
+    alignItems: 'flex-start',
+    gap: designTokens.spacing.scale.md,
   },
   methodIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: designTokens.colors.semantic.primary + '20',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: designTokens.spacing.scale.md,
+    backgroundColor: `${designTokens.colors.semantic.primary}14`,
   },
-  methodInfo: {
+  methodCopy: {
     flex: 1,
   },
   methodTitleRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: designTokens.spacing.scale.sm,
-    marginBottom: designTokens.spacing.scale.xs,
   },
-  methodName: {
+  methodTitle: {
     ...designTokens.typography.styles.subheading,
     color: designTokens.colors.semantic.text,
-    fontSize: designTokens.typography.sizes.body,
   },
-  selectedMethodName: {
-    color: designTokens.colors.semantic.surface,
+  methodBody: {
+    ...designTokens.typography.styles.body,
+    color: designTokens.colors.semantic.textSecondary,
+    marginTop: designTokens.spacing.scale.xs,
   },
-  recommendedBadge: {
-    paddingHorizontal: designTokens.spacing.scale.sm,
-    paddingVertical: designTokens.spacing.scale.xs,
-    backgroundColor: designTokens.colors.semantic.accent,
-    borderRadius: designTokens.borderRadius.components.button,
-    ...designTokens.shadows.sm,
-  },
-  recommendedText: {
-    ...designTokens.typography.styles.caption,
-    fontWeight: designTokens.typography.weights.semibold,
-    color: designTokens.colors.semantic.surface,
-    fontSize: designTokens.typography.sizes.small,
-  },
-  methodDescription: {
+  methodHelper: {
     ...designTokens.typography.styles.caption,
     color: designTokens.colors.semantic.textSecondary,
-    lineHeight: designTokens.typography.lineHeights.normal * designTokens.typography.sizes.caption,
+    marginTop: designTokens.spacing.scale.sm,
   },
-  selectedMethodDescription: {
-    color: designTokens.colors.semantic.surface + 'CC',
+  badge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: designTokens.spacing.scale.sm,
+    paddingVertical: designTokens.spacing.scale.xs,
+    borderRadius: 999,
+    backgroundColor: designTokens.colors.semantic.accent,
   },
-  selectionIndicator: {
+  badgeText: {
+    ...designTokens.typography.styles.caption,
+    fontSize: designTokens.typography.sizes.small,
+    fontWeight: designTokens.typography.weights.semibold,
+    color: designTokens.colors.semantic.text,
+  },
+  radio: {
     width: 24,
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
     borderColor: designTokens.colors.semantic.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...designTokens.shadows.sm,
   },
-  selectedIndicator: {
-    borderColor: designTokens.colors.semantic.surface,
+  radioSelected: {
+    borderColor: designTokens.colors.semantic.primary,
+  },
+  actionCard: {
+    marginBottom: designTokens.spacing.scale.xl,
     backgroundColor: designTokens.colors.semantic.surface,
-    ...designTokens.shadows.md,
   },
-  methodDetails: {
-    borderTopWidth: 1,
-    borderTopColor: designTokens.colors.semantic.surface + '30',
-    padding: designTokens.spacing.scale.lg,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  errorCard: {
+    marginBottom: designTokens.spacing.scale.xl,
+    borderWidth: 1,
+    borderColor: designTokens.colors.semantic.error,
+    backgroundColor: designTokens.colors.semantic.surface,
   },
-  detailsList: {
-    marginBottom: designTokens.spacing.scale.md,
+  successCard: {
+    marginBottom: designTokens.spacing.scale.xl,
+    borderWidth: 1,
+    borderColor: designTokens.colors.semantic.success,
+    backgroundColor: designTokens.colors.semantic.surface,
   },
-  detailItem: {
+  noticeRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: designTokens.spacing.scale.xs,
-  },
-  detailBullet: {
-    ...designTokens.typography.styles.caption,
-    color: designTokens.colors.semantic.surface,
-    marginRight: designTokens.spacing.scale.sm,
-    marginTop: 2,
-  },
-  detailText: {
-    flex: 1,
-    ...designTokens.typography.styles.caption,
-    color: designTokens.colors.semantic.surface + 'DD',
-    lineHeight: designTokens.typography.lineHeights.normal * designTokens.typography.sizes.caption,
-  },
-  instructionsContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: designTokens.borderRadius.components.card,
-    padding: designTokens.spacing.scale.md,
-    borderWidth: 1,
-    borderColor: designTokens.colors.semantic.surface + '30',
-  },
-  instructionsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: designTokens.spacing.scale.xs,
-    marginBottom: designTokens.spacing.scale.xs,
-  },
-  instructionsTitle: {
-    ...designTokens.typography.styles.caption,
-    fontWeight: designTokens.typography.weights.semibold,
-    color: designTokens.colors.semantic.surface,
-  },
-  instructionsText: {
-    ...designTokens.typography.styles.caption,
-    color: designTokens.colors.semantic.surface + 'DD',
-    lineHeight: designTokens.typography.lineHeights.normal * designTokens.typography.sizes.caption,
-  },
-  instructionStep: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-    marginTop: 8,
-  },
-  stepNumber: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: designTokens.colors.semantic.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-    marginTop: 1,
-  },
-  stepNumberText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: designTokens.colors.semantic.surface,
-  },
-  stepText: {
-    flex: 1,
-    ...designTokens.typography.styles.caption,
-    color: designTokens.colors.semantic.surface + 'DD',
-    lineHeight: 18,
-  },
-  securityCard: {
-    marginBottom: designTokens.spacing.scale.lg,
-    backgroundColor: designTokens.colors.semantic.surface,
-    borderRadius: designTokens.borderRadius.components.card,
-    borderWidth: 1,
-    borderColor: designTokens.colors.semantic.accent + '20',
-    ...designTokens.shadows.md,
-  },
-  securityHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: designTokens.spacing.scale.sm,
     marginBottom: designTokens.spacing.scale.md,
   },
-  securityTitle: {
-    ...designTokens.typography.styles.subheading,
+  noticeText: {
+    flex: 1,
+    ...designTokens.typography.styles.body,
     color: designTokens.colors.semantic.text,
-    fontSize: designTokens.typography.sizes.body,
   },
-  securityContent: {
-    gap: designTokens.spacing.scale.xs,
+  errorText: {
+    flex: 1,
+    ...designTokens.typography.styles.body,
+    color: designTokens.colors.semantic.error,
+  },
+  securityCard: {
+    marginBottom: designTokens.spacing.scale.xl,
+    backgroundColor: designTokens.colors.semantic.surface,
   },
   securityText: {
     ...designTokens.typography.styles.caption,
     color: designTokens.colors.semantic.textSecondary,
-    lineHeight: designTokens.typography.lineHeights.normal * designTokens.typography.sizes.caption,
-  },
-  termsCard: {
-    marginBottom: designTokens.spacing.scale.xl,
-    borderRadius: designTokens.borderRadius.components.card,
-    ...designTokens.shadows.md,
-  },
-  termsTitle: {
-    ...designTokens.typography.styles.subheading,
-    color: designTokens.colors.semantic.text,
-    marginBottom: designTokens.spacing.scale.md,
-    fontSize: designTokens.typography.sizes.body,
-  },
-  termsContent: {
-    gap: designTokens.spacing.scale.xs,
-  },
-  termsText: {
-    ...designTokens.typography.styles.caption,
-    color: designTokens.colors.semantic.textSecondary,
-    lineHeight: designTokens.typography.lineHeights.normal * designTokens.typography.sizes.caption,
-  },
-  footer: {
-    padding: designTokens.spacing.scale.lg,
-    backgroundColor: designTokens.colors.semantic.surface,
-    borderTopWidth: 1,
-    borderTopColor: designTokens.colors.semantic.border,
-    ...designTokens.shadows.sm,
-  },
-  footerButtons: {
-    flexDirection: 'row',
-    gap: designTokens.spacing.scale.md,
-  },
-  previousButton: {
-    flex: 1,
-  },
-  nextButton: {
-    flex: 2,
   },
 });

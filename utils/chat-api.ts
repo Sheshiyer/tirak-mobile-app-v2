@@ -9,7 +9,6 @@
 import { secureStorage } from './secure-storage';
 import { API_BASE_URL } from '@/constants/api';
 import { logger } from './logger';
-import { TEST_COMPANION_ID, getCompanionImage, isTestCompanionId } from './companion-display';
 import { handleApiError } from './api-errors';
 
 export const BACKEND_URL = API_BASE_URL;
@@ -125,238 +124,12 @@ export interface RoomDetail {
   createdAt: string;
 }
 
-// Demo chat data for Apple review
-const demoRooms: ChatRoom[] = [
-  {
-    id: 'demo_room_test_customer',
-    status: 'active',
-    otherParty: {
-      id: '4f34d4e0-84f3-4e3c-b443-909ea3905f58',
-      name: 'test.customer.tirak',
-      image: null,
-      type: 'customer',
-    },
-    lastMessage: {
-      content: 'Can we meet by the main entrance?',
-      type: 'text',
-      timestamp: new Date(Date.now() - 600000).toISOString(),
-    },
-    lastActivity: new Date(Date.now() - 600000).toISOString(),
-    createdAt: new Date(Date.now() - 86400000).toISOString(),
-  },
-  {
-    id: 'demo_room_test_companion',
-    status: 'active',
-    otherParty: {
-      id: TEST_COMPANION_ID,
-      name: 'Test Companion',
-      image: getCompanionImage({ id: TEST_COMPANION_ID, displayName: 'Test Companion' }),
-      type: 'supplier',
-    },
-    lastMessage: {
-      content: 'Happy to tailor the walk around food, temples, or local markets.',
-      type: 'text',
-      timestamp: new Date(Date.now() - 1200000).toISOString(),
-    },
-    lastActivity: new Date(Date.now() - 1200000).toISOString(),
-    createdAt: new Date(Date.now() - 86400000).toISOString(),
-  },
-  {
-    id: 'demo_room_001',
-    status: 'active',
-    otherParty: {
-      id: 'companion_001',
-      name: 'Somchai Guide',
-      image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=300',
-      type: 'supplier',
-    },
-    lastMessage: {
-      content: 'Looking forward to our Bangkok tour tomorrow!',
-      type: 'text',
-      timestamp: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-    },
-    lastActivity: new Date(Date.now() - 3600000).toISOString(),
-    createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-  },
-  {
-    id: 'demo_room_002',
-    status: 'active',
-    otherParty: {
-      id: 'companion_002',
-      name: 'Areeya Thai',
-      image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300',
-      type: 'supplier',
-    },
-    lastMessage: {
-      content: 'The cooking class will start at 2 PM. See you then!',
-      type: 'text',
-      timestamp: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-    },
-    lastActivity: new Date(Date.now() - 86400000).toISOString(),
-    createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
-  },
-];
-
-const demoMessages: Record<string, ChatMessage[]> = {
-  demo_room_test_customer: [
-    {
-      id: 'msg_customer_001',
-      senderId: '4f34d4e0-84f3-4e3c-b443-909ea3905f58',
-      senderName: 'test.customer.tirak',
-      type: 'text',
-      content: 'Hi, looking forward to the walk tomorrow.',
-      imageUrl: null,
-      metadata: null,
-      timestamp: new Date(Date.now() - 1200000).toISOString(),
-      isOwn: false,
-    },
-    {
-      id: 'msg_customer_002',
-      senderId: '4f34d4e0-84f3-4e3c-b443-909ea3905f58',
-      senderName: 'test.customer.tirak',
-      type: 'text',
-      content: 'Can we meet by the main entrance?',
-      imageUrl: null,
-      metadata: null,
-      timestamp: new Date(Date.now() - 600000).toISOString(),
-      isOwn: false,
-    },
-  ],
-  demo_room_test_companion: [
-    {
-      id: 'msg_test_001',
-      senderId: 'user_current',
-      senderName: 'You',
-      type: 'text',
-      content: 'Hi! I am planning a first trip to Bangkok and would love a local introduction.',
-      imageUrl: null,
-      metadata: null,
-      timestamp: new Date(Date.now() - 3600000).toISOString(),
-      isOwn: true,
-    },
-    {
-      id: 'msg_test_002',
-      senderId: TEST_COMPANION_ID,
-      senderName: 'Test Companion',
-      type: 'text',
-      content: 'I can help with a relaxed market and temple route, or an evening food trail. Tell me your pace and interests.',
-      imageUrl: null,
-      metadata: null,
-      timestamp: new Date(Date.now() - 3000000).toISOString(),
-      isOwn: false,
-    },
-    {
-      id: 'msg_test_003',
-      senderId: TEST_COMPANION_ID,
-      senderName: 'Test Companion',
-      type: 'text',
-      content: 'For the guide rate, the Old Town walk starts at ฿1,800 for a half day.',
-      imageUrl: null,
-      metadata: null,
-      timestamp: new Date(Date.now() - 1200000).toISOString(),
-      isOwn: false,
-    },
-  ],
-  demo_room_001: [
-    {
-      id: 'msg_001',
-      senderId: 'user_current',
-      senderName: 'You',
-      type: 'text',
-      content: 'Hi Somchai! I\'m excited about the Bangkok tour tomorrow.',
-      imageUrl: null,
-      metadata: null,
-      timestamp: new Date(Date.now() - 86400000 * 2).toISOString(),
-      isOwn: true,
-    },
-    {
-      id: 'msg_002',
-      senderId: 'companion_001',
-      senderName: 'Somchai Guide',
-      type: 'text',
-      content: 'Hello! Yes, we\'ll start at the Grand Palace at 9 AM. Wear comfortable shoes!',
-      imageUrl: null,
-      metadata: null,
-      timestamp: new Date(Date.now() - 86400000 * 2 + 300000).toISOString(),
-      isOwn: false,
-    },
-    {
-      id: 'msg_003',
-      senderId: 'user_current',
-      senderName: 'You',
-      type: 'text',
-      content: 'Perfect! Should I bring anything special?',
-      imageUrl: null,
-      metadata: null,
-      timestamp: new Date(Date.now() - 86400000).toISOString(),
-      isOwn: true,
-    },
-    {
-      id: 'msg_004',
-      senderId: 'companion_001',
-      senderName: 'Somchai Guide',
-      type: 'text',
-      content: 'Just your camera and water! I\'ll provide everything else. Looking forward to our Bangkok tour tomorrow!',
-      imageUrl: null,
-      metadata: null,
-      timestamp: new Date(Date.now() - 3600000).toISOString(),
-      isOwn: false,
-    },
-  ],
-  demo_room_002: [
-    {
-      id: 'msg_101',
-      senderId: 'user_current',
-      senderName: 'You',
-      type: 'text',
-      content: 'Hi Areeya! I booked the Thai cooking class.',
-      imageUrl: null,
-      metadata: null,
-      timestamp: new Date(Date.now() - 86400000 * 3).toISOString(),
-      isOwn: true,
-    },
-    {
-      id: 'msg_102',
-      senderId: 'companion_002',
-      senderName: 'Areeya Thai',
-      type: 'text',
-      content: 'Welcome! We\'ll be making Pad Thai and Tom Yum soup.',
-      imageUrl: null,
-      metadata: null,
-      timestamp: new Date(Date.now() - 86400000 * 3 + 600000).toISOString(),
-      isOwn: false,
-    },
-    {
-      id: 'msg_103',
-      senderId: 'user_current',
-      senderName: 'You',
-      type: 'text',
-      content: 'That sounds amazing! What time should I arrive?',
-      imageUrl: null,
-      metadata: null,
-      timestamp: new Date(Date.now() - 86400000 * 2).toISOString(),
-      isOwn: true,
-    },
-    {
-      id: 'msg_104',
-      senderId: 'companion_002',
-      senderName: 'Areeya Thai',
-      type: 'text',
-      content: 'The cooking class will start at 2 PM. See you then!',
-      imageUrl: null,
-      metadata: null,
-      timestamp: new Date(Date.now() - 86400000).toISOString(),
-      isOwn: false,
-    },
-  ],
-};
-
 // ─── API helpers ──────────────────────────────────────────────────────────────
 
 /** List all chat rooms for the current user. */
 export async function getRooms(): Promise<ChatRoom[]> {
   const data = await apiGet<{ items: ChatRoom[] }>('/api/chat/rooms');
-  return data?.items || [];
+  return data?.items ?? [];
 }
 
 /**
@@ -364,18 +137,6 @@ export async function getRooms(): Promise<ChatRoom[]> {
  * Returns the room UUID or null on failure.
  */
 export async function createOrGetRoom(otherUserId: string): Promise<string | null> {
-  if (isTestCompanionId(otherUserId)) {
-    return 'demo_room_test_companion';
-  }
-
-  if (otherUserId === 'companion_001') {
-    return 'demo_room_001';
-  }
-
-  if (otherUserId === 'companion_002') {
-    return 'demo_room_002';
-  }
-
   const data = await apiPost<{ roomId: string; existed: boolean }>(
     '/api/chat/rooms',
     { otherUserId },
@@ -385,22 +146,6 @@ export async function createOrGetRoom(otherUserId: string): Promise<string | nul
 
 /** Load room metadata + first page of messages (newest-first, reversed to chrono). */
 export async function getRoomDetail(roomId: string): Promise<RoomDetail | null> {
-  // Return demo room detail for demo rooms
-  if (roomId.startsWith('demo_room_')) {
-    const room = demoRooms.find(r => r.id === roomId);
-    const messages = demoMessages[roomId] || [];
-    if (room) {
-      logger.log('Returning demo room detail for:', roomId);
-      return {
-        id: roomId,
-        status: room.status,
-        otherParty: room.otherParty,
-        messages: messages,
-        pagination: { page: 1, limit: 50, total: messages.length, totalPages: 1 },
-        createdAt: room.createdAt,
-      };
-    }
-  }
   return apiGet<RoomDetail>(`/api/chat/rooms/${roomId}`);
 }
 
@@ -410,35 +155,6 @@ export async function sendMessage(
   content: string,
   messageType: 'text' | 'image' = 'text',
 ): Promise<ChatMessage | null> {
-  if (roomId.startsWith('demo_room_')) {
-    const timestamp = new Date().toISOString();
-    const message: ChatMessage = {
-      id: `demo_msg_${Date.now()}`,
-      senderId: 'user_current',
-      senderName: 'You',
-      type: messageType,
-      content,
-      imageUrl: null,
-      metadata: null,
-      timestamp,
-      isOwn: true,
-    };
-    demoMessages[roomId] = [...(demoMessages[roomId] || []), message];
-    const room = demoRooms.find((item) => item.id === roomId);
-    if (room) {
-      room.lastMessage = {
-        content,
-        type: messageType,
-        timestamp,
-        senderId: message.senderId,
-        senderName: message.senderName,
-        isOwn: true,
-      };
-      room.lastActivity = timestamp;
-    }
-    return message;
-  }
-
   return apiPost<ChatMessage>(`/api/chat/rooms/${roomId}/messages`, {
     roomId,
     messageType,

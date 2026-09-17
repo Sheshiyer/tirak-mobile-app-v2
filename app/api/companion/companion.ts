@@ -3,6 +3,7 @@ import axios from "axios";
 import { useQuery } from '@tanstack/react-query';
 import { secureStorage } from '@/utils/secure-storage';
 import { API_BASE_URL, apiUrl } from '@/constants/api';
+import { isReviewModeEnabled, REVIEW_ACCOUNTS } from '@/constants/review-mode';
 
 export const BASE_URL = API_BASE_URL;
 const LOCAL_AVAILABILITY_KEY = 'tirak-local-availability';
@@ -194,6 +195,63 @@ export interface CompanionDetailsResponse {
   message?: string;
 }
 
+const reviewGuideDetails = (): CompanionDetails => ({
+  id: REVIEW_ACCOUNTS.guide.user.id,
+  name: REVIEW_ACCOUNTS.guide.user.name,
+  displayName: REVIEW_ACCOUNTS.guide.user.name,
+  profileImage: '',
+  gallery: [],
+  location: 'Bangkok, Thailand',
+  rating: 5,
+  reviewCount: 1,
+  price: 1800,
+  currency: 'THB',
+  services: [{
+    id: 'review_experience_bangkok_001',
+    name: 'Bangkok Old Town Culture Walk',
+    description: 'A review-safe cultural walk through markets, river lanes, and temple history.',
+    price: 1800,
+    currency: 'THB',
+    duration: '3 hours',
+    category: 'Culture',
+  }],
+  experiences: [{
+    id: 'review_experience_bangkok_001',
+    name: 'Bangkok Old Town Culture Walk',
+    title: 'Bangkok Old Town Culture Walk',
+    description: 'A review-safe cultural walk through markets, river lanes, and temple history.',
+    price: 1800,
+    currency: 'THB',
+    duration: '3 hours',
+    durationMinutes: 180,
+    category: 'Culture',
+    keywords: ['Bangkok', 'culture', 'markets'],
+  }],
+  languages: ['Thai', 'English'],
+  verified: true,
+  online: true,
+  categories: ['Culture', 'Walking Tour'],
+  bio: REVIEW_ACCOUNTS.guide.user.bio || 'Local Bangkok cultural guide.',
+  age: 32,
+  responseTime: 'Usually responds within an hour',
+  completionRate: 100,
+  joinedDate: REVIEW_ACCOUNTS.guide.user.createdAt,
+  availability: {
+    weeklySchedule: {
+      monday: [], tuesday: [], wednesday: [], thursday: [], friday: [], saturday: [], sunday: [],
+    },
+    exceptions: [],
+  },
+  reviews: [{
+    id: 'review_guide_review_001',
+    user: { id: REVIEW_ACCOUNTS.customer.user.id, name: 'Review Traveler' },
+    rating: 5,
+    comment: 'Clear local context and an easy-to-follow cultural route.',
+    date: '2026-01-01',
+    verified: true,
+  }],
+});
+
 // Availability-specific interfaces
 export interface AvailabilityTimeSlot {
   start: string;
@@ -317,6 +375,43 @@ export const getAuthToken = async (): Promise<string | null> => {
 
 // Main API function to fetch companions
 export const fetchCompanions = async (params: CompanionSearchParams = {}): Promise<CompanionSearchResponse> => {
+  if (isReviewModeEnabled()) {
+    const guide = reviewGuideDetails();
+    return {
+      success: true,
+      message: 'Review guide fixture',
+      data: {
+        companions: [{
+          id: guide.id,
+          name: guide.name,
+          displayName: guide.displayName,
+          profileImage: guide.profileImage,
+          gallery: guide.gallery,
+          location: guide.location,
+          rating: guide.rating,
+          reviewCount: guide.reviewCount,
+          price: guide.price,
+          services: guide.services.map((service) => service.name),
+          languages: guide.languages,
+          verified: guide.verified,
+          online: guide.online,
+          categories: guide.categories,
+          bio: guide.bio,
+          age: guide.age,
+          responseTime: guide.responseTime,
+          completionRate: guide.completionRate,
+        }],
+        pagination: { page: 1, limit: 20, total: 1, totalPages: 1 },
+        filters: {
+          categories: [{ id: 'culture', name: 'Culture', count: 1 }],
+          locations: [{ id: 'bangkok', name: 'Bangkok', count: 1 }],
+          priceRange: { min: 1800, max: 1800 },
+          languages: [{ id: 'en', name: 'English', count: 1 }],
+        },
+      },
+    };
+  }
+
   const token = await getAuthToken();
   const headers = {
     'Content-Type': 'application/json',
@@ -548,6 +643,10 @@ export const useCompanionMonthlyAvailability = (id: string, year: number, month:
 // API function to fetch companion details by ID
 export const fetchCompanionById = async (id: string): Promise<CompanionDetailsResponse> => {
   try {
+    if (isReviewModeEnabled() && id === REVIEW_ACCOUNTS.guide.user.id) {
+      return { success: true, data: reviewGuideDetails(), message: 'Review guide fixture' };
+    }
+
     // Get authentication token
     const token = await getAuthToken();
     
@@ -583,6 +682,20 @@ export const fetchCompanionById = async (id: string): Promise<CompanionDetailsRe
 // API function to fetch companion availability
 export const fetchCompanionAvailability = async (id: string, params: AvailabilityParams): Promise<AvailabilityResponse> => {
   try {
+    if (isReviewModeEnabled() && id === REVIEW_ACCOUNTS.guide.user.id) {
+      const start = new Date(`${params.startDate}T00:00:00.000Z`);
+      const end = new Date(`${params.endDate}T00:00:00.000Z`);
+      const availability: DayAvailability[] = [];
+      for (let date = start; date <= end; date = new Date(date.getTime() + 86_400_000)) {
+        availability.push({
+          date: date.toISOString().slice(0, 10),
+          available: true,
+          slots: [{ start: '09:00', end: '12:00', available: true, price: 1800 }],
+        });
+      }
+      return { success: true, message: 'Review guide availability', data: { availability } };
+    }
+
     // Get authentication token
     const token = await getAuthToken();
     

@@ -1,0 +1,87 @@
+{
+  "schema": "temperance.orchestration.v1",
+  "plan_id": "plan_9f56b730cb5621f54001",
+  "state": "awaiting_approval",
+  "mapping": {
+    "policy_hash": "f41f6873f99821c46610410fd977e0b454cbc60fd898ef6e8d06c4333bc32605",
+    "phase_combo_map": "temperance.phase-combo-map.v2",
+    "planner": "temperance-next-wave"
+  },
+  "source_fingerprints": [
+    {
+      "path": ".planning/STATE.md",
+      "fingerprint": "ca8553a323891192f79e0fbc0a9e85b87621916b4ca3986bc7a6c745b5051691"
+    },
+    {
+      "path": "tasks/lessons.md",
+      "fingerprint": "bd5fd8053c787db88826a14f55ed0daa30df3c52f384a61deaf4bcb2dc942bd6"
+    },
+    {
+      "path": "tasks/todo.md",
+      "fingerprint": "f245992a16de345710fa64c15ed4e72458e7961af5b184f9c3bd83cb9889e0ea"
+    },
+    {
+      "path": ".planning/ROADMAP.md",
+      "fingerprint": "c80341d7a1904e8ba3b122a3abe401df6a9ab994e2bdc9806d7e24bbbbfa4dba"
+    },
+    {
+      "path": ".planning/PROJECT.md",
+      "fingerprint": "41b9709b8f9f888a8cc519b5c4139e88f238f4f643664f7c0ac8568c5bfb2071"
+    }
+  ],
+  "research": [],
+  "options": [
+    {
+      "option_id": "opt_807ef789848edcf76659",
+      "label": "Execute the proposed next task",
+      "recommendation": true,
+      "rationale": "phase \"Product Readiness Standard\" has 59 open tasks; take next batch",
+      "tasks": [
+        {
+          "id": "L1",
+          "parallel": false,
+          "desc": "Confirm every visible button, icon, chip, menu item, card action, and CTA in logged-out, traveler, and companion flows is wired to a real action or an honest disabled/empty state.",
+          "phase": "Product Readiness Standard",
+          "source": "tasks/todo.md"
+        },
+        {
+          "id": "L2",
+          "parallel": false,
+          "desc": "Confirm no screen presents hardcoded mock data as live product data unless it is scoped to the explicit Apple review/demo accounts and follows the same backend contract.",
+          "phase": "Product Readiness Standard",
+          "source": "tasks/todo.md"
+        }
+      ],
+      "combo": "noesis-build",
+      "concurrency": 2,
+      "worktree_required": false
+    }
+  ],
+  "approval": {
+    "approval_id": "apr_74635a4ac5803f6ecc45",
+    "status": "required",
+    "expires_at": "2026-08-22T01:25:57.412Z",
+    "selected_option_id": null
+  },
+  "readiness": {
+    "status": "blocked",
+    "checks": [
+      "human_approval",
+      "source_freshness",
+      "quota_snapshot",
+      "dispatch_receipt"
+    ]
+  },
+  "execution": {
+    "status": "blocked",
+    "reason": "human approval is required before any swarm dispatch"
+  },
+  "reporting": {
+    "status": "pending",
+    "required_receipts": [
+      "dispatch",
+      "task",
+      "verification"
+    ]
+  }
+}

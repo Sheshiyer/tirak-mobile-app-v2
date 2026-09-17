@@ -16,6 +16,9 @@ import { useBookingStore } from '@/stores/booking-store';
 import { designTokens } from '@/constants/design-tokens';
 import { ArrowLeft, User, Calendar, Briefcase } from 'lucide-react-native';
 import { usePostHog } from 'posthog-react-native';
+import { useTranslation } from 'react-i18next';
+import { formatBookingDate } from '@/components/booking/booking-format';
+import { isPaymentNavigationLocked, usePaymentStore } from '@/stores/payment-store';
 
 // Import step components (we'll create these next)
 import { ServiceSelectionStep } from './steps/ServiceSelectionStep';
@@ -31,7 +34,7 @@ interface BookingWizardProps {
   initialStep?: number;
 }
 
-const STEP_LABELS = [
+const STEP_ANALYTICS_LABELS = [
   'Service',
   'Date & Time',
   'Location',
@@ -47,6 +50,17 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
 }) => {
   const { companionId: paramCompanionId } = useLocalSearchParams();
   const posthog = usePostHog();
+  const { t, i18n } = useTranslation();
+  const language = i18n?.resolvedLanguage || i18n?.language || 'en';
+  const stepLabels = [
+    t('bookingWizard.service'),
+    t('bookingWizard.dateTime'),
+    t('bookingWizard.location'),
+    t('bookingWizard.requests'),
+    t('bookingWizard.summary'),
+    t('bookingWizard.payment'),
+    t('bookingWizard.confirmation'),
+  ];
   const {
     bookingData,
     isLoading,
@@ -57,6 +71,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
     setCompanionId,
     resetBooking,
   } = useBookingStore();
+  const paymentNavigationLocked = usePaymentStore((state) => isPaymentNavigationLocked(state));
 
   const currentCompanionId = companionId || (paramCompanionId as string);
 
@@ -73,19 +88,21 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
   const handleNext = () => {
     posthog.capture('booking_step_completed', {
       step: bookingData.currentStep,
-      step_name: STEP_LABELS[bookingData.currentStep - 1] ?? '',
+      step_name: STEP_ANALYTICS_LABELS[bookingData.currentStep - 1] ?? '',
       companion_id: currentCompanionId,
     });
     nextStep();
   };
 
   const handlePrevious = () => {
+    if (paymentNavigationLocked) return;
     if (bookingData.currentStep > 1) {
       prevStep();
     }
   };
 
   const handleClose = () => {
+    if (paymentNavigationLocked) return;
     router.back();
   };
 
@@ -102,6 +119,8 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
       case 5:
         return <BookingSummaryStep onNext={handleNext} onPrevious={handlePrevious} />;
       case 6:
+        return <PaymentSelectionStep onNext={handleNext} onPrevious={handlePrevious} />;
+      case 7:
         return <BookingConfirmationStep onPrevious={handlePrevious} />;
       default:
         return <ServiceSelectionStep onNext={handleNext} />;
@@ -117,7 +136,12 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
               style={styles.closeButton}
               onPress={handleClose}
               accessibilityRole="button"
-              accessibilityLabel="Back to guide profile"
+              accessibilityLabel={t('bookingWizard.backToGuideA11y')}
+              accessibilityHint={paymentNavigationLocked
+                ? t('bookingWizard.paymentNavigationLocked')
+                : undefined}
+              accessibilityState={{ disabled: paymentNavigationLocked }}
+              disabled={paymentNavigationLocked}
             >
               <ArrowLeft size={22} color={designTokens.colors.semantic.text} />
             </TouchableOpacity>
@@ -125,10 +149,14 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
             <View style={styles.progressWrap}>
               <ProgressBar
                 currentStep={bookingData.currentStep}
-                totalSteps={STEP_LABELS.length}
-                labels={STEP_LABELS}
+                totalSteps={stepLabels.length}
+                labels={stepLabels}
                 showLabels={false}
                 variant="gradient"
+                accessibilityLabel={t('bookingWizard.progressA11y', {
+                  current: bookingData.currentStep,
+                  total: stepLabels.length,
+                })}
               />
             </View>
 
@@ -146,7 +174,11 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
             {bookingData.companionData && (
               <View style={styles.summaryChip}>
                 <User size={12} color={designTokens.colors.semantic.primary} />
-                <Text style={styles.summaryChipText} numberOfLines={1}>
+                <Text
+                  style={styles.summaryChipText}
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={1.4}
+                >
                   {bookingData.companionData.name}
                 </Text>
               </View>
@@ -154,7 +186,11 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
             {bookingData.service && (
               <View style={styles.summaryChip}>
                 <Briefcase size={12} color={designTokens.colors.semantic.primary} />
-                <Text style={styles.summaryChipText} numberOfLines={1}>
+                <Text
+                  style={styles.summaryChipText}
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={1.4}
+                >
                   {bookingData.service.name}
                 </Text>
               </View>
@@ -162,8 +198,12 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
             {bookingData.dateTime?.date && (
               <View style={styles.summaryChip}>
                 <Calendar size={12} color={designTokens.colors.semantic.primary} />
-                <Text style={styles.summaryChipText} numberOfLines={1}>
-                  {new Date(bookingData.dateTime.date).toLocaleDateString('en', { month: 'short', day: 'numeric' })}
+                <Text
+                  style={styles.summaryChipText}
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={1.4}
+                >
+                  {formatBookingDate(bookingData.dateTime.date, language)}
                   {bookingData.dateTime.time ? ` · ${bookingData.dateTime.time}` : ''}
                 </Text>
               </View>

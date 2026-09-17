@@ -6,6 +6,16 @@ import { DeviceEventEmitter, Platform } from 'react-native';
 import { User, UserRole } from '@/types/auth';
 import { secureStorage } from '@/utils/secure-storage';
 import { posthog } from '@/utils/posthog';
+import { usePaymentStore } from '@/stores/payment-store';
+import { useBookingStore } from '@/stores/booking-store';
+import { API_BASE_URL } from '@/constants/api';
+import { isLocalPromptPayEnabled } from '@/constants/payment-capabilities';
+import {
+  getReviewAccount,
+  isReviewAccountUser,
+  isReviewModeEnabled,
+  type ReviewAccountKey,
+} from '@/constants/review-mode';
 
 interface AuthState {
   user: User | null;
@@ -19,11 +29,13 @@ interface AuthActions {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string, userType: UserRole, contactNumber?: string, dateOfBirth?: Date, gender?: string) => Promise<void>;
   demoLogin: (userType: UserRole) => Promise<void>;
+  switchReviewAccount: (account: ReviewAccountKey) => Promise<void>;
   logout: () => Promise<void>;
   setOnboarded: (value: boolean) => void;
   clearError: () => void;
   updateUser: (userData: Partial<User>) => void;
   validateToken: () => Promise<void>;
+  invalidateAuth: () => Promise<void>;
 }
 
 // Helper to format a Date into local YYYY-MM-DD without timezone shifting
@@ -34,6 +46,12 @@ const formatDateLocal = (date?: Date): string | undefined => {
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 };
+
+async function clearAccountScopedState(): Promise<void> {
+  await usePaymentStore.getState().clearPaymentSession();
+  useBookingStore.getState().resetBooking();
+  await useBookingStore.persist.clearStorage();
+}
 
 export const useAuthStore = create<AuthState & AuthActions>()(
   persist(
@@ -46,6 +64,24 @@ export const useAuthStore = create<AuthState & AuthActions>()(
 
       setOnboarded: (value: boolean) => {
         set({ onboarded: value });
+      },
+
+      invalidateAuth: async () => {
+        set({
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: null,
+          onboarded: false,
+        });
+
+        const cleanup = (operation: () => Promise<void>) => Promise.resolve().then(operation);
+        await Promise.allSettled([
+          cleanup(() => usePaymentStore.getState().clearPaymentSession()),
+          cleanup(() => secureStorage.deleteItemAsync('authToken')),
+          cleanup(() => secureStorage.deleteItemAsync('refreshToken')),
+          cleanup(() => secureStorage.deleteItemAsync('userCredentials')),
+        ]);
       },
 
       login: async (email: string, password: string) => {
@@ -74,6 +110,8 @@ export const useAuthStore = create<AuthState & AuthActions>()(
               phone: response.data.user.phone,
               createdAt: new Date().toISOString(),
             };
+
+            if (get().user?.id !== user.id) usePaymentStore.getState().resetPayment();
 
             // Store user credentials for token validation
             await secureStorage.setItemAsync("userCredentials", JSON.stringify(user));
@@ -133,6 +171,8 @@ export const useAuthStore = create<AuthState & AuthActions>()(
               createdAt: new Date().toISOString(),
             };
 
+            if (get().user?.id !== user.id) usePaymentStore.getState().resetPayment();
+
             // Store user credentials for token validation
             await secureStorage.setItemAsync("userCredentials", JSON.stringify(user));
 
@@ -160,26 +200,8 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           // IMPORTANT: Clear all storage FIRST before anything else
           // This prevents re-authentication on page reload
           
-          // Clear authentication token from secure storage
-          await secureStorage.deleteItemAsync("authToken");
-          logger.log('[Logout] Cleared authToken');
-          
-          // Clear refresh token if it exists
-          await secureStorage.deleteItemAsync("refreshToken");
-          logger.log('[Logout] Cleared refreshToken');
-          
-          // Clear any other sensitive data from secure storage
-          await secureStorage.deleteItemAsync("userCredentials");
-          logger.log('[Logout] Cleared userCredentials');
-          
-          // Clear user state and authentication
-          set({
-            user: null,
-            isAuthenticated: false,
-            isLoading: false,
-            error: null,
-            onboarded: false, // Reset onboarded status
-          });
+          await get().invalidateAuth();
+          logger.log('[Logout] Cleared authentication and payment session');
           
           // Clear other stores that contain user-specific data
           // Import and reset booking store
@@ -225,6 +247,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
               window.localStorage.removeItem('tirak-auth-storage');
               window.localStorage.removeItem('tirak-booking-storage');
               window.localStorage.removeItem('tirak-supplier-storage');
+              window.localStorage.removeItem('tirak-payment-session');
               logger.log('[Logout] localStorage cleared directly');
             } catch (localStorageError) {
               logger.warn('[Logout] localStorage clear failed:', localStorageError);
@@ -245,14 +268,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           
         } catch (error) {
           console.error('Error during logout:', error);
-          // Even if there's an error, still clear the auth state
-          set({
-            user: null,
-            isAuthenticated: false,
-            isLoading: false,
-            error: null,
-            onboarded: false,
-          });
+          await get().invalidateAuth();
         }
       },
 
@@ -293,6 +309,21 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             createdAt: new Date().toISOString(),
           };
 
+          if (get().user?.id !== demoUser.id) usePaymentStore.getState().resetPayment();
+
+          if (
+            userType === 'customer'
+            && isLocalPromptPayEnabled({
+              flag: process.env.EXPO_PUBLIC_PROMPTPAY_ENABLED,
+              apiBaseUrl: API_BASE_URL,
+              isDev: __DEV__,
+              reviewMode: isReviewModeEnabled(),
+            })
+          ) {
+            await secureStorage.setItemAsync('authToken', 'tirak-local-fixture-token');
+            await secureStorage.setItemAsync('userCredentials', JSON.stringify(demoUser));
+          }
+
           set({ user: demoUser, isAuthenticated: true, onboarded: true, isLoading: false });
         } catch (error) {
           const errorMessage = 'Demo login failed';
@@ -301,10 +332,47 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         }
       },
 
+      switchReviewAccount: async (accountKey: ReviewAccountKey) => {
+        set({ isLoading: true, error: null });
+
+        if (!isReviewModeEnabled()) {
+          const errorMessage = 'App review accounts are not enabled in this build';
+          set({ isLoading: false, error: errorMessage });
+          throw new Error(errorMessage);
+        }
+
+        try {
+          const reviewAccount = getReviewAccount(accountKey);
+          const reviewUser = { ...reviewAccount.user };
+
+          await clearAccountScopedState();
+          await Promise.all([
+            secureStorage.deleteItemAsync('authToken'),
+            secureStorage.deleteItemAsync('refreshToken'),
+          ]);
+          await secureStorage.setItemAsync('userCredentials', JSON.stringify(reviewUser));
+
+          set({
+            user: reviewUser,
+            isAuthenticated: true,
+            onboarded: true,
+            isLoading: false,
+            error: null,
+          });
+        } catch (error) {
+          const errorMessage = error && typeof error === 'object' && 'message' in error
+            ? String(error.message)
+            : 'Unable to switch app review account';
+          set({ isLoading: false, error: errorMessage });
+          throw new Error(errorMessage);
+        }
+      },
+
       updateUser: (userData: Partial<User>) => {
         const currentUser = get().user;
         if (currentUser) {
           const nextUser = { ...currentUser, ...userData };
+          if (currentUser.id !== nextUser.id) usePaymentStore.getState().resetPayment();
           set({ user: nextUser });
           secureStorage.setItemAsync("userCredentials", JSON.stringify(nextUser)).catch((error) => {
             logger.warn('Failed to persist updated user credentials', error);
@@ -321,9 +389,19 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           // logger.log('Token validation - token exists:', !!token);
           // logger.log('Token validation - credentials exist:', !!userCredentials);
           
-          if (token && userCredentials) {
+          if (userCredentials) {
             try {
               const userData = JSON.parse(userCredentials);
+              if (!userData || typeof userData !== 'object' || typeof userData.id !== 'string' || !userData.id) {
+                throw new Error('Stored user credentials are invalid');
+              }
+              const isEnabledReviewAccount = isReviewModeEnabled() && isReviewAccountUser(userData);
+              if (!token && !isEnabledReviewAccount) {
+                await get().invalidateAuth();
+                logger.log('No valid token found - user not authenticated');
+                return;
+              }
+              if (get().user?.id !== userData.id) usePaymentStore.getState().resetPayment();
               // If we have both token and user data, consider user authenticated
               set({ 
                 user: userData, 
@@ -333,19 +411,15 @@ export const useAuthStore = create<AuthState & AuthActions>()(
               // logger.log('Token validation successful - user authenticated:', userData.email);
             } catch (parseError) {
               console.error('Error parsing stored user credentials:', parseError);
-              // Clear invalid data
-              await secureStorage.deleteItemAsync("authToken").catch(() => {});
-              await secureStorage.deleteItemAsync("userCredentials").catch(() => {});
-              set({ isAuthenticated: false });
+              await get().invalidateAuth();
             }
           } else {
-            // No token or credentials found
-            set({ isAuthenticated: false });
+            await get().invalidateAuth();
             logger.log('No valid token found - user not authenticated');
           }
         } catch (error) {
           console.error('Error validating token:', error);
-          set({ isAuthenticated: false });
+          await get().invalidateAuth();
         }
       },
     }),
@@ -364,13 +438,13 @@ export const useAuthStore = create<AuthState & AuthActions>()(
 
 // Listen for unauthorized events from browser API calls.
 if (Platform.OS !== 'web') {
-  DeviceEventEmitter.addListener('auth:unauthorized', () => {
+  DeviceEventEmitter.addListener('auth:unauthorized', async () => {
     logger.warn('Auth:unauthorized event received - logging out');
-    useAuthStore.getState().logout();
+    await useAuthStore.getState().invalidateAuth();
   });
 } else if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
-  window.addEventListener('auth:unauthorized', () => {
+  window.addEventListener('auth:unauthorized', async () => {
     logger.warn('Auth:unauthorized event received - logging out');
-    useAuthStore.getState().logout();
+    await useAuthStore.getState().invalidateAuth();
   });
 }

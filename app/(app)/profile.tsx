@@ -1,12 +1,18 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { Alert, View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { router } from 'expo-router';
+import Constants from 'expo-constants';
 import { useAuthStore } from '@/stores/auth-store';
 import { Card } from '@/components/ui/Card';
 import { ProfileImage } from '@/components/ui/ProfileImage';
 import { RadialGradient } from '@/components/ui/RadialGradient';
 import { LinearGradient } from 'expo-linear-gradient';
 import { designTokens } from '@/constants/design-tokens';
+import {
+  isReviewModeEnabled,
+  REVIEW_ACCOUNT_LIST,
+  type ReviewAccountKey,
+} from '@/constants/review-mode';
 import {
   Settings,
   LogOut,
@@ -21,8 +27,38 @@ import {
 } from 'lucide-react-native';
 
 export default function ProfileScreen() {
-  const { user, logout } = useAuthStore();
+  const { user, logout, switchReviewAccount, isLoading } = useAuthStore();
   const isCompanion = user?.userType === 'companion' || user?.userType === 'supplier';
+  const appVersion = Constants.expoConfig?.version ?? 'unknown';
+
+  const handleReviewAccountSwitch = (account: ReviewAccountKey) => {
+    const target = REVIEW_ACCOUNT_LIST.find((candidate) => candidate.key === account);
+    if (!target || target.user.id === user?.id || isLoading) return;
+
+    const performSwitch = async () => {
+      try {
+        await switchReviewAccount(account);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unable to switch account';
+        if (Platform.OS === 'web') {
+          window.alert(message);
+        } else {
+          Alert.alert('Account switch failed', message);
+        }
+      }
+    };
+
+    const warning = 'Switching accounts clears the current booking and payment draft.';
+    if (Platform.OS === 'web') {
+      if (window.confirm(`${target.label}\n\n${warning}`)) void performSwitch();
+      return;
+    }
+
+    Alert.alert(target.label, warning, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Switch account', onPress: () => void performSwitch() },
+    ]);
+  };
 
   const handleLogout = async () => {
     const performLogout = async () => {
@@ -127,6 +163,40 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.content}>
+          {isReviewModeEnabled() && (
+            <Card style={styles.reviewAccountCard} padding={20}>
+              <Text style={styles.cardTitle}>App Review Accounts</Text>
+              <Text style={styles.reviewAccountIntro}>
+                Both pre-populated roles are available without passwords. Switching clears booking and payment drafts.
+              </Text>
+              {REVIEW_ACCOUNT_LIST.map((account) => {
+                const active = account.user.id === user?.id;
+                return (
+                  <TouchableOpacity
+                    key={account.key}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${account.label}${active ? ', active account' : ''}`}
+                    accessibilityHint={active ? undefined : 'Clears the current booking and payment draft before switching'}
+                    disabled={active || isLoading}
+                    onPress={() => handleReviewAccountSwitch(account.key)}
+                    style={[styles.reviewAccountRow, active && styles.reviewAccountRowActive]}
+                  >
+                    <View style={styles.reviewAccountCopy}>
+                      <Text style={styles.reviewAccountLabel}>{account.label}</Text>
+                      <Text style={styles.reviewAccountDescription}>{account.description}</Text>
+                    </View>
+                    <Text style={[styles.reviewAccountStatus, active && styles.reviewAccountStatusActive]}>
+                      {active ? 'Active' : 'Switch'}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+              <Text style={styles.reviewPaymentNote}>
+                Review checkout with cash only. PromptPay is disabled and no real payment is created.
+              </Text>
+            </Card>
+          )}
+
           {/* Quick Stats for Companion */}
           {isCompanion && (
             <Card style={styles.quickStatsCard} padding={20}>
@@ -193,7 +263,7 @@ export default function ProfileScreen() {
 
           {/* App Version */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Tirak v1.0.0</Text>
+            <Text style={styles.footerText}>Tirak v{appVersion}</Text>
             <Text style={styles.footerSubtext}>Built for local days in Thailand</Text>
           </View>
         </View>
@@ -208,6 +278,57 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     marginBottom: 20,
+  },
+  reviewAccountCard: {
+    marginBottom: 16,
+  },
+  reviewAccountIntro: {
+    color: designTokens.colors.semantic.textSecondary,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  reviewAccountRow: {
+    alignItems: 'center',
+    borderColor: designTokens.colors.semantic.border,
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    marginBottom: 10,
+    padding: 12,
+  },
+  reviewAccountRowActive: {
+    backgroundColor: `${designTokens.colors.semantic.primary}10`,
+    borderColor: designTokens.colors.semantic.primary,
+  },
+  reviewAccountCopy: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  reviewAccountLabel: {
+    color: designTokens.colors.semantic.text,
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 3,
+  },
+  reviewAccountDescription: {
+    color: designTokens.colors.semantic.textSecondary,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  reviewAccountStatus: {
+    color: designTokens.colors.semantic.primary,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  reviewAccountStatusActive: {
+    color: designTokens.colors.semantic.success,
+  },
+  reviewPaymentNote: {
+    color: designTokens.colors.semantic.textSecondary,
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: 2,
   },
   headerGradient: {
     paddingTop: 60,

@@ -15,6 +15,11 @@ import { SimpleInput } from '@/components/ui/SimpleInput';
 import { useTranslation } from 'react-i18next';
 import { SoundManager } from '@/utils/sound-manager';
 import { usePostHog } from 'posthog-react-native';
+import {
+  isReviewModeEnabled,
+  REVIEW_ACCOUNT_LIST,
+  type ReviewAccountKey,
+} from '@/constants/review-mode';
 
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
@@ -50,8 +55,8 @@ export default function LoginScreen() {
     password: '',
   });
   const [errors, setErrors] = useState<Partial<LoginFormData>>({});
-  const { login, demoLogin, isLoading, error: authError } = useAuthStore();
-  const [isDemoLoading, setIsDemoLoading] = useState(false);
+  const { login, switchReviewAccount, isLoading, error: authError } = useAuthStore();
+  const [reviewAccountLoading, setReviewAccountLoading] = useState<ReviewAccountKey | null>(null);
   const animatedValue = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -159,17 +164,16 @@ export default function LoginScreen() {
     router.push('/auth/forgot');
   };
 
-  const handleDemoLogin = async () => {
+  const handleReviewAccountLogin = async (account: ReviewAccountKey) => {
     try {
-      setIsDemoLoading(true);
-      await demoLogin('customer');
+      setReviewAccountLoading(account);
+      await switchReviewAccount(account);
       SoundManager.play('loginSuccess');
-      router.replace('/(app)');
+      router.replace('/profile');
     } catch (error) {
-      logger.warn('Demo login failed:', error instanceof Error ? error.message : error);
-      // Don't navigate on error - stay on login screen to show error
+      logger.warn('Review account login failed:', error instanceof Error ? error.message : error);
     } finally {
-      setIsDemoLoading(false);
+      setReviewAccountLoading(null);
     }
   };
 
@@ -244,9 +248,34 @@ export default function LoginScreen() {
               fullWidth
               style={styles.button}
             />
-
-            
           </View>
+
+          {isReviewModeEnabled() && (
+            <View style={styles.reviewAccessCard}>
+              <Text style={styles.reviewAccessTitle}>App Review Access</Text>
+              <Text style={styles.reviewAccessDescription}>
+                Choose a pre-populated account. No password or real payment is required.
+              </Text>
+              {REVIEW_ACCOUNT_LIST.map((account) => (
+                <TouchableOpacity
+                  key={account.key}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Continue as ${account.label}`}
+                  disabled={isLoading || reviewAccountLoading !== null}
+                  onPress={() => handleReviewAccountLogin(account.key)}
+                  style={styles.reviewAccountButton}
+                >
+                  <Text style={styles.reviewAccountButtonTitle}>
+                    {reviewAccountLoading === account.key ? 'Opening…' : account.label}
+                  </Text>
+                  <Text style={styles.reviewAccountButtonDescription}>{account.description}</Text>
+                </TouchableOpacity>
+              ))}
+              <Text style={styles.reviewSafetyText}>
+                Payment review uses the cash option; PromptPay is disabled in review mode.
+              </Text>
+            </View>
+          )}
           
           <View style={styles.footer}>
             <Text style={styles.footerText}>{t('login.dontHaveAnAccount')} </Text>
@@ -320,6 +349,50 @@ const styles = StyleSheet.create({
   demoButton: {
     marginTop: 16,
     borderColor: designTokens.colors.semantic.accent,
+  },
+  reviewAccessCard: {
+    backgroundColor: designTokens.colors.semantic.surface,
+    borderColor: designTokens.colors.semantic.primary,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 20,
+  },
+  reviewAccessTitle: {
+    color: designTokens.colors.semantic.text,
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 6,
+  },
+  reviewAccessDescription: {
+    color: designTokens.colors.semantic.textSecondary,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  reviewAccountButton: {
+    borderColor: designTokens.colors.semantic.border,
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 12,
+    marginBottom: 10,
+  },
+  reviewAccountButtonTitle: {
+    color: designTokens.colors.semantic.primary,
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 3,
+  },
+  reviewAccountButtonDescription: {
+    color: designTokens.colors.semantic.textSecondary,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  reviewSafetyText: {
+    color: designTokens.colors.semantic.textSecondary,
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: 2,
   },
   footer: {
     flexDirection: 'row',
