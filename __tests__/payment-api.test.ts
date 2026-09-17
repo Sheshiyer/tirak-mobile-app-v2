@@ -28,6 +28,7 @@ import {
 } from '@/app/api/payment/payment';
 
 const contractPath = [
+  path.resolve(__dirname, '../contracts/tirak-payments-v1/payment-api.json'),
   path.resolve(__dirname, '../../backend/tirak-backend-alpha01/contracts/tirak-payments-v1/payment-api.json'),
   path.resolve(__dirname, '../../../backend/tirak-backend-alpha01/contracts/tirak-payments-v1/payment-api.json'),
 ].find((candidate) => fs.existsSync(candidate));
@@ -40,6 +41,7 @@ const contract = JSON.parse(fs.readFileSync(contractPath, 'utf8')) as {
 };
 
 const stateMatrixPath = [
+  path.resolve(__dirname, '../contracts/tirak-payments-v1/state-matrix.json'),
   path.resolve(__dirname, '../../backend/tirak-backend-alpha01/contracts/tirak-payments-v1/state-matrix.json'),
   path.resolve(__dirname, '../../../backend/tirak-backend-alpha01/contracts/tirak-payments-v1/state-matrix.json'),
 ].find((candidate) => fs.existsSync(candidate));
