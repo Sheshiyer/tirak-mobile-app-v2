@@ -10,8 +10,9 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { RadialGradient } from '@/components/ui/RadialGradient';
 import { designTokens } from '@/constants/design-tokens';
 import { ArrowLeft } from 'lucide-react-native';
+import { POLICY_VERSION } from '@/utils/account-consent';
 
-const PRIVACY_POLICY = `Last updated: May 2026
+const PRIVACY_POLICY = `Policy version: ${POLICY_VERSION}
 
 **1. Introduction**
 Tirak ("we", "us", or "our") helps travelers discover Thailand through verified local guides and bookable cultural experiences. We protect your privacy so planning, booking, and messaging can happen with confidence.
@@ -30,6 +31,9 @@ Tirak ("we", "us", or "our") helps travelers discover Thailand through verified 
 - To send booking confirmations, message alerts, safety updates, and service notices
 - To ensure platform safety and prevent fraud
 - To comply with legal obligations
+
+**Optional Emails and Analytics**
+Marketing emails and optional app usage analytics are separate choices, off by default for new accounts. You can save or change these choices in Settings > Trust & Safety. Essential account, safety and booking messages are separate from marketing emails. Optional app analytics uses an account ID rather than your name or email address.
 
 **4. Information Sharing**
 We do not sell your personal data. We share information only:
@@ -52,7 +56,7 @@ Tirak is not intended for users under 18 years of age.
 **9. Contact**
 For privacy concerns, contact: support@tirak.app`;
 
-const TERMS_OF_SERVICE = `Last updated: May 2026
+const TERMS_OF_SERVICE = `Policy version: ${POLICY_VERSION}
 
 **1. Acceptance of Terms**
 By using the Tirak app, you agree to these Terms of Service. If you do not agree, please do not use the app.

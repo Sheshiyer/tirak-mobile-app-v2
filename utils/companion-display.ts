@@ -23,6 +23,12 @@ export const isTestCompanion = (companion: any): boolean => {
   return isTestCompanionId(companion?.id) || email === TEST_COMPANION_EMAIL || displayName === 'test companion';
 };
 
+/** Only explicit fixtures are hidden; ordinary vendor accounts are never guessed. */
+export const isDemoCompanion = (companion: any): boolean => {
+  const id = normalizeText(companion?.id);
+  return isTestCompanion(companion) || ['companion_001', 'companion_002', 'demo_companion_001'].includes(id);
+};
+
 export const getCompanionDisplayName = (companion: any): string => {
   return (
     normalizeText(companion?.displayName) ||
@@ -37,7 +43,7 @@ export const getCompanionLocation = (companion: any): string => {
   return normalizeText(companion?.location) || normalizeText(regions[0]) || 'Thailand';
 };
 
-export const getCompanionServices = (companion: any): string[] => {
+export const getCompanionServices = (companion: any, allowDemoData = false): string[] => {
   if (Array.isArray(companion?.services) && companion.services.length > 0) {
     return companion.services;
   }
@@ -50,14 +56,14 @@ export const getCompanionServices = (companion: any): string[] => {
     return companion.categories;
   }
 
-  if (isTestCompanion(companion)) {
+  if (allowDemoData && isTestCompanion(companion)) {
     return ['Temple walks', 'Market tasting'];
   }
 
   return ['Local experiences'];
 };
 
-export const getCompanionImage = (companion: any): string => {
+export const getCompanionImage = (companion: any, allowDemoData = false): string => {
   const profileImage = normalizeText(companion?.profileImage);
   if (profileImage) return profileImage;
 
@@ -65,18 +71,18 @@ export const getCompanionImage = (companion: any): string => {
   const galleryImage = gallery.find((image: unknown) => normalizeText(image));
   if (galleryImage) return normalizeText(galleryImage);
 
-  if (isTestCompanion(companion)) {
+  if (allowDemoData && isTestCompanion(companion)) {
     return FALLBACK_GUIDE_IMAGES[0];
   }
 
   return '';
 };
 
-export const getCompanionGallery = (companion: any): string[] => {
+export const getCompanionGallery = (companion: any, allowDemoData = false): string[] => {
   const gallery = Array.isArray(companion?.gallery)
     ? companion.gallery.filter((image: unknown) => normalizeText(image))
     : [];
 
-  const displayImage = getCompanionImage(companion);
+  const displayImage = getCompanionImage(companion, allowDemoData);
   return gallery.length > 0 ? gallery : displayImage ? [displayImage] : [];
 };

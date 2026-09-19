@@ -1,7 +1,7 @@
 import { logger } from '@/utils/logger';
 import React, { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
-import { Stack, router, usePathname, useGlobalSearchParams } from 'expo-router';
+import { Stack, router, usePathname } from 'expo-router';
 import { PostHogProvider } from 'posthog-react-native';
 import { posthog } from '@/utils/posthog';
 import { useFonts } from 'expo-font';
@@ -17,18 +17,20 @@ import PWAHead from '@/components/PWAHead';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { SimpleToast } from '@/components/ui/SimpleToast';
 import { SoundManager } from '@/utils/sound-manager';
+import { useAuthStore } from '@/stores/auth-store';
+import { parsePasswordResetLink, shouldShowStartupSplash } from '@/utils/startup-navigation';
 
 Sentry.init({
   dsn: 'https://aa0f61b9f2d781f2a2295677370e6749@o4509643523162112.ingest.us.sentry.io/4509643525783552',
 
   // Adds more context data to events (IP address, cookies, user, etc.)
   // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
-  sendDefaultPii: true,
+  sendDefaultPii: false,
 
   // Configure Session Replay
-  replaysSessionSampleRate: 0.1,
-  replaysOnErrorSampleRate: 1,
-  integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
+  replaysSessionSampleRate: 0,
+  replaysOnErrorSampleRate: 0,
+  integrations: [Sentry.feedbackIntegration()],
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: __DEV__,
@@ -63,6 +65,17 @@ export { default as SplashScreen } from './splash';
 SplashScreen.preventAutoHideAsync();
 
 export default Sentry.wrap(function RootLayout() {
+  const pathname = usePathname();
+  const currentPathname = useRef(pathname);
+  currentPathname.current = pathname;
+  useEffect(() => useAuthStore.subscribe((state, previous) => {
+    if (state.user?.id !== previous.user?.id) {
+      // User-specific query keys predate account scoping in some screens.
+      // Cancel in-flight responses and discard cache across account changes.
+      void queryClient.cancelQueries();
+      queryClient.clear();
+    }
+  }), []);
   const [fontsLoaded] = useFonts({
     // Custom fonts for headings and subheadings only (visual impact)
     'ProximaNova-Regular': require('../assets/images/fonts/ProximaNova-Regular.otf'),
@@ -71,20 +84,28 @@ export default Sentry.wrap(function RootLayout() {
     'Garet-Heavy': require('../assets/images/fonts/garet.heavy.ttf'),
   });
 
-  // Handle splash screen and initial navigation
+  // Show the branded startup sequence only for a plain root launch. Explicit
+  // auth/legal/reset routes must remain accessible when opened directly.
   useEffect(() => {
-    if (fontsLoaded) {
-      SplashScreen.hideAsync();
-      SoundManager.preloadAll(); // warm up audio after fonts are ready
-
-      const rafId = requestAnimationFrame(() => {
-        setTimeout(() => {
-          router.replace('/splash');
+    if (!fontsLoaded) return;
+    void SplashScreen.hideAsync();
+    void SoundManager.preloadAll();
+    let cancelled = false;
+    let rafId: number | undefined;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    void Linking.getInitialURL().catch(() => null).then((initialUrl) => {
+      if (cancelled || !shouldShowStartupSplash(currentPathname.current, initialUrl)) return;
+      rafId = requestAnimationFrame(() => {
+        timer = setTimeout(() => {
+          if (!cancelled && shouldShowStartupSplash(currentPathname.current, initialUrl)) router.replace('/splash');
         }, 100);
       });
-      
-      return () => cancelAnimationFrame(rafId);
-    }
+    });
+    return () => {
+      cancelled = true;
+      if (rafId !== undefined) cancelAnimationFrame(rafId);
+      if (timer !== undefined) clearTimeout(timer);
+    };
   }, [fontsLoaded]);
 
   // Register service worker for PWA (web only) - DISABLED for now
@@ -116,43 +137,21 @@ export default Sentry.wrap(function RootLayout() {
 
   // Handle deep links
   useEffect(() => {
+    if (!fontsLoaded) return;
+    let disposed = false;
+    let resetTimer: ReturnType<typeof setTimeout> | undefined;
     const handleDeepLink = (url: string) => {
-      logger.log('Deep link received:', url);
-      
-      if (url.includes('reset-password')) {
-        try {
-          // Handle both production (tirak://) and development (exp://) URLs
-          let token = null;
-          
-          if (url.includes('exp://')) {
-            // Expo development URL format: exp://192.168.0.101:8081//reset-password?token=...
-            const match = url.match(/token=([^&]+)/);
-            token = match ? match[1] : null;
-          } else {
-            // Production URL format: tirak://reset-password?token=...
-            const urlObj = new URL(url);
-            token = urlObj.searchParams.get('token');
-          }
-          
-          if (token) {
-            logger.log('Reset password token:', token);
-            // Navigate directly to /auth/new screen with token
-            setTimeout(() => {
-              router.replace(`/auth/new?token=${token}`);
-            }, 100);
-          } else {
-            logger.log('No token found, redirecting to forgot password');
-            setTimeout(() => {
-              router.replace('/auth/forgot');
-            }, 100);
-          }
-        } catch (error) {
-          console.error('Error parsing deep link:', error);
-          setTimeout(() => {
-            router.replace('/auth/forgot');
-          }, 100);
-        }
-      }
+      const reset = parsePasswordResetLink(url);
+      if (!reset || disposed) return;
+      // Never log the reset URL or token. Structured params safely preserve
+      // encoded characters rather than inserting the token into a new URL.
+      if (resetTimer !== undefined) clearTimeout(resetTimer);
+      resetTimer = setTimeout(() => {
+        if (disposed) return;
+        router.replace(reset.token
+          ? { pathname: '/auth/new', params: { token: reset.token } }
+          : '/auth/forgot');
+      }, 100);
     };
 
     // Listen for incoming links when the app is already open
@@ -161,16 +160,18 @@ export default Sentry.wrap(function RootLayout() {
     });
 
     // Check if the app was opened by a deep link
-    Linking.getInitialURL().then((url) => {
+    void Linking.getInitialURL().then((url) => {
       if (url) {
         handleDeepLink(url);
       }
-    });
+    }).catch(() => logger.warn('Unable to read initial app link'));
 
     return () => {
+      disposed = true;
+      if (resetTimer !== undefined) clearTimeout(resetTimer);
       subscription.remove();
     };
-  }, []);
+  }, [fontsLoaded]);
 
   if (!fontsLoaded) {
     return null;
@@ -181,7 +182,7 @@ export default Sentry.wrap(function RootLayout() {
       client={posthog}
       autocapture={{
         captureScreens: false, // manual screen tracking via usePathname
-        captureTouches: true,
+        captureTouches: false,
         propsToCapture: ['testID'],
       }}
     >
@@ -200,7 +201,6 @@ export default Sentry.wrap(function RootLayout() {
 
 function RootLayoutNav() {
   const pathname = usePathname();
-  const params = useGlobalSearchParams();
   const previousPathname = useRef<string | undefined>(undefined);
 
   // Manual screen tracking for Expo Router
@@ -208,11 +208,10 @@ function RootLayoutNav() {
     if (previousPathname.current !== pathname) {
       posthog.screen(pathname, {
         previous_screen: previousPathname.current ?? null,
-        ...params,
       });
       previousPathname.current = pathname;
     }
-  }, [pathname, params]);
+  }, [pathname]);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

@@ -102,6 +102,8 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({
       case 5:
         return <BookingSummaryStep onNext={handleNext} onPrevious={handlePrevious} />;
       case 6:
+        return <PaymentSelectionStep onNext={handleNext} onPrevious={handlePrevious} />;
+      case 7:
         return <BookingConfirmationStep onPrevious={handlePrevious} />;
       default:
         return <ServiceSelectionStep onNext={handleNext} />;

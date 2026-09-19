@@ -72,9 +72,6 @@ const EnhancedCompanionCard: React.FC<CompanionCardProps> = ({
     }).start();
   };
 
-  // Calculate distance (mock data)
-  const distance = `${(Math.random() * 10 + 1).toFixed(1)} km`;
-
   return (
     <Animated.View
       style={[
@@ -153,7 +150,7 @@ const EnhancedCompanionCard: React.FC<CompanionCardProps> = ({
             <View style={styles.locationRow}>
               <MapPin size={12} color={designTokens.colors.semantic.textSecondary} />
               <Text style={styles.locationText} numberOfLines={1}>
-                {companion.location} • {distance}
+                {companion.location}
               </Text>
             </View>
           </View>

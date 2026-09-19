@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getAuthToken } from './companion';
 import { apiUrl } from '@/constants/api';
-import { isUnauthorizedError } from '@/utils/api-errors';
+import { getDemoModeEnabled } from '@/utils/demo-mode';
 
 // Types
 export interface ExperienceStats {
@@ -122,7 +122,7 @@ export const fetchCompanionProfile = async (): Promise<CompanionProfileResponse>
     return response.data;
   } catch (error) {
     const statusCode = axios.isAxiosError(error) ? error.response?.status : undefined;
-    if (__DEV__ || statusCode === 404 || isUnauthorizedError(error)) {
+    if (await getDemoModeEnabled()) {
       logger.log('Companion profile backend unavailable; using local preview profile fallback', {
         status: statusCode,
       });
@@ -170,7 +170,7 @@ export const createOrUpdateCompanionProfile = async (payload: any): Promise<Comp
     return response.data;
   } catch (error) {
     const statusCode = axios.isAxiosError(error) ? error.response?.status : undefined;
-    if (__DEV__ || statusCode === 404 || isUnauthorizedError(error)) {
+    if (await getDemoModeEnabled()) {
       if (payload instanceof FormData) {
         const rawData = payload.get('data');
         const parsedData = typeof rawData === 'string' ? JSON.parse(rawData) : {};

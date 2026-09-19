@@ -1,4 +1,3 @@
-import { logger } from '@/utils/logger';
 import React, { useState } from 'react';
 import {
   View,
@@ -24,10 +23,8 @@ import { BookingStepFooter } from '../BookingStepFooter';
 import { ProfileImage } from '@/components/ui/ProfileImage';
 import { useBookingStore } from '@/stores/booking-store';
 import { designTokens, componentTokens } from '@/constants/design-tokens';
-import { useCreateBooking } from '@/app/api/booking/booking';
 import { useTranslation } from 'react-i18next';
 import { convertCurrency, formatOriginalCurrencyContext, formatTravelerCurrency } from '@/utils/currency';
-import { usePostHog } from 'posthog-react-native';
 
 interface BookingSummaryStepProps {
   onNext: () => void;
@@ -104,10 +101,8 @@ export const BookingSummaryStep: React.FC<BookingSummaryStepProps> = ({
   onNext,
   onPrevious,
 }) => {
-  const { bookingData, calculateTotal, goToStep, prepareBookingRequest, setBookingComplete } = useBookingStore();
+  const { bookingData, calculateTotal, goToStep } = useBookingStore();
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const createBookingMutation = useCreateBooking();
-  const posthog = usePostHog();
   const { t } = useTranslation();
 
   const companion = bookingData.companionData
@@ -125,99 +120,12 @@ export const BookingSummaryStep: React.FC<BookingSummaryStepProps> = ({
       );
     }
 
-  const handleNext = async () => {
-    logger.log('🔄 BookingSummaryStep handleNext started', {
-      timestamp: new Date().toISOString(),
-      termsAccepted,
-      isPending: createBookingMutation.isPending
-    });
-
+  const handleNext = () => {
     if (!termsAccepted) {
-      logger.log('⚠️ Terms not accepted');
       Alert.alert('Terms Required', 'Please accept the terms and conditions to continue.');
       return;
     }
-
-    // Prevent multiple submissions
-    if (createBookingMutation.isPending) {
-      logger.log('⏳ Submission already in progress, preventing duplicate');
-      return;
-    }
-
-    try {
-      // Get the prepared booking request from the store
-      logger.log('📝 Getting prepared booking request from store');
-      const bookingRequest = await prepareBookingRequest();
-      
-      if (!bookingRequest) {
-        console.error('❌ Failed to prepare booking request');
-        Alert.alert('Error', 'Failed to prepare booking request. Please try again.');
-        return;
-      }
-
-      logger.log('🚀 Submitting booking request', {
-        timestamp: new Date().toISOString(),
-        bookingRequest: {
-          companionId: bookingRequest.companionId,
-          serviceId: bookingRequest.serviceId,
-          date: bookingRequest.date,
-          startTime: bookingRequest.startTime,
-          duration: bookingRequest.duration
-        }
-      });
-
-      // Submit the booking using React Query mutation
-      const result = await createBookingMutation.mutateAsync(bookingRequest);
-      
-      logger.log('Booking API Response:', {
-        result,
-        success: result.success,
-        bookingId: result?.data?.booking?.id,
-        timestamp: new Date().toISOString()
-      });
-      
-      if (result.success && result.data.booking.id) {
-        logger.log('✅ Booking created successfully', {
-          timestamp: new Date().toISOString(),
-          bookingId: result.data.booking.id
-        });
-        posthog.capture('booking_submitted', {
-          booking_id: result.data.booking.id,
-          companion_id: bookingData.companionId,
-          service_name: bookingData.service?.name ?? 'Selected experience',
-          total_amount: result.data.booking.totalAmount,
-          payment_status: result.data.booking.paymentStatus,
-          duration_minutes: result.data.booking.duration,
-        });
-        setBookingComplete(true);
     onNext();
-      } else {
-        console.error('❌ Booking creation failed - Invalid response format:', {
-          timestamp: new Date().toISOString(),
-          result
-        });
-        throw new Error('Invalid booking response format');
-      }
-    } catch (error) {
-      console.error('❌ Booking creation failed:', {
-        timestamp: new Date().toISOString(),
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-      Alert.alert(
-        'Booking Failed',
-        'There was an error creating your booking. Please try again.',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              logger.log('🔄 Resetting booking state after error');
-              setBookingComplete(false);
-              goToStep(1);
-            }
-          }
-        ]
-      );
-    }
   };
 
   const handleEditStep = (step: number) => {
@@ -509,7 +417,7 @@ export const BookingSummaryStep: React.FC<BookingSummaryStepProps> = ({
       <BookingStepFooter
         onPrevious={onPrevious}
         onNext={handleNext}
-        nextTitle={t('bookingSummary.confirm')}
+        nextTitle="Choose payment"
         nextDisabled={!termsAccepted}
         showPrevious={true}
         showNext={true}

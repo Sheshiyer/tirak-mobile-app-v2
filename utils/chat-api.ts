@@ -9,8 +9,9 @@
 import { secureStorage } from './secure-storage';
 import { API_BASE_URL } from '@/constants/api';
 import { logger } from './logger';
-import { TEST_COMPANION_ID, getCompanionImage, isTestCompanionId } from './companion-display';
+import { TEST_COMPANION_ID, getCompanionImage } from './companion-display';
 import { handleApiError } from './api-errors';
+import { getDemoModeEnabled } from './demo-mode';
 
 export const BACKEND_URL = API_BASE_URL;
 
@@ -90,6 +91,7 @@ export interface OtherParty {
 
 export interface ChatRoom {
   id: string;
+  bookingId?: string;
   status: string;
   otherParty: OtherParty;
   lastMessage: {
@@ -355,38 +357,103 @@ const demoMessages: Record<string, ChatMessage[]> = {
 
 /** List all chat rooms for the current user. */
 export async function getRooms(): Promise<ChatRoom[]> {
+  if (!(await getAuthToken())) return [];
   const data = await apiGet<{ items: ChatRoom[] }>('/api/chat/rooms');
-  return data?.items || [];
+  if (!data) throw new Error('We could not load your conversations. Check your connection and try again.');
+  const demoEnabled = await getDemoModeEnabled();
+  return (data.items || []).filter(room => demoEnabled || !room.id.startsWith('demo_room_'));
 }
 
 /**
- * Create or retrieve a chat room between the current user and `otherUserId`.
+ * Create or retrieve a room for a confirmed/in-progress booking.
  * Returns the room UUID or null on failure.
  */
-export async function createOrGetRoom(otherUserId: string): Promise<string | null> {
-  if (isTestCompanionId(otherUserId)) {
-    return 'demo_room_test_companion';
-  }
-
-  if (otherUserId === 'companion_001') {
-    return 'demo_room_001';
-  }
-
-  if (otherUserId === 'companion_002') {
-    return 'demo_room_002';
-  }
-
+export async function createOrGetRoom(bookingId: string): Promise<string | null> {
   const data = await apiPost<{ roomId: string; existed: boolean }>(
     '/api/chat/rooms',
-    { otherUserId },
+    { bookingId },
   );
   return data?.roomId ?? null;
+}
+
+/** Exchange bearer authentication for a short-lived, single-use socket credential. */
+export async function getSocketTicket(roomId: string): Promise<string | null> {
+  if (roomId.startsWith('demo_room_')) return null;
+  const data = await apiPost<{ ticket: string; expiresInSeconds: number }>(
+    `/api/chat/rooms/${encodeURIComponent(roomId)}/socket-ticket`,
+    {},
+  );
+  return typeof data?.ticket === 'string' && data.ticket ? data.ticket : null;
+}
+
+export function buildChatSocketUrl(roomId: string, ticket: string): string {
+  const base = BACKEND_URL.replace(/^https:/, 'wss:').replace(/^http:/, 'ws:');
+  return `${base}/api/chat/rooms/${encodeURIComponent(roomId)}/ws?ticket=${encodeURIComponent(ticket)}`;
+}
+
+type ParticipantChatResult = { roomId: string } | { roomId: null; reason: 'booking_required' | 'unavailable' };
+
+/** Resolve profile links through the same booking policy enforced by the server. */
+export async function resolveParticipantChat(otherUserId: string): Promise<ParticipantChatResult> {
+  if (await getDemoModeEnabled()) {
+    const demoRoom = demoRooms.find(room => room.otherParty.id === otherUserId);
+    if (demoRoom) return { roomId: demoRoom.id };
+  }
+  const rooms = await apiGet<{ items: ChatRoom[] }>('/api/chat/rooms');
+  if (!rooms) return { roomId: null, reason: 'unavailable' };
+  const existing = rooms.items.find(room => room.otherParty.id === otherUserId && !room.id.startsWith('demo_room_'));
+  if (existing) return { roomId: existing.id };
+
+  interface ChatBooking {
+    id: string;
+    status: string;
+    companionId?: string;
+    customerId?: string;
+    companion?: { id: string };
+    customer?: { id: string };
+  }
+  let page = 1;
+  let totalPages = 1;
+  do {
+    const data = await apiGet<{ items?: ChatBooking[]; bookings?: ChatBooking[]; pagination?: { totalPages: number } }>(`/api/bookings?page=${page}&limit=100`);
+    if (!data) return { roomId: null, reason: 'unavailable' };
+    const booking = (data.items || data.bookings || []).find(item =>
+      !item.id.startsWith('demo_booking_') && ['confirmed', 'in_progress'].includes(item.status) &&
+      [item.companionId, item.customerId, item.companion?.id, item.customer?.id].includes(otherUserId)
+    );
+    if (booking) {
+      const roomId = await createOrGetRoom(booking.id);
+      return roomId ? { roomId } : { roomId: null, reason: 'unavailable' };
+    }
+    totalPages = data.pagination?.totalPages || 1;
+    page += 1;
+  } while (page <= totalPages);
+  return { roomId: null, reason: 'booking_required' };
+}
+
+/** Durable Object events have a different envelope from the REST message API. */
+export function normalizeRealtimeMessage(event: any, currentUserId: string): ChatMessage | null {
+  if (event?.type !== 'message_received') return null;
+  const message = event.data;
+  if (!message?.id || !message.senderId || !message.timestamp) return null;
+  return {
+    id: message.id,
+    senderId: message.senderId,
+    senderName: message.senderName || null,
+    type: message.messageType === 'image' ? 'image' : 'text',
+    content: message.content || null,
+    imageUrl: message.mediaUrl || null,
+    metadata: null,
+    timestamp: message.timestamp,
+    isOwn: message.senderId === currentUserId,
+  };
 }
 
 /** Load room metadata + first page of messages (newest-first, reversed to chrono). */
 export async function getRoomDetail(roomId: string): Promise<RoomDetail | null> {
   // Return demo room detail for demo rooms
   if (roomId.startsWith('demo_room_')) {
+    if (!(await getDemoModeEnabled())) return null;
     const room = demoRooms.find(r => r.id === roomId);
     const messages = demoMessages[roomId] || [];
     if (room) {
@@ -411,6 +478,7 @@ export async function sendMessage(
   messageType: 'text' | 'image' = 'text',
 ): Promise<ChatMessage | null> {
   if (roomId.startsWith('demo_room_')) {
+    if (!(await getDemoModeEnabled()) || !demoRooms.some(room => room.id === roomId)) return null;
     const timestamp = new Date().toISOString();
     const message: ChatMessage = {
       id: `demo_msg_${Date.now()}`,

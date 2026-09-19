@@ -15,8 +15,28 @@ build/
 web-build/
 
 # Environment files
+.env
+.env.*
+!.env.example
 .env.local
 .env.*.local
+credentials.json
+sentry.json
+*.p12
+*.mobileprovision
+*.jks
+*.keystore
+!android/app/debug.keystore
+
+# Local orchestration, evidence and worktrees are not application inputs
+.git/
+.planning/
+.project/
+.superset/
+.temperance/
+.worktrees/
+evidence/
+rehearsal/
 
 # OS files
 .DS_Store

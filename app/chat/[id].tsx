@@ -16,10 +16,10 @@ import { useAuthStore } from '@/stores/auth-store';
 import {
   getRoomDetail,
   sendMessage as sendChatMessage,
-  createOrGetRoom,
-  isUUID,
-  getAuthToken,
-  BACKEND_URL,
+  resolveParticipantChat,
+  normalizeRealtimeMessage,
+  getSocketTicket,
+  buildChatSocketUrl,
   type ChatMessage as BackendChatMessage,
   type OtherParty,
 } from '@/utils/chat-api';
@@ -42,7 +42,6 @@ import { TranslationToggle } from '@/components/chat/TranslationToggle';
 import { ChatSettings } from '@/components/chat/ChatSettings';
 import { EnhancedMessageInput } from '@/components/chat/EnhancedMessageInput';
 import { useTranslation } from 'react-i18next';
-import { isTestCompanionId } from '@/utils/companion-display';
 
 // TypeScript interfaces for type safety
 interface Message {
@@ -104,12 +103,18 @@ export default function ChatScreen() {
   const [isTyping, setIsTyping] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [chatError, setChatError] = useState<string | null>(null);
+  const [bookingRequired, setBookingRequired] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [isSending, setIsSending] = useState(false);
   const [showTranslation, setShowTranslation] = useState(false);
   const [translationEnabled, setTranslationEnabled] = useState(false);
   const [showChatSettings, setShowChatSettings] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const initGenerationRef = useRef(0);
+  const sendingRef = useRef(false);
   const { t } = useTranslation();
 
   // Map backend message shape to local Message interface
@@ -118,26 +123,50 @@ export default function ChatScreen() {
     text: msg.content ?? undefined,
     sender: msg.isOwn ? 'user' : 'companion',
     timestamp: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    status: 'delivered',
+    status: 'sent',
     type: (msg.type === 'image' ? 'image' : 'text') as Message['type'],
     images: msg.imageUrl ? [msg.imageUrl] : undefined,
   }), []);
 
   // Connect WebSocket for real-time messages and typing indicators
-  const connectWS = useCallback((rId: string, userId: string, token: string) => {
-    const wsUrl =
-      `wss://${BACKEND_URL.replace(/^https?:\/\//, '')}/api/chat/rooms/${rId}/ws` +
-      `?userId=${encodeURIComponent(userId)}&token=${encodeURIComponent(token)}`;
-    const ws = new WebSocket(wsUrl);
+  const connectWS = useCallback(async (rId: string, userId: string, generation: number) => {
+    const ticket = await getSocketTicket(rId);
+    const isCurrentSession = () => generation === initGenerationRef.current && useAuthStore.getState().user?.id === userId;
+    if (!isCurrentSession()) return;
+    if (!ticket) {
+      setConnectionError('Live updates are unavailable. Tap to reconnect and refresh this conversation.');
+      return;
+    }
+    wsRef.current?.close();
+    let ws: WebSocket;
+    try {
+      ws = new WebSocket(buildChatSocketUrl(rId, ticket));
+    } catch {
+      setConnectionError('Live updates are unavailable. Tap to reconnect and refresh this conversation.');
+      return;
+    }
     wsRef.current = ws;
+    ws.onopen = () => { if (isCurrentSession()) setConnectionError(null); };
+    const onDisconnect = () => {
+      if (isCurrentSession()) setConnectionError('Live updates are unavailable. Tap to reconnect and refresh this conversation.');
+    };
+    ws.onerror = onDisconnect;
+    ws.onclose = onDisconnect;
 
     ws.onmessage = (event) => {
+      if (!isCurrentSession()) return;
       try {
         const data = JSON.parse(event.data as string);
-        if (data.type === 'new_message' && data.message && !data.message.isOwn) {
-          setMessages(prev => [...prev, backendMsgToLocal(data.message)]);
+        const incoming = normalizeRealtimeMessage(data, userId);
+        if (incoming && !incoming.isOwn) {
+          setMessages(prev => prev.some(message => message.id === incoming.id)
+            ? prev : [...prev, backendMsgToLocal(incoming)]);
         }
-        if (data.type === 'typing_start') {
+        if (data.type === 'message_status_update' && ['delivered', 'read'].includes(data.data?.status)) {
+          setMessages(prev => prev.map(message => message.id === data.data.messageId
+            ? { ...message, status: data.data.status } : message));
+        }
+        if (data.type === 'typing_start' && data.data?.userId !== userId) {
           setIsTyping(true);
           if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
           typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 3000);
@@ -154,60 +183,50 @@ export default function ChatScreen() {
 
   // Initialise chat: resolve room ID then load messages
   const initChat = useCallback(async () => {
+    const generation = ++initGenerationRef.current;
+    wsRef.current?.close();
     setIsLoading(true);
     setChatError(null);
+    setConnectionError(null);
+    setSendError(null);
+    setBookingRequired(false);
+    setRoomId(null);
+    setMessages([]);
+    setOtherParty(null);
     const rawId = typeof id === 'string' ? id : Array.isArray(id) ? id[0] : '';
 
-    if (!rawId) {
-      setChatError('We could not find this conversation.');
+    if (!rawId || !user?.id) {
+      setChatError(!user?.id ? 'Please sign in to open your conversations.' : 'We could not find this conversation.');
       setIsLoading(false);
-      return;
-    }
-
-    if (rawId.startsWith('demo_room_')) {
-      setRoomId(rawId);
-      const roomDetail = await getRoomDetail(rawId);
-      if (roomDetail) {
-        setOtherParty(roomDetail.otherParty);
-        setMessages(roomDetail.messages.map(backendMsgToLocal));
-      } else {
-        setChatError('We could not load this conversation. Check your connection and try again.');
-      }
-      setIsLoading(false);
-      return;
-    }
-
-    if (!isUUID(rawId) || isTestCompanionId(rawId)) {
-      // rawId is a known preview participant ID from a profile/search screen.
-      const newRoomId = await createOrGetRoom(rawId);
-      if (newRoomId) {
-        router.replace(`/chat/${newRoomId}`);
-      } else {
-        setChatError('This chat is not available yet. Please try from Messages or the companion profile.');
-        setIsLoading(false);
-      }
       return;
     }
 
     // UUIDs can be either room IDs from Messages or participant IDs from profiles.
-    // Try room detail first; if that misses, create/get the room for that participant.
+    // If no room exists, find an eligible booking before opening a participant chat.
     const roomDetail = await getRoomDetail(rawId);
+    if (generation !== initGenerationRef.current) return;
     if (roomDetail) {
       setRoomId(rawId);
       setOtherParty(roomDetail.otherParty);
       setMessages(roomDetail.messages.map(backendMsgToLocal));
       setIsLoading(false);
 
-      const token = await getAuthToken();
-      if (token && user?.id) {
-        connectWS(rawId, user.id, token);
+      if (user?.id && !rawId.startsWith('demo_room_')) {
+        await connectWS(rawId, user.id, generation);
       }
     } else {
-      const newRoomId = await createOrGetRoom(rawId);
-      if (newRoomId) {
-        router.replace(`/chat/${newRoomId}`);
+      const result = rawId.startsWith('demo_room_')
+        ? { roomId: null, reason: 'unavailable' as const }
+        : await resolveParticipantChat(rawId);
+      if (generation !== initGenerationRef.current) return;
+      if (result.roomId) {
+        router.replace(`/chat/${result.roomId}`);
       } else {
-        setChatError('This chat is not available yet. Please try from Messages or the companion profile.');
+        const requiresBooking = 'reason' in result && result.reason === 'booking_required';
+        setBookingRequired(requiresBooking);
+        setChatError(requiresBooking
+          ? 'Chat opens after your guide confirms a booking and remains available while the experience is in progress. Open Bookings to check your confirmation.'
+          : 'We could not load this conversation. Check your connection and try again.');
         setIsLoading(false);
       }
     }
@@ -216,6 +235,7 @@ export default function ChatScreen() {
   useEffect(() => {
     initChat();
     return () => {
+      initGenerationRef.current += 1;
       wsRef.current?.close();
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     };
@@ -233,30 +253,26 @@ export default function ChatScreen() {
   };
 
   const handleSend = async () => {
-    if (!message.trim() || !roomId) return;
+    if (!message.trim() || !roomId || sendingRef.current) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-    const optimisticId = `opt-${Date.now()}`;
-    const optimistic: Message = {
-      id: optimisticId,
-      text: message.trim(),
-      sender: 'user',
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      status: 'sent',
-      type: 'text',
-    };
-
-    setMessages(prev => [...prev, optimistic]);
+    sendingRef.current = true;
+    setIsSending(true);
+    setSendError(null);
     const textToSend = message.trim();
-    setMessage('');
-
-    const sent = await sendChatMessage(roomId, textToSend);
-    if (sent) {
-      setMessages(prev =>
-        prev.map(m =>
-          m.id === optimisticId ? { ...backendMsgToLocal(sent), id: optimisticId } : m
-        )
-      );
+    const generation = initGenerationRef.current;
+    try {
+      const sent = await sendChatMessage(roomId, textToSend);
+      if (generation !== initGenerationRef.current) return;
+      if (!sent) throw new Error('Message not sent');
+      setMessages(prev => prev.some(item => item.id === sent.id) ? prev : [...prev, backendMsgToLocal(sent)]);
+      setMessage(current => current.trim() === textToSend ? '' : current);
+    } catch {
+      if (generation === initGenerationRef.current) {
+        setSendError('Your message was not sent. Check your connection and tap send to try again.');
+      }
+    } finally {
+      sendingRef.current = false;
+      setIsSending(false);
     }
   };
 
@@ -404,8 +420,8 @@ export default function ChatScreen() {
         <View style={styles.errorContainer}>
           <Body style={styles.errorTitle}>Chat unavailable</Body>
           <Caption style={styles.errorMessage}>{chatError}</Caption>
-          <TouchableOpacity style={styles.errorButton} onPress={initChat}>
-            <Body style={styles.errorButtonText}>Try again</Body>
+          <TouchableOpacity style={styles.errorButton} onPress={bookingRequired ? () => router.push('/bookings') : initChat}>
+            <Body style={styles.errorButtonText}>{bookingRequired ? 'View bookings' : 'Try again'}</Body>
           </TouchableOpacity>
           <TouchableOpacity style={styles.secondaryErrorButton} onPress={() => router.replace('/messages')}>
             <Caption style={styles.secondaryErrorText}>Back to messages</Caption>
@@ -449,11 +465,18 @@ export default function ChatScreen() {
           />
         )}
 
+        {connectionError && (
+          <TouchableOpacity onPress={initChat} accessibilityRole="button" accessibilityLabel="Reconnect live chat">
+            <Caption style={styles.errorMessage}>{connectionError}</Caption>
+          </TouchableOpacity>
+        )}
+        {sendError && <Caption accessibilityRole="alert" style={styles.errorMessage}>{sendError}</Caption>}
+        {roomId?.startsWith('demo_room_') && <Caption style={styles.errorMessage}>Demo conversation — messages stay on this device.</Caption>}
         <EnhancedMessageInput
           message={message}
           onMessageChange={setMessage}
           onSend={handleSend}
-          disabled={!roomId}
+          disabled={!roomId || isSending}
         />
 
         {/* Chat Settings Modal */}

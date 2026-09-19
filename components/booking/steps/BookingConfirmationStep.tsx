@@ -26,8 +26,9 @@ import { ProfileImage } from '@/components/ui/ProfileImage';
 import { useBookingStore } from '@/stores/booking-store';
 import { useCreateBooking } from '@/app/api/booking/booking';
 import { designTokens } from '@/constants/design-tokens';
-import { CompanionData } from '@/types/companion';
 import { useTranslation } from 'react-i18next';
+import { usePostHog } from 'posthog-react-native';
+import { toPaymentDisplay } from '@/utils/payment-display';
 
 interface BookingConfirmationStepProps {
   onPrevious: () => void;
@@ -36,14 +37,15 @@ interface BookingConfirmationStepProps {
 export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = ({
   onPrevious,
 }) => {
-  const { bookingData, resetBooking } = useBookingStore();
+  const { bookingData, prepareBookingRequest, resetBooking, setBookingComplete } = useBookingStore();
   const [animationValue] = useState(new Animated.Value(0));
   const [now, setNow] = useState(() => new Date());
   const createBookingMutation = useCreateBooking();
   const { t } = useTranslation();
+  const posthog = usePostHog();
 
   useEffect(() => {
-    // Start success animation
+    // The final step submits only after a payment method has been selected.
     Animated.sequence([
       Animated.timing(animationValue, {
         toValue: 1,
@@ -51,7 +53,7 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
         useNativeDriver: true,
       }),
     ]).start();
-  }, []);
+  }, [animationValue]);
 
   useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 60 * 1000);
@@ -98,12 +100,18 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
     });
   };
 
-  const bookingId = createBookingMutation.data?.data?.booking?.id || null;
+  const createdBooking = createBookingMutation.data?.data?.booking;
+  const bookingId = createdBooking?.id || null;
+  const payment = bookingData.payment;
+  const paymentDisplay = toPaymentDisplay(payment ? {
+    method: payment.method,
+    status: createdBooking?.paymentStatus,
+  } : null);
+  const bookingSubmitted = Boolean(bookingId);
   const companion = bookingData.companionData;
   const service = bookingData.service;
   const dateTime = bookingData.dateTime;
   const location = bookingData.location;
-  const payment = bookingData.payment;
   const startsAt = dateTime ? new Date(`${dateTime.date}T${dateTime.time}:00`) : null;
   const countdownMs = startsAt ? Math.max(0, startsAt.getTime() - now.getTime()) : 0;
   const countdownDays = Math.floor(countdownMs / (1000 * 60 * 60 * 24));
@@ -125,7 +133,7 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
     const end = new Date(`${dateTime.date}T${dateTime.endTime}:00`);
     const formatCalendarDate = (date: Date) => date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
     const title = encodeURIComponent(`Tirak: ${service?.name || 'Local guide booking'} with ${companion.name}`);
-    const details = encodeURIComponent(`Message your local guide in Tirak before the experience. Pay the guide rate in cash directly to your guide.`);
+    const details = encodeURIComponent(`Message your local guide in Tirak before the experience. ${paymentDisplay.collectionNote}`);
     const locationText = encodeURIComponent([location?.meetingPoint, location?.area].filter(Boolean).join(', '));
     const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${formatCalendarDate(start)}/${formatCalendarDate(end)}&details=${details}&location=${locationText}`;
 
@@ -134,6 +142,35 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
     } catch (error) {
       logger.warn('Unable to open calendar link', error);
       Alert.alert('Calendar unavailable', 'We could not open the calendar event link on this device.');
+    }
+  };
+
+  const handleSubmitBooking = async () => {
+    if (createBookingMutation.isPending || bookingSubmitted) return;
+
+    const request = prepareBookingRequest();
+    if (!request) {
+      Alert.alert('Booking details missing', 'Please return to the booking details and complete the required information.');
+      return;
+    }
+
+    try {
+      const result = await createBookingMutation.mutateAsync(request);
+      const booking = result.data?.booking;
+      if (!result.success || !booking?.id) {
+        throw new Error('Booking response did not include a booking ID.');
+      }
+      setBookingComplete(true);
+      posthog.capture('booking_submitted', {
+        booking_id: booking.id,
+        companion_id: bookingData.companionId,
+        service_name: bookingData.service?.name ?? 'Selected experience',
+        total_amount: booking.totalAmount,
+        payment_status: booking.paymentStatus,
+        duration_minutes: booking.duration,
+      });
+    } catch (error) {
+      Alert.alert('Booking not submitted', error instanceof Error ? error.message : 'Please try again.');
     }
   };
 
@@ -155,12 +192,18 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
             },
           ]}
         >
-          <View style={styles.successIcon}>
-            <CheckCircle size={64} color={designTokens.colors.semantic.success} />
-          </View>
-          <Text style={styles.successTitle}>{t('bookingConfirmation.bookingConfirmed')}</Text>
+          {bookingSubmitted && (
+            <View style={styles.successIcon}>
+              <CheckCircle size={64} color={designTokens.colors.semantic.success} />
+            </View>
+          )}
+          <Text style={[styles.successTitle, !bookingSubmitted && styles.readyTitle]}>
+            {bookingSubmitted ? t('bookingConfirmation.bookingConfirmed') : 'Ready to submit your booking'}
+          </Text>
           <Text style={styles.successSubtitle}>
-            {t('bookingConfirmation.bookingSubmitted')}
+            {bookingSubmitted
+              ? t('bookingConfirmation.bookingSubmitted')
+              : 'Review your booking and selected payment method, then submit your request.'}
           </Text>
           {bookingId && (
             <View style={styles.bookingIdContainer}>
@@ -170,7 +213,7 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
           )}
         </Animated.View>
 
-        {dateTime && (
+        {bookingSubmitted && dateTime && (
           <Card style={styles.countdownCard} padding={16}>
             <View style={styles.countdownHeader}>
               <Calendar size={20} color={designTokens.colors.semantic.primary} />
@@ -273,11 +316,8 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
               <>
             <View style={styles.detailSection}>
               <Text style={styles.detailSectionTitle}>{t('bookingConfirmation.paymentMethod')}</Text>
-              <Text style={styles.detailSectionValue}>
-                    {payment.method === 'cash' ? 'Cash Payment' :
-                     payment.method === 'promptpay' ? 'PromptPay QR' :
-                 'Bank Transfer'}
-              </Text>
+              <Text style={styles.detailSectionValue}>{paymentDisplay.method}</Text>
+              <Text style={styles.detailSectionSubvalue}>{paymentDisplay.status}</Text>
             </View>
             
             <View style={styles.detailSection}>
@@ -292,7 +332,7 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
         </Card>
 
         {/* Next Steps */}
-        <Card style={styles.sectionCard} padding={16}>
+        {bookingSubmitted && <Card style={styles.sectionCard} padding={16}>
           <Text style={styles.sectionTitle}>{t('bookingConfirmation.whatsNext')}</Text>
           
           <View style={styles.nextSteps}>
@@ -332,25 +372,39 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
               </View>
             </View>
           </View>
-        </Card>
+        </Card>}
 
       </ScrollView>
 
       {/* Enhanced CTA Footer */}
       <View style={styles.footer}>
         <View style={styles.ctaContainer}>
-          <Button
-            title={t('bookingConfirmation.bookings')}
-            onPress={handleViewBookings}
-            variant="outline"
-            style={styles.bookingsButton}
-          />
-          <Button
-            title={t('bookingConfirmation.backToHome')}
-            onPress={handleBackToHome}
-            style={styles.homeButton}
-            leftIcon={<Home size={18} color={designTokens.colors.semantic.surface} />}
-          />
+          {bookingSubmitted ? (
+            <>
+              <Button
+                title={t('bookingConfirmation.bookings')}
+                onPress={handleViewBookings}
+                variant="outline"
+                style={styles.bookingsButton}
+              />
+              <Button
+                title={t('bookingConfirmation.backToHome')}
+                onPress={handleBackToHome}
+                style={styles.homeButton}
+                leftIcon={<Home size={18} color={designTokens.colors.semantic.surface} />}
+              />
+            </>
+          ) : (
+            <>
+              <Button title="Back" onPress={onPrevious} variant="outline" style={styles.bookingsButton} />
+              <Button
+                title="Submit booking"
+                onPress={handleSubmitBooking}
+                loading={createBookingMutation.isPending}
+                style={styles.homeButton}
+              />
+            </>
+          )}
         </View>
       </View>
     </View>
@@ -392,6 +446,9 @@ const styles = StyleSheet.create({
     color: designTokens.colors.semantic.success,
     textAlign: 'center',
     marginBottom: designTokens.spacing.scale.sm,
+  },
+  readyTitle: {
+    color: designTokens.colors.semantic.text,
   },
   successSubtitle: {
     ...designTokens.typography.styles.body,

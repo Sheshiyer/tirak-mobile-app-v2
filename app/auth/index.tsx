@@ -195,11 +195,11 @@ export default function AuthScreen() {
         <View style={styles.footer}>
           <Text style={styles.footerText}>{t('getStarted.byContinuing')}</Text>
           <View style={styles.footerLinks}>
-            <TouchableOpacity>
+            <TouchableOpacity accessibilityRole="link" onPress={() => router.push('/auth/legal?type=terms')}>
               <Text style={styles.link}>{t('getStarted.termsOfService')}</Text>
             </TouchableOpacity>
             <Text style={styles.footerText}>{t('getStarted.and')}</Text>
-            <TouchableOpacity>
+            <TouchableOpacity accessibilityRole="link" onPress={() => router.push('/auth/legal?type=privacy')}>
               <Text style={styles.link}>{t('getStarted.privacyPolicy')}</Text>
             </TouchableOpacity>
           </View>

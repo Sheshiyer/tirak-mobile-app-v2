@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -83,15 +83,13 @@ export const PaymentSelectionStep: React.FC<PaymentSelectionStepProps> = ({
   onPrevious,
 }) => {
   const { bookingData, updatePayment, calculateTotal } = useBookingStore();
-  const [selectedMethod, setSelectedMethod] = useState<string>(
-    bookingData.payment?.method || ''
-  );
+  const [selectedMethod, setSelectedMethod] = useState<string>(bookingData.payment?.method || 'cash');
 
   const totalAmount = calculateTotal();
   const serviceFee = 0;
   const baseAmount = totalAmount;
 
-  const handleMethodSelect = (methodId: string) => {
+  const handleMethodSelect = useCallback((methodId: string) => {
     setSelectedMethod(methodId);
     
     const paymentData: BookingPayment = {
@@ -104,7 +102,13 @@ export const PaymentSelectionStep: React.FC<PaymentSelectionStepProps> = ({
     };
     
     updatePayment(paymentData);
-  };
+  }, [baseAmount, serviceFee, totalAmount, updatePayment]);
+
+  useEffect(() => {
+    if (!bookingData.payment) {
+      handleMethodSelect('cash');
+    }
+  }, [bookingData.payment, handleMethodSelect]);
 
   const handleNext = () => {
     if (!selectedMethod) {

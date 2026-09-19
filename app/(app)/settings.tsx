@@ -15,6 +15,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { designTokens } from '@/constants/design-tokens';
 import { RadialGradient } from '@/components/ui/RadialGradient';
 import { Card } from '@/components/ui/Card';
+import { AccountPrivacyPreferences } from '@/components/AccountPrivacyPreferences';
 import {
   User,
   Bell,
@@ -29,12 +30,11 @@ import {
   Mail,
   Gift,
 } from 'lucide-react-native';
-import * as SecureStore from 'expo-secure-store';
+import { secureStorage } from '@/utils/secure-storage';
 import Constants from 'expo-constants';
 import {
   HELP_CENTER_EMAIL,
   HELP_CENTER_MAILTO,
-  PRIVACY_POLICY_URL,
   SUPPORT_EMAIL,
   SUPPORT_MAILTO,
 } from '@/constants/support';
@@ -134,7 +134,7 @@ export default function SettingsScreen() {
       if (!user?.id) return;
       setDeletingAccount(true);
       try {
-        const token = await SecureStore.getItemAsync('authToken');
+        const token = await secureStorage.getItemAsync('authToken');
         const res = await fetch(`${BACKEND_URL}/api/users/${user.id}`, {
           method: 'DELETE',
           headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -179,6 +179,12 @@ export default function SettingsScreen() {
             subtitle="Keep your photo, contact details, and travel style current"
             onPress={() => router.push('/profile/edit')}
           />
+          <SettingsItem
+            icon={<Mail size={22} color={designTokens.colors.semantic.primary} />}
+            title={user?.verified ? 'Email verified' : 'Verify your email'}
+            subtitle={user?.verified ? 'Your account email is confirmed' : 'Receive a code to confirm your account email'}
+            onPress={() => router.push('/auth/verify-email')}
+          />
         </Card>
 
         {/* App Settings */}
@@ -222,14 +228,15 @@ export default function SettingsScreen() {
             icon={<Shield size={22} color={designTokens.colors.semantic.primary} />}
             title="Privacy Policy"
             subtitle="See how Tirak protects your data"
-            onPress={() => openExternalLink(PRIVACY_POLICY_URL, `Visit ${PRIVACY_POLICY_URL}`)}
+            onPress={() => router.push('/auth/legal?type=privacy')}
           />
           <SettingsItem
             icon={<FileText size={22} color={designTokens.colors.semantic.primary} />}
             title="Terms of Service"
             subtitle="Review the rules for travelers and guides"
-            onPress={() => router.push('/legal?type=terms')}
+            onPress={() => router.push('/auth/legal?type=terms')}
           />
+          <AccountPrivacyPreferences />
         </Card>
 
         {/* Support */}

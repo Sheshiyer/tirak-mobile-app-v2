@@ -1,8 +1,8 @@
 import { logger } from '@/utils/logger';
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, Platform, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, Platform, Linking, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import { 
   User, 
   Bell, 
@@ -20,7 +20,6 @@ import {
 import { colors } from '@/constants/colors';
 import { useSupplierStore } from '@/stores/supplier-store';
 import { designTokens } from '@/constants/design-tokens';
-import { useCompanionProfile } from '@/app/api/companion/profile';
 import { useAuthStore } from '@/stores/auth-store';
 import Constants from 'expo-constants';
 import { useTranslation } from 'react-i18next';
@@ -29,7 +28,6 @@ import { deleteCompanionAccount, deleteSupplierAccount, deleteUserAccount } from
 import {
   HELP_CENTER_EMAIL,
   HELP_CENTER_MAILTO,
-  PRIVACY_POLICY_URL,
   SUPPORT_EMAIL,
   SUPPORT_MAILTO,
 } from '@/constants/support';
@@ -38,17 +36,29 @@ import {
   useUpdateNotificationPreferences,
 } from '@/app/api/notifications/notifications';
 import { Smartphone, Mail } from 'lucide-react-native';
+import CustomerSettingsScreen from '@/app/(app)/settings';
+import { AccountEmailVerification } from '@/components/AccountEmailVerification';
+import { AccountPrivacyPreferences } from '@/components/AccountPrivacyPreferences';
 
 
 
 export default function SettingsScreen() {
+  const { isHydrated, user } = useAuthStoreHydrated();
+  if (!isHydrated) return <ActivityIndicator accessibilityLabel="Loading account settings" />;
+  if (!user) return <Redirect href="/auth" />;
+  // Both route groups resolve to /settings on a cold link. Render the right
+  // screen directly instead of redirecting back into the ambiguous URL.
+  if (user.userType === 'customer') return <CustomerSettingsScreen />;
+  return <SupplierSettingsScreen />;
+}
+
+function SupplierSettingsScreen() {
   const router = useRouter();
   const { setIsSupplier } = useSupplierStore();
   const { logout } = useAuthStore();
 
   const { user } = useAuthStoreHydrated();
   const isCompanion = user?.userType === 'companion' || user?.userType === 'supplier';
-  // logger.log('companionProfile', companionProfile);
   const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
   const [emailNotificationsEnabled, setEmailNotificationsEnabled] = React.useState(true);
   const { data: notificationPreferences } = useNotificationPreferences();
@@ -137,6 +147,9 @@ export default function SettingsScreen() {
           <Text style={styles.subtitle}>
             {t('settings.settingsDescription')}
           </Text>
+        </View>
+        <View style={styles.section}>
+          <View style={styles.card}><AccountEmailVerification /></View>
         </View>
         
         {isCompanion && (
@@ -262,7 +275,7 @@ export default function SettingsScreen() {
           <View style={styles.card}>
             <TouchableOpacity
               style={styles.settingItem}
-              onPress={() => openExternalLink(PRIVACY_POLICY_URL, `Visit ${PRIVACY_POLICY_URL}`)}
+              onPress={() => router.push('/auth/legal?type=privacy')}
             >
               <View style={styles.settingIcon}>
                 <Shield size={20} color={designTokens.colors.semantic.surface} />
@@ -275,6 +288,14 @@ export default function SettingsScreen() {
               </View>
               <ChevronRight size={20} color={designTokens.colors.semantic.text} />
             </TouchableOpacity>
+            <TouchableOpacity style={styles.settingItem} onPress={() => router.push('/auth/legal?type=terms')}>
+              <View style={styles.settingContent}>
+                <Text style={styles.settingTitle}>Terms of Service</Text>
+                <Text style={styles.settingDescription}>Review the rules for travelers and guides</Text>
+              </View>
+              <ChevronRight size={20} color={designTokens.colors.semantic.text} />
+            </TouchableOpacity>
+            <View style={{ paddingHorizontal: 16 }}><AccountPrivacyPreferences /></View>
             
             {/* <View style={styles.divider} /> */}
             

@@ -53,8 +53,6 @@ export const requestPasswordReset = async (identifier: string): Promise<ForgotPa
     
     return response.data;
   } catch (error: any) {
-    console.error('Password reset request error:', error);
-    
     // Handle axios error response
     if (error.response?.data) {
       throw error.response.data as PasswordResetError;
@@ -92,8 +90,6 @@ export const resetPassword = async (token: string, newPassword: string): Promise
     
     return response.data;
   } catch (error: any) {
-    console.error('Password reset error:', error);
-    
     // Handle axios error response
     if (error.response?.data) {
       throw error.response.data as PasswordResetError;
@@ -116,7 +112,7 @@ export const storeResetToken = async (token: string): Promise<void> => {
   try {
     await secureStorage.setItemAsync('resetToken', token);
   } catch (error) {
-    console.error('Error storing reset token:', error);
+    console.warn('Unable to store the password reset session');
   }
 };
 
@@ -128,7 +124,7 @@ export const getStoredResetToken = async (): Promise<string | null> => {
   try {
     return await secureStorage.getItemAsync('resetToken');
   } catch (error) {
-    console.error('Error retrieving reset token:', error);
+    console.warn('Unable to restore the password reset session');
     return null;
   }
 };
@@ -140,6 +136,6 @@ export const clearResetToken = async (): Promise<void> => {
   try {
     await secureStorage.deleteItemAsync('resetToken');
   } catch (error) {
-    console.error('Error clearing reset token:', error);
+    console.warn('Unable to clear the password reset session');
   }
 };

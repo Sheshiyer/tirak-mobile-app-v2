@@ -1,8 +1,9 @@
 import axios from 'axios';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { handleApiError, isUnauthorizedError } from '@/utils/api-errors';
+import { handleApiError } from '@/utils/api-errors';
 import { apiUrl } from '@/constants/api';
 import { logger } from '@/utils/logger';
+import { getDemoModeEnabled } from '@/utils/demo-mode';
 
 // Optionally import getAuthToken if you use auth
 import { getAuthToken } from '../companion/companion';
@@ -51,7 +52,7 @@ export const fetchCustomerProfile = async (): Promise<CustomerProfileResponse> =
   } catch (error) {
     handleApiError(error);
     const statusCode = axios.isAxiosError(error) ? error.response?.status : undefined;
-    if (__DEV__ || statusCode === 404 || isUnauthorizedError(error)) {
+    if (await getDemoModeEnabled()) {
       // Return demo data for unauthorized during review
       return {
         success: true,
@@ -119,7 +120,7 @@ export const updateCustomerProfile = async (payload: any): Promise<CustomerProfi
     return response.data;
   } catch (error) {
     const statusCode = axios.isAxiosError(error) ? error.response?.status : undefined;
-    if (__DEV__ || statusCode === 404 || isUnauthorizedError(error)) {
+    if (await getDemoModeEnabled()) {
       logger.warn('Customer profile update backend unavailable; using local profile fallback', {
         status: statusCode,
       });

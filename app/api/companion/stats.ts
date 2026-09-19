@@ -5,6 +5,7 @@ import { logger } from '@/utils/logger';
 import { fetchBookings, BookingListItem } from '@/app/api/booking/booking';
 import { fetchCompanionProfile } from '@/app/api/companion/profile';
 import { apiUrl } from '@/constants/api';
+import { getDemoModeEnabled } from '@/utils/demo-mode';
 
 export interface SupplierStatsResponse {
   success: boolean;
@@ -230,7 +231,7 @@ export const fetchSupplierStats = async (): Promise<SupplierStatsResponse> => {
   } catch (error: any) {
     // Return demo data for 404s (backend not set up) or in dev mode - handle FIRST before logging
     const statusCode = error?.response?.status;
-    if (statusCode === 404 || __DEV__) {
+    if (await getDemoModeEnabled()) {
       logger.log('Backend returned', statusCode, '- returning demo stats for review/testing');
       return await getDemoStats();
     }
