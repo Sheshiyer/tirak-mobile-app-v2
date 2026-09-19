@@ -15,6 +15,20 @@ The fingerprint runtime policy prevents an update from loading on a binary whose
 
 This repository checks in `ios/` and `android/`, so the update URL, enabled flag, and fingerprint sentinel are mirrored in the native Expo configuration. Keep those native values aligned with `app.config.js` if the EAS project is migrated.
 
+For SDK 53 bare Android, compare fingerprints **after** the same native-config
+normalization EAS runs. Its XML formatter changes resource attributes and final
+newlines; comparing the pre-normalized files gives a different fingerprint even
+when the update settings are semantically identical. Keep the normalized native
+files committed and never force a runtime string to bypass a mismatch:
+
+```bash
+bunx expo-updates configuration:syncnative --platform android --workflow generic
+bunx expo-updates runtimeversion:resolve --platform android
+```
+
+Use the same EAS environment and review/payment flags as the target build. After
+publishing, verify the update group and build have identical runtime versions.
+
 ## One-time GitHub setup
 
 1. In the Expo account that owns the configured EAS project, create a robot or personal access token with only the access needed to publish updates.
