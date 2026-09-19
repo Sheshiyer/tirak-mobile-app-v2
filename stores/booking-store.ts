@@ -349,7 +349,7 @@ export const useBookingStore = create<BookingState & BookingActions>()(
             return true;
             
           case 5: // Summary (validation)
-            return !!bookingData.service && !!bookingData.dateTime && !!bookingData.location && !!bookingData.payment;
+            return !!bookingData.service && !!bookingData.dateTime && !!bookingData.location;
             
           case 6: // Payment
             if (!bookingData.payment) {

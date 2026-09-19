@@ -5,7 +5,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DeviceEventEmitter, Platform } from 'react-native';
 import { User, UserRole } from '@/types/auth';
 import { secureStorage } from '@/utils/secure-storage';
-import { posthog } from '@/utils/posthog';
 import { usePaymentStore } from '@/stores/payment-store';
 import { useBookingStore } from '@/stores/booking-store';
 import { API_BASE_URL } from '@/constants/api';
@@ -16,6 +15,9 @@ import {
   isReviewModeEnabled,
   type ReviewAccountKey,
 } from '@/constants/review-mode';
+import { applyAnalyticsConsent } from '@/utils/posthog';
+import { AccountConsents, EmailVerificationDelivery, RegistrationConsent, verificationRetryAt } from '@/utils/account-consent';
+import { isDemoModeEnabled, isDemoIdentity } from '@/utils/demo-mode';
 
 interface AuthState {
   user: User | null;
@@ -23,11 +25,13 @@ interface AuthState {
   isLoading: boolean;
   error: string | null;
   onboarded: boolean;
+  consents: AccountConsents | null;
+  emailVerification: (EmailVerificationDelivery & { retryAt: number }) | null;
 }
 
 interface AuthActions {
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string, userType: UserRole, contactNumber?: string, dateOfBirth?: Date, gender?: string) => Promise<void>;
+  register: (name: string, email: string, password: string, userType: UserRole, contactNumber?: string, dateOfBirth?: Date, gender?: string, consent?: RegistrationConsent) => Promise<void>;
   demoLogin: (userType: UserRole) => Promise<void>;
   switchReviewAccount: (account: ReviewAccountKey) => Promise<void>;
   logout: () => Promise<void>;
@@ -36,6 +40,9 @@ interface AuthActions {
   updateUser: (userData: Partial<User>) => void;
   validateToken: () => Promise<void>;
   invalidateAuth: () => Promise<void>;
+  loadConsents: () => Promise<void>;
+  saveConsents: (preferences: Pick<AccountConsents, 'marketingOptIn' | 'analyticsOptIn'>) => Promise<void>;
+  setEmailVerification: (delivery: EmailVerificationDelivery) => void;
 }
 
 // Helper to format a Date into local YYYY-MM-DD without timezone shifting
@@ -61,6 +68,40 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       isLoading: false,
       error: null,
       onboarded: false,
+      consents: null,
+      emailVerification: null,
+
+      setEmailVerification: (delivery) => set({ emailVerification: { ...delivery, retryAt: verificationRetryAt(delivery.retryAfterSeconds) } }),
+
+      loadConsents: async () => {
+        const userId = get().user?.id;
+        if (!userId || isDemoIdentity(get().user)) return;
+        const { getAccountConsents } = await import('@/utils/account-api');
+        try {
+          const consents = await getAccountConsents();
+          if (get().user?.id !== userId) return;
+          set({ consents });
+          await applyAnalyticsConsent(userId, consents.analyticsOptIn === true);
+        } catch (error) {
+          if (get().user?.id === userId) {
+            set({ consents: null });
+            await applyAnalyticsConsent();
+          }
+          throw error;
+        }
+      },
+
+      saveConsents: async (preferences) => {
+        const userId = get().user?.id;
+        if (!userId) throw new Error('Please sign in to save your preferences.');
+        // A withdrawal takes effect on this device immediately, even offline.
+        if (!preferences.analyticsOptIn) await applyAnalyticsConsent();
+        const { saveAccountConsents } = await import('@/utils/account-api');
+        const consents = await saveAccountConsents(preferences);
+        if (get().user?.id !== userId) return;
+        set({ consents });
+        await applyAnalyticsConsent(userId, consents.analyticsOptIn === true);
+      },
 
       setOnboarded: (value: boolean) => {
         set({ onboarded: value });
@@ -73,10 +114,13 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           isLoading: false,
           error: null,
           onboarded: false,
+          consents: null,
+          emailVerification: null,
         });
 
         const cleanup = (operation: () => Promise<void>) => Promise.resolve().then(operation);
         await Promise.allSettled([
+          cleanup(() => applyAnalyticsConsent()),
           cleanup(() => usePaymentStore.getState().clearPaymentSession()),
           cleanup(() => secureStorage.deleteItemAsync('authToken')),
           cleanup(() => secureStorage.deleteItemAsync('refreshToken')),
@@ -85,7 +129,8 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       },
 
       login: async (email: string, password: string) => {
-        set({ isLoading: true, error: null });
+        await applyAnalyticsConsent();
+        set({ isLoading: true, error: null, consents: null, emailVerification: null });
         try {
           // Import the real API function
           const { login: loginAPI } = await import('@/app/api/auth/login');
@@ -117,6 +162,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             await secureStorage.setItemAsync("userCredentials", JSON.stringify(user));
 
             set({ user, isAuthenticated: true, onboarded: true, isLoading: false });
+            await get().loadConsents().catch(() => {});
           } else {
             const errorMessage = response.message || 'Login failed';
             set({ error: errorMessage, isLoading: false });
@@ -129,8 +175,9 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         }
       },
 
-      register: async (name: string, email: string, password: string, userType: UserRole, contactNumber?: string, dateOfBirth?: Date, gender?: string) => {
-        set({ isLoading: true, error: null });
+      register: async (name: string, email: string, password: string, userType: UserRole, contactNumber?: string, dateOfBirth?: Date, gender?: string, consent?: RegistrationConsent) => {
+        await applyAnalyticsConsent();
+        set({ isLoading: true, error: null, consents: null, emailVerification: null });
         try {
           // Import the real API function
           const { register: registerAPI } = await import('@/app/api/auth/register');
@@ -145,11 +192,12 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             // Format as local YYYY-MM-DD to avoid timezone-induced off-by-one
             dateOfBirth: formatDateLocal(dateOfBirth),
             gender: gender as "male" | "female" | "other" | "prefer_not_to_say" | undefined,
+            ...consent,
           };
 
           const response = await registerAPI(registrationData);
 
-          if (response.success) {
+          if (response.success && response.token && response.user?.id) {
             // Store tokens if available
             if (response.token) {
               await secureStorage.setItemAsync("authToken", response.token);
@@ -160,7 +208,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
 
             // Create user object from response
             const user: User = {
-              id: response.user?.id || 'temp-id',
+              id: response.user.id,
               name: response.user?.name || name,
               email: response.user?.email || email,
               userType: (response.user?.userType as UserRole) || userType,
@@ -177,6 +225,8 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             await secureStorage.setItemAsync("userCredentials", JSON.stringify(user));
 
             set({ user, isAuthenticated: true, onboarded: true, isLoading: false });
+            get().setEmailVerification(response.emailVerification || { deliveryStatus: 'unavailable', retryAfterSeconds: 0 });
+            await get().loadConsents().catch(() => {});
           } else {
             const errorMessage = response.message || 'Registration failed';
             set({ error: errorMessage, isLoading: false });
@@ -192,8 +242,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       logout: async () => {
         try {
           set({ isLoading: true });
-          posthog.capture('user_logged_out');
-          posthog.reset();
+          await applyAnalyticsConsent();
 
           logger.log('[Logout] Starting logout process...');
           
@@ -277,6 +326,9 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       },
 
       demoLogin: async (userType: UserRole) => {
+        const demoIdentity = { id: userType === 'companion' ? 'demo_companion_001' : 'demo_customer_001' };
+        if (!isDemoModeEnabled(demoIdentity)) throw new Error('Demo mode is not enabled in this build. Please sign in to your account.');
+        await applyAnalyticsConsent();
         set({ isLoading: true, error: null });
         try {
           // Simulate network delay for realistic demo experience
@@ -310,7 +362,9 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           };
 
           if (get().user?.id !== demoUser.id) usePaymentStore.getState().resetPayment();
-
+          await secureStorage.deleteItemAsync('authToken');
+          await secureStorage.deleteItemAsync('refreshToken');
+          await secureStorage.setItemAsync('userCredentials', JSON.stringify(demoUser));
           if (
             userType === 'customer'
             && isLocalPromptPayEnabled({
@@ -321,10 +375,8 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             })
           ) {
             await secureStorage.setItemAsync('authToken', 'tirak-local-fixture-token');
-            await secureStorage.setItemAsync('userCredentials', JSON.stringify(demoUser));
           }
-
-          set({ user: demoUser, isAuthenticated: true, onboarded: true, isLoading: false });
+          set({ user: demoUser, isAuthenticated: true, onboarded: true, isLoading: false, consents: null, emailVerification: null });
         } catch (error) {
           const errorMessage = 'Demo login failed';
           set({ error: errorMessage, isLoading: false });
@@ -342,6 +394,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         }
 
         try {
+          await applyAnalyticsConsent();
           const reviewAccount = getReviewAccount(accountKey);
           const reviewUser = { ...reviewAccount.user };
 
@@ -358,6 +411,8 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             onboarded: true,
             isLoading: false,
             error: null,
+            consents: null,
+            emailVerification: null,
           });
         } catch (error) {
           const errorMessage = error && typeof error === 'object' && 'message' in error
@@ -396,18 +451,28 @@ export const useAuthStore = create<AuthState & AuthActions>()(
                 throw new Error('Stored user credentials are invalid');
               }
               const isEnabledReviewAccount = isReviewModeEnabled() && isReviewAccountUser(userData);
-              if (!token && !isEnabledReviewAccount) {
+              const isEnabledDemoAccount = isDemoModeEnabled(userData);
+              if (userData.id.startsWith('demo_') && !isEnabledReviewAccount && !isEnabledDemoAccount) {
+                await get().invalidateAuth();
+                return;
+              }
+              if (!token && !isEnabledReviewAccount && !isEnabledDemoAccount) {
                 await get().invalidateAuth();
                 logger.log('No valid token found - user not authenticated');
                 return;
               }
-              if (get().user?.id !== userData.id) usePaymentStore.getState().resetPayment();
+              if (get().user?.id !== userData.id) {
+                usePaymentStore.getState().resetPayment();
+                await applyAnalyticsConsent();
+                set({ consents: null, emailVerification: null });
+              }
               // If we have both token and user data, consider user authenticated
               set({ 
                 user: userData, 
                 isAuthenticated: true, 
                 isLoading: false 
               });
+              if (!get().consents) await get().loadConsents().catch(() => {});
               // logger.log('Token validation successful - user authenticated:', userData.email);
             } catch (parseError) {
               console.error('Error parsing stored user credentials:', parseError);

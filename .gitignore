@@ -50,3 +50,6 @@ TODO_MAINTENANCE_SUMMARY.md
 sentry.json
 credentials.json
 .codegraph/
+.worktrees/
+.superset/
+.temperance/
