@@ -46,6 +46,8 @@ describe('release delivery boundaries', () => {
     expect(workflow).toContain("inputs.channel == 'production' && github.ref != 'refs/heads/main'");
     expect(workflow).toContain('--environment "$EAS_ENVIRONMENT"');
     expect(workflow).toContain('EXPO_PUBLIC_PROMPTPAY_ENABLED: "false"');
+    const beforePublish = workflow.split('- name: Publish update')[0];
+    expect(beforePublish).not.toContain('EXPO_PUBLIC_REVIEW_MODE:');
   });
 
   test('Bun is authoritative and uploads exclude local secrets and raw evidence', () => {
