@@ -1,6 +1,7 @@
 import { logger } from '@/utils/logger';
 import axios from "axios";
 import { apiUrl } from '@/constants/api';
+import { EmailVerificationDelivery, RegistrationConsent } from '@/utils/account-consent';
 
 // TypeScript interface for registration data
 interface RegisterData {
@@ -12,6 +13,9 @@ interface RegisterData {
   dateOfBirth?: string;
   gender?: "male" | "female" | "other" | "prefer_not_to_say";
   referralCode?: string;
+  policyAcceptance?: RegistrationConsent['policyAcceptance'];
+  marketingOptIn?: boolean;
+  analyticsOptIn?: boolean;
 }
 
 // Response interface
@@ -29,6 +33,7 @@ interface RegisterResponse {
   };
   token?: string; // mapped from accessToken
   refreshToken?: string;
+  emailVerification?: EmailVerificationDelivery;
 }
 
 export const register = async (userData: RegisterData): Promise<RegisterResponse> => {
@@ -55,6 +60,7 @@ export const register = async (userData: RegisterData): Promise<RegisterResponse
           : undefined,
         token: api.data.accessToken,
         refreshToken: api.data.refreshToken,
+        emailVerification: api.data.emailVerification,
       };
       return mapped;
     }

@@ -13,6 +13,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { useCurrencyConversion } from '@/utils/currency';
 import { TEST_COMPANION_ID, isTestCompanion } from '@/utils/companion-display';
 import { ArrowLeft, CalendarPlus, CheckCircle, Clock, MessageCircle, XCircle } from 'lucide-react-native';
+import { toPaymentDisplay } from '@/utils/payment-display';
 
 const BookingDetailsScreen = () => {
   const { user, isAuthenticated } = useAuthStore();
@@ -117,16 +118,15 @@ const BookingDetailsScreen = () => {
     }
   };
 
-  const getPaymentStatusCopy = () => {
-    if (booking.paymentStatus === 'paid') return 'Paid';
-    if (booking.status === 'pending') return 'Payment not collected yet';
-    return 'Pay guide in cash';
-  };
+  const paymentDisplay = toPaymentDisplay(booking.payment ?? {
+    method: booking.paymentMethod?.type,
+    status: booking.paymentStatus,
+  });
 
   const formatCalendarDate = (date: Date) => date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
   const handleAddToCalendar = async () => {
     const title = encodeURIComponent(`Tirak: ${service?.name || experience?.name || 'Local guide booking'}`);
-    const details = encodeURIComponent(`Booking with ${displayName}. Payment is handled in cash directly with the guide.`);
+    const details = encodeURIComponent(`Booking with ${displayName}. ${paymentDisplay.collectionNote}`);
     const location = encodeURIComponent([booking.meetingPoint, booking.location].filter(Boolean).join(', '));
     const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${formatCalendarDate(startAt)}/${formatCalendarDate(endAt)}&details=${details}&location=${location}`;
 
@@ -306,13 +306,14 @@ const BookingDetailsScreen = () => {
           {/* Payment & Fees */}
           <View style={styles.section}>
             <Subheading>Payment</Subheading>
-            <Body>{getPaymentStatusCopy()}</Body>
+            <Body>{paymentDisplay.status}</Body>
+            <Caption style={styles.cashNote}>{paymentDisplay.method}</Caption>
           </View>
           
           <View style={styles.section}>
             <Subheading>Guide Rate</Subheading>
             <Body>฿{booking.totalAmount?.toLocaleString() || 'N/A'}{usdTotal ? ` (${usdTotal})` : ''}</Body>
-            <Caption style={styles.cashNote}>Paid in cash directly to the guide</Caption>
+            <Caption style={styles.cashNote}>{paymentDisplay.collectionNote}</Caption>
           </View>
 
           {/* Preferences & Special Requests */}

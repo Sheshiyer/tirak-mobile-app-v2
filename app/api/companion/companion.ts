@@ -3,7 +3,10 @@ import axios from "axios";
 import { useQuery } from '@tanstack/react-query';
 import { secureStorage } from '@/utils/secure-storage';
 import { API_BASE_URL, apiUrl } from '@/constants/api';
-import { isReviewModeEnabled, REVIEW_ACCOUNTS } from '@/constants/review-mode';
+import { REVIEW_ACCOUNTS } from '@/constants/review-mode';
+import { getDemoModeEnabled, getReviewModeEnabled, isDemoModeEnabled } from '@/utils/demo-mode';
+import { isDemoCompanion } from '@/utils/companion-display';
+import { useAuthStore } from '@/stores/auth-store';
 
 export const BASE_URL = API_BASE_URL;
 const LOCAL_AVAILABILITY_KEY = 'tirak-local-availability';
@@ -42,8 +45,8 @@ export interface Companion {
   categories: string[];
   bio?: string;
   age?: number;
-  responseTime: string;
-  completionRate: number;
+  responseTime: string | null;
+  completionRate: number | null;
   distance?: number;
 }
 
@@ -182,8 +185,8 @@ export interface CompanionDetails {
   categories: string[];
   bio: string;
   age: number;
-  responseTime: string;
-  completionRate: number;
+  responseTime: string | null;
+  completionRate: number | null;
   joinedDate: string;
   availability: CompanionAvailability;
   reviews: CompanionReview[];
@@ -348,7 +351,7 @@ export const saveCompanionAvailability = async (
     await writeLocalAvailability(localStore);
     return response.data;
   } catch (error) {
-    if (__DEV__ || (axios.isAxiosError(error) && [404, 405, 501].includes(error.response?.status || 0))) {
+    if (await getDemoModeEnabled()) {
       localStore[id] = merged;
       await writeLocalAvailability(localStore);
       return {
@@ -375,7 +378,7 @@ export const getAuthToken = async (): Promise<string | null> => {
 
 // Main API function to fetch companions
 export const fetchCompanions = async (params: CompanionSearchParams = {}): Promise<CompanionSearchResponse> => {
-  if (isReviewModeEnabled()) {
+  if (await getReviewModeEnabled()) {
     const guide = reviewGuideDetails();
     return {
       success: true,
@@ -412,6 +415,11 @@ export const fetchCompanions = async (params: CompanionSearchParams = {}): Promi
     };
   }
 
+  const demoEnabled = await getDemoModeEnabled();
+  const filterFixtures = (response: CompanionSearchResponse): CompanionSearchResponse => ({
+    ...response,
+    data: { ...response.data, companions: (response.data?.companions || []).filter(companion => demoEnabled || !isDemoCompanion(companion)) },
+  });
   const token = await getAuthToken();
   const headers = {
     'Content-Type': 'application/json',
@@ -427,7 +435,7 @@ export const fetchCompanions = async (params: CompanionSearchParams = {}): Promi
       headers,
     });
     
-    return response.data;
+    return filterFixtures(response.data);
   } catch (error) {
     if (axios.isAxiosError(error)) {
       const statusCode = error.response?.status;
@@ -438,7 +446,7 @@ export const fetchCompanions = async (params: CompanionSearchParams = {}): Promi
           data: error.response?.data,
         });
         const response = await axios.get(apiUrl('/api/companions'), { headers });
-        return response.data;
+        return filterFixtures(response.data);
       }
 
       logger.warn('Error fetching companions', {
@@ -456,8 +464,9 @@ export const fetchCompanions = async (params: CompanionSearchParams = {}): Promi
 
 // React Query hook for fetching companions
 export const useCompanionsQuery = (params: CompanionSearchParams = {}) => {
+  const user = useAuthStore(state => state.user);
   return useQuery({
-    queryKey: ['companions', params],
+    queryKey: ['companions', user?.id || 'public', isDemoModeEnabled(user), params],
     queryFn: () => fetchCompanions(params),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
@@ -512,8 +521,9 @@ export const useCompanionsByLocation = (location: string) => {
 
 // Legacy configuration object (for manual usage)
 export const useCompanions = (params: CompanionSearchParams = {}) => {
+  const user = useAuthStore(state => state.user);
   return {
-    queryKey: ['companions', params],
+    queryKey: ['companions', user?.id || 'public', isDemoModeEnabled(user), params],
     queryFn: () => fetchCompanions(params),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
@@ -642,8 +652,10 @@ export const useCompanionMonthlyAvailability = (id: string, year: number, month:
 
 // API function to fetch companion details by ID
 export const fetchCompanionById = async (id: string): Promise<CompanionDetailsResponse> => {
+  const demoEnabled = await getDemoModeEnabled();
+  if (!demoEnabled && isDemoCompanion({ id })) throw new Error('This profile is not available.');
   try {
-    if (isReviewModeEnabled() && id === REVIEW_ACCOUNTS.guide.user.id) {
+    if (await getReviewModeEnabled() && id === REVIEW_ACCOUNTS.guide.user.id) {
       return { success: true, data: reviewGuideDetails(), message: 'Review guide fixture' };
     }
 
@@ -665,6 +677,7 @@ export const fetchCompanionById = async (id: string): Promise<CompanionDetailsRe
 
     // logger.log("Companion details API response:", response.data);
     
+    if (!demoEnabled && isDemoCompanion(response.data?.data)) throw new Error('This profile is not available.');
     return response.data;
   } catch (error) {
     console.error("Error fetching companion details:", error);
@@ -675,14 +688,14 @@ export const fetchCompanionById = async (id: string): Promise<CompanionDetailsRe
       throw new Error(errorMessage);
     }
     
-    throw new Error("Network error occurred while fetching companion details");
+    throw error instanceof Error ? error : new Error("Network error occurred while fetching companion details");
   }
 };
 
 // API function to fetch companion availability
 export const fetchCompanionAvailability = async (id: string, params: AvailabilityParams): Promise<AvailabilityResponse> => {
   try {
-    if (isReviewModeEnabled() && id === REVIEW_ACCOUNTS.guide.user.id) {
+    if (await getReviewModeEnabled() && id === REVIEW_ACCOUNTS.guide.user.id) {
       const start = new Date(`${params.startDate}T00:00:00.000Z`);
       const end = new Date(`${params.endDate}T00:00:00.000Z`);
       const availability: DayAvailability[] = [];
@@ -722,7 +735,7 @@ export const fetchCompanionAvailability = async (id: string, params: Availabilit
     
     const localStore = await readLocalAvailability();
     const localAvailability = localStore[id] || [];
-    if (__DEV__ && localAvailability.length > 0) {
+    if (await getDemoModeEnabled() && localAvailability.length > 0) {
       const remoteAvailability = response.data?.data?.availability || [];
       const remoteDates = new Set(remoteAvailability.map((day: DayAvailability) => day.date));
       return {
@@ -740,7 +753,7 @@ export const fetchCompanionAvailability = async (id: string, params: Availabilit
   } catch (error) {
     // Handle different error types
     if (axios.isAxiosError(error)) {
-      if (error.response?.status === 404) {
+      if (error.response?.status === 404 && await getDemoModeEnabled()) {
         logger.warn("Companion availability not found - using empty availability fallback");
         const localStore = await readLocalAvailability();
         return {
@@ -752,7 +765,7 @@ export const fetchCompanionAvailability = async (id: string, params: Availabilit
         };
       }
 
-      if (__DEV__) {
+      if (await getDemoModeEnabled()) {
         const localStore = await readLocalAvailability();
         return {
           success: true,
@@ -775,8 +788,9 @@ export const fetchCompanionAvailability = async (id: string, params: Availabilit
 
 // React Query hook for fetching companion details by ID
 export const useCompanionQuery = (id: string) => {
+  const user = useAuthStore(state => state.user);
   return useQuery({
-    queryKey: ['companion', id],
+    queryKey: ['companion', id, user?.id || 'public', isDemoModeEnabled(user)],
     queryFn: () => fetchCompanionById(id),
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes
@@ -795,8 +809,9 @@ export const useCompanionQuery = (id: string) => {
 
 // React Query hook for fetching companion availability
 export const useCompanionAvailabilityQuery = (id: string, params: AvailabilityParams) => {
+  const user = useAuthStore(state => state.user);
   return useQuery({
-    queryKey: ['companionAvailability', id, params],
+    queryKey: ['companionAvailability', id, user?.id || 'public', isDemoModeEnabled(user), params],
     queryFn: () => fetchCompanionAvailability(id, params),
     staleTime: 1 * 60 * 1000, // 1 minute (availability changes frequently)
     gcTime: 2 * 60 * 1000, // 2 minutes

@@ -89,6 +89,7 @@ export interface OtherParty {
 
 export interface ChatRoom {
   id: string;
+  bookingId?: string;
   status: string;
   otherParty: OtherParty;
   lastMessage: {
@@ -128,24 +129,96 @@ export interface RoomDetail {
 
 /** List all chat rooms for the current user. */
 export async function getRooms(): Promise<ChatRoom[]> {
+  if (!(await getAuthToken())) return [];
   const data = await apiGet<{ items: ChatRoom[] }>('/api/chat/rooms');
-  return data?.items ?? [];
+  if (!data) throw new Error('We could not load your conversations. Check your connection and try again.');
+  return (data.items || []).filter(room => !room.id.startsWith('demo_room_'));
 }
 
 /**
- * Create or retrieve a chat room between the current user and `otherUserId`.
+ * Create or retrieve a room for a confirmed/in-progress booking.
  * Returns the room UUID or null on failure.
  */
-export async function createOrGetRoom(otherUserId: string): Promise<string | null> {
+export async function createOrGetRoom(bookingId: string): Promise<string | null> {
   const data = await apiPost<{ roomId: string; existed: boolean }>(
     '/api/chat/rooms',
-    { otherUserId },
+    { bookingId },
   );
   return data?.roomId ?? null;
 }
 
+/** Exchange bearer authentication for a short-lived, single-use socket credential. */
+export async function getSocketTicket(roomId: string): Promise<string | null> {
+  if (roomId.startsWith('demo_room_')) return null;
+  const data = await apiPost<{ ticket: string; expiresInSeconds: number }>(
+    `/api/chat/rooms/${encodeURIComponent(roomId)}/socket-ticket`,
+    {},
+  );
+  return typeof data?.ticket === 'string' && data.ticket ? data.ticket : null;
+}
+
+export function buildChatSocketUrl(roomId: string, ticket: string): string {
+  const base = BACKEND_URL.replace(/^https:/, 'wss:').replace(/^http:/, 'ws:');
+  return `${base}/api/chat/rooms/${encodeURIComponent(roomId)}/ws?ticket=${encodeURIComponent(ticket)}`;
+}
+
+type ParticipantChatResult = { roomId: string } | { roomId: null; reason: 'booking_required' | 'unavailable' };
+
+/** Resolve profile links through the same booking policy enforced by the server. */
+export async function resolveParticipantChat(otherUserId: string): Promise<ParticipantChatResult> {
+  const rooms = await apiGet<{ items: ChatRoom[] }>('/api/chat/rooms');
+  if (!rooms) return { roomId: null, reason: 'unavailable' };
+  const existing = rooms.items.find(room => room.otherParty.id === otherUserId && !room.id.startsWith('demo_room_'));
+  if (existing) return { roomId: existing.id };
+
+  interface ChatBooking {
+    id: string;
+    status: string;
+    companionId?: string;
+    customerId?: string;
+    companion?: { id: string };
+    customer?: { id: string };
+  }
+  let page = 1;
+  let totalPages = 1;
+  do {
+    const data = await apiGet<{ items?: ChatBooking[]; bookings?: ChatBooking[]; pagination?: { totalPages: number } }>(`/api/bookings?page=${page}&limit=100`);
+    if (!data) return { roomId: null, reason: 'unavailable' };
+    const booking = (data.items || data.bookings || []).find(item =>
+      !item.id.startsWith('demo_booking_') && ['confirmed', 'in_progress'].includes(item.status) &&
+      [item.companionId, item.customerId, item.companion?.id, item.customer?.id].includes(otherUserId)
+    );
+    if (booking) {
+      const roomId = await createOrGetRoom(booking.id);
+      return roomId ? { roomId } : { roomId: null, reason: 'unavailable' };
+    }
+    totalPages = data.pagination?.totalPages || 1;
+    page += 1;
+  } while (page <= totalPages);
+  return { roomId: null, reason: 'booking_required' };
+}
+
+/** Durable Object events have a different envelope from the REST message API. */
+export function normalizeRealtimeMessage(event: any, currentUserId: string): ChatMessage | null {
+  if (event?.type !== 'message_received') return null;
+  const message = event.data;
+  if (!message?.id || !message.senderId || !message.timestamp) return null;
+  return {
+    id: message.id,
+    senderId: message.senderId,
+    senderName: message.senderName || null,
+    type: message.messageType === 'image' ? 'image' : 'text',
+    content: message.content || null,
+    imageUrl: message.mediaUrl || null,
+    metadata: null,
+    timestamp: message.timestamp,
+    isOwn: message.senderId === currentUserId,
+  };
+}
+
 /** Load room metadata + first page of messages (newest-first, reversed to chrono). */
 export async function getRoomDetail(roomId: string): Promise<RoomDetail | null> {
+  if (roomId.startsWith('demo_room_')) return null;
   return apiGet<RoomDetail>(`/api/chat/rooms/${roomId}`);
 }
 
@@ -155,6 +228,7 @@ export async function sendMessage(
   content: string,
   messageType: 'text' | 'image' = 'text',
 ): Promise<ChatMessage | null> {
+  if (roomId.startsWith('demo_room_')) return null;
   return apiPost<ChatMessage>(`/api/chat/rooms/${roomId}/messages`, {
     roomId,
     messageType,

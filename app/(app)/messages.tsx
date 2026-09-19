@@ -1,7 +1,7 @@
 import { logger } from '@/utils/logger';
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, TextInput, Animated } from 'react-native';
-import { router } from 'expo-router';
+import { View, StyleSheet, ScrollView, TouchableOpacity, TextInput, Animated, RefreshControl } from 'react-native';
+import { router, useFocusEffect } from 'expo-router';
 import { useAuthStore } from '@/stores/auth-store';
 import { getRooms, formatRelativeTime, type ChatRoom } from '@/utils/chat-api';
 import { Card } from '@/components/ui/Card';
@@ -203,7 +203,7 @@ const EmptyState: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
     <Caption style={styles.emptyStateText}>
       {searchQuery
         ? `${t('chat.noConversationsMatch')} "${searchQuery}"`
-        : `${t('chat.startChattingWithCompanions')} ${t('chat.seeConversationsHere')}`
+        : 'Your conversations appear here after a guide confirms your booking. Open Bookings to check its status.'
       }
     </Caption>
   </Card>
@@ -214,11 +214,21 @@ export default function MessagesScreen() {
   const { user } = useAuthStore();
   const [conversations, setConversations] = useState<Conversation[]>(mockConversations);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const { t } = useTranslation();
 
   const fetchRooms = useCallback(async () => {
-    const rooms = await getRooms();
-    if (rooms.length > 0) {
+    if (!user?.id) {
+      setConversations([]);
+      return;
+    }
+    const requestingUserId = user.id;
+    setIsRefreshing(true);
+    setLoadError(null);
+    try {
+      const rooms = await getRooms();
+      if (useAuthStore.getState().user?.id !== requestingUserId) return;
       setConversations(
         rooms.map((room: ChatRoom) => ({
           id: room.id,
@@ -231,12 +241,18 @@ export default function MessagesScreen() {
           isTyping: false,
         }))
       );
+    } catch (error) {
+      if (useAuthStore.getState().user?.id !== requestingUserId) return;
+      setLoadError(error instanceof Error ? error.message : 'Unable to load conversations.');
+    } finally {
+      setIsRefreshing(false);
     }
-  }, []);
+  }, [user?.id]);
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
+    setConversations([]);
     fetchRooms();
-  }, [fetchRooms]);
+  }, [fetchRooms]));
 
   const filteredConversations = conversations.filter(conversation =>
     conversation.companionName.toLowerCase().includes(searchQuery.toLowerCase())
@@ -250,8 +266,15 @@ export default function MessagesScreen() {
         style={styles.content}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={fetchRooms} />}
       >
-        {filteredConversations.length > 0 ? (
+        {loadError ? (
+          <Card style={styles.emptyState}>
+            <Body style={styles.emptyStateTitle}>Unable to load conversations</Body>
+            <Caption style={styles.emptyStateText}>{loadError}</Caption>
+            <TouchableOpacity onPress={fetchRooms} accessibilityRole="button"><Body>Try again</Body></TouchableOpacity>
+          </Card>
+        ) : filteredConversations.length > 0 ? (
           filteredConversations.map((conversation) => (
             <ConversationItem
               key={conversation.id}

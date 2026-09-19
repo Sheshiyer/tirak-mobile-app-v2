@@ -30,8 +30,10 @@ jobs:
     timeout-minutes: 30
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EXPO_PUBLIC_DEMO_MODE: "false"
       EXPO_PUBLIC_PROMPTPAY_ENABLED: "false"
       EXPO_PUBLIC_REVIEW_MODE: ${{ inputs.channel == 'review' && 'true' || 'false' }}
+      EAS_ENVIRONMENT: ${{ inputs.channel == 'preview' && 'preview' || 'production' }}
       UPDATE_NOTE: ${{ inputs.message }}
     steps:
       - name: Require main for production
@@ -68,5 +70,6 @@ jobs:
           release_note="${UPDATE_NOTE:-Manual OTA update} | ${GITHUB_REF_NAME}@${GITHUB_SHA}"
           eas update \
             --channel "${{ inputs.channel }}" \
+            --environment "$EAS_ENVIRONMENT" \
             --message "$release_note" \
             --non-interactive
