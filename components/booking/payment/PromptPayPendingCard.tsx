@@ -3,7 +3,7 @@ import { Image, StyleSheet, Text, View } from 'react-native';
 import { Clock3, QrCode } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 
-import type { PromptPayCharge } from '@/app/api/payment/payment';
+import type { PromptPayCharge } from '@/services/api/payment/payment';
 import { Card } from '@/components/ui/Card';
 import { designTokens } from '@/constants/design-tokens';
 

@@ -39,7 +39,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Heading, Subheading, Body, Caption } from '@/components/ui/Typography';
 import { designTokens, componentTokens } from '@/constants/design-tokens';
-import { useCompanionProfile, useCreateOrUpdateCompanionProfile, CompanionProfile, CompanionProfileRequest, CompanionProfileResponse } from '@/app/api/companion/profile';
+import { useCompanionProfile, useCreateOrUpdateCompanionProfile, CompanionProfile, CompanionProfileRequest, CompanionProfileResponse } from '@/services/api/companion/profile';
 import { useAuthStore } from '@/stores/auth-store';
 import { useQueryClient } from '@tanstack/react-query';
 import * as ExpoImagePicker from 'expo-image-picker';

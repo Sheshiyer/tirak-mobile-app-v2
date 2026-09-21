@@ -13,13 +13,13 @@ jest.mock('@/utils/demo-mode', () => ({ getDemoModeEnabled: mockDemoEnabled, get
 jest.mock('@/stores/auth-store', () => ({ useAuthStore: Object.assign(jest.fn(() => null), { getState: () => ({ user: { id: 'real-user', userType: 'customer' } }) }) }));
 jest.mock('@/utils/booking-notifications', () => ({ scheduleThreeHourBookingReminder: jest.fn(), showBookingCreatedNotification: jest.fn(), syncBookingReminderNotifications: jest.fn() }));
 
-const { fetchCustomerProfile, updateCustomerProfile } = require('@/app/api/customer/customerProfile');
-const { fetchCompanionProfile, createOrUpdateCompanionProfile } = require('@/app/api/companion/profile');
-const { fetchSupplierStats } = require('@/app/api/companion/stats');
-const { fetchCompanions, fetchCompanionById, saveCompanionAvailability, fetchCompanionAvailability } = require('@/app/api/companion/companion');
-const { fetchBookingById, updateBookingStatus, createBooking } = require('@/app/api/booking/booking');
+const { fetchCustomerProfile, updateCustomerProfile } = require('@/services/api/customer/customerProfile');
+const { fetchCompanionProfile, createOrUpdateCompanionProfile } = require('@/services/api/companion/profile');
+const { fetchSupplierStats } = require('@/services/api/companion/stats');
+const { fetchCompanions, fetchCompanionById, saveCompanionAvailability, fetchCompanionAvailability } = require('@/services/api/companion/companion');
+const { fetchBookingById, updateBookingStatus, createBooking } = require('@/services/api/booking/booking');
 const { getCompanionImage, getCompanionServices } = require('@/utils/companion-display');
-const { getNotifications, markNotificationRead, markAllNotificationsRead } = require('@/app/api/notifications/notifications');
+const { getNotifications, markNotificationRead, markAllNotificationsRead } = require('@/services/api/notifications/notifications');
 
 describe('ordinary accounts never receive demo fallbacks', () => {
   const unavailable = { isAxiosError: true, response: { status: 404, data: { message: 'Not found' } } };

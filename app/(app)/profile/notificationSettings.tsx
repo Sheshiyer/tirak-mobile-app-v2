@@ -7,7 +7,7 @@ import { ArrowLeft, Bell, Mail, Smartphone } from "lucide-react-native";
 import {
   useNotificationPreferences,
   useUpdateNotificationPreferences,
-} from '@/app/api/notifications/notifications';
+} from '@/services/api/notifications/notifications';
 
 const NotificationSettings = () => {
   const { data } = useNotificationPreferences();

@@ -23,7 +23,7 @@ jest.mock('@/utils/companion-display', () => ({ isTestCompanionId: jest.fn() }))
 jest.mock('@/constants/api', () => ({ API_BASE_URL: 'http://127.0.0.1:8787', apiUrl: (path: string) => path }));
 
 import axios from 'axios';
-import { createBooking, parseCreateBookingResponse } from '@/app/api/booking/booking';
+import { createBooking, parseCreateBookingResponse } from '@/services/api/booking/booking';
 import { useReviewBookingFixtureStore } from '@/stores/review-booking-fixture-store';
 
 const responseWith = (paymentStatus: string, currency?: string) => ({

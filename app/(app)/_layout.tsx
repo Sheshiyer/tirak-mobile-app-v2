@@ -20,7 +20,7 @@ import { ProfileImage } from "@/components/ui/ProfileImage";
 import { RadialGradient } from "@/components/ui/RadialGradient";
 import { AnimatedTabBar } from "@/components/ui/AnimatedTabBar";
 import { LinearGradient } from "expo-linear-gradient";
-import { useNotifications } from "@/app/api/notifications/notifications";
+import { useNotifications } from "@/services/api/notifications/notifications";
 import { useTranslation } from 'react-i18next';
 import { SoundManager } from '@/utils/sound-manager';
 import { registerForBookingPushNotifications } from '@/utils/booking-notifications';

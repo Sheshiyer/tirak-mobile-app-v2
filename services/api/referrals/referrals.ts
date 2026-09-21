@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiUrl } from '@/constants/api';
-import { getAuthToken } from '@/app/api/companion/companion';
+import { getAuthToken } from '@/services/api/companion/companion';
 
 export interface ReferralEvent {
   id: string;

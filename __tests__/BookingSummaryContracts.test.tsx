@@ -62,7 +62,7 @@ jest.mock('@/components/booking/BookingStepFooter', () => {
   };
 });
 
-jest.mock('@/app/api/booking/booking', () => ({
+jest.mock('@/services/api/booking/booking', () => ({
   createBooking: jest.fn(),
   useCreateBooking: () => ({ isPending: false, mutateAsync: mockMutateAsync }),
 }));

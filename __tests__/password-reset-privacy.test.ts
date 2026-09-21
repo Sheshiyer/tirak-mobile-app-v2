@@ -2,7 +2,7 @@ const mockPost = jest.fn();
 jest.mock('axios', () => ({ __esModule: true, default: { post: mockPost } }));
 jest.mock('@/utils/secure-storage', () => ({ secureStorage: {} }));
 jest.mock('@/constants/api', () => ({ API_BASE_URL: 'https://account.test' }));
-const { resetPassword, requestPasswordReset } = require('@/app/api/auth/password-reset');
+const { resetPassword, requestPasswordReset } = require('@/services/api/auth/password-reset');
 
 test('reset failures never log the axios request body containing credentials', async () => {
   const log = jest.spyOn(console, 'error').mockImplementation(() => {});

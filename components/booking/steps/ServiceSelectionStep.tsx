@@ -15,7 +15,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { BookingStepFooter } from '../BookingStepFooter';
 import { useBookingStore, BookingService } from '@/stores/booking-store';
-import { useExperiences, Experience } from '@/app/api/companion/experience';
+import { useExperiences, Experience } from '@/services/api/companion/experience';
 import { designTokens, componentTokens } from '@/constants/design-tokens';
 import { useTranslation } from 'react-i18next';
 import { formatOriginalCurrencyContext, formatTravelerCurrency } from '@/utils/currency';

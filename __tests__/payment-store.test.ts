@@ -1,7 +1,7 @@
 const mockCreatePromptPayCharge = jest.fn();
 
-jest.mock('@/app/api/payment/payment', () => {
-  const actual = jest.requireActual('@/app/api/payment/payment');
+jest.mock('@/services/api/payment/payment', () => {
+  const actual = jest.requireActual('@/services/api/payment/payment');
   return {
     ...actual,
     createPromptPayCharge: (...args: unknown[]) => mockCreatePromptPayCharge(...args),
@@ -176,7 +176,7 @@ describe('payment session store', () => {
   });
 
   test('turns a server already-paid response into authoritative paid store state', async () => {
-    const { PaymentClientError } = jest.requireActual('@/app/api/payment/payment');
+    const { PaymentClientError } = jest.requireActual('@/services/api/payment/payment');
     mockCreatePromptPayCharge.mockRejectedValueOnce(new PaymentClientError('already-paid'));
     usePaymentStore.getState().setBooking({ id: 'booking-1', status: 'confirmed', paymentStatus: 'pending' });
 
@@ -186,7 +186,7 @@ describe('payment session store', () => {
   });
 
   test('turns an indeterminate POST outcome into explicit indeterminate store state', async () => {
-    const { PaymentClientError } = jest.requireActual('@/app/api/payment/payment');
+    const { PaymentClientError } = jest.requireActual('@/services/api/payment/payment');
     mockCreatePromptPayCharge.mockRejectedValueOnce(new PaymentClientError('indeterminate'));
     usePaymentStore.getState().setBooking({ id: 'booking-1', status: 'confirmed', paymentStatus: 'pending' });
 

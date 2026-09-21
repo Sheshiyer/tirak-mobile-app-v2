@@ -16,7 +16,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   },
 }));
 
-jest.mock('@/app/api/payment/payment', () => {
+jest.mock('@/services/api/payment/payment', () => {
   class PaymentClientError extends Error {
     kind: string;
 
@@ -134,7 +134,7 @@ jest.mock('@/components/ui/ProfileImage', () => {
 });
 jest.mock('@/utils/posthog', () => ({ posthog: { capture: jest.fn(), reset: jest.fn() } }));
 jest.mock('posthog-react-native', () => ({ usePostHog: () => ({ capture: jest.fn() }) }));
-jest.mock('@/app/api/booking/booking', () => ({
+jest.mock('@/services/api/booking/booking', () => ({
   useCreateBooking: () => ({ data: null }),
   createBooking: jest.fn(),
 }));

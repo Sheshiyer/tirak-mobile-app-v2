@@ -6,7 +6,7 @@ import { RadialGradient } from '@/components/ui/RadialGradient';
 import { Card } from '@/components/ui/Card';
 import { Heading, Subheading, Body, Caption } from '@/components/ui/Typography';
 import { designTokens } from '@/constants/design-tokens';
-import { useBookingQuery, useUpdateBookingStatus } from '@/app/api/booking/booking';
+import { useBookingQuery, useUpdateBookingStatus } from '@/services/api/booking/booking';
 import { ProfileImage } from '@/components/ui/ProfileImage';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/stores/auth-store';

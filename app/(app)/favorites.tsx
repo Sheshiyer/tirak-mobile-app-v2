@@ -8,7 +8,7 @@ import { designTokens } from '@/constants/design-tokens';
 import { Heart, Search, Filter, Grid3X3, List } from 'lucide-react-native';
 import { FavoriteCompanion, useFavoritesStore } from '@/stores/favorites-store';
 import { useQueries } from '@tanstack/react-query';
-import { fetchCompanionById } from '@/app/api/companion/companion';
+import { fetchCompanionById } from '@/services/api/companion/companion';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/auth-store';
 import { isDemoModeEnabled } from '@/utils/demo-mode';

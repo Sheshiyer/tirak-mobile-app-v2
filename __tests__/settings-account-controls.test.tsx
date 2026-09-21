@@ -34,8 +34,8 @@ jest.mock('@/constants/api', () => ({ API_BASE_URL: 'http://account.test' }));
 jest.mock('@/components/ui/Card', () => ({ Card: 'Card' }));
 jest.mock('@/components/ui/RadialGradient', () => ({ RadialGradient: 'RadialGradient' }));
 jest.mock('@/components/AccountPrivacyPreferences', () => ({ AccountPrivacyPreferences: 'AccountPrivacyPreferences' }));
-jest.mock('@/app/api/notifications/notifications', () => ({ useNotificationPreferences: () => ({}), useUpdateNotificationPreferences: () => ({ mutate: jest.fn() }) }));
-jest.mock('@/app/api/auth/delete', () => ({ deleteCompanionAccount: jest.fn(), deleteSupplierAccount: jest.fn(), deleteUserAccount: jest.fn() }));
+jest.mock('@/services/api/notifications/notifications', () => ({ useNotificationPreferences: () => ({}), useUpdateNotificationPreferences: () => ({ mutate: jest.fn() }) }));
+jest.mock('@/services/api/auth/delete', () => ({ deleteCompanionAccount: jest.fn(), deleteSupplierAccount: jest.fn(), deleteUserAccount: jest.fn() }));
 jest.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key === 'settings.privacyPolicy' ? 'Privacy Policy' : key }) }));
 
 const CustomerSettings = require('@/app/(app)/settings').default;

@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/Button';
 import { BookingStepFooter } from '../BookingStepFooter';
 import { useBookingStore, BookingDateTime } from '@/stores/booking-store';
 import { designTokens } from '@/constants/design-tokens';
-import { useCompanionWeeklyAvailability } from '@/app/api/companion/companion';
+import { useCompanionWeeklyAvailability } from '@/services/api/companion/companion';
 import { useTranslation } from 'react-i18next';
 import { isTestCompanionId } from '@/utils/companion-display';
 import { getDemoGuideAvailability } from '@/utils/preview-availability';

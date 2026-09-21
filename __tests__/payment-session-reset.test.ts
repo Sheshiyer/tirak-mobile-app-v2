@@ -50,14 +50,14 @@ jest.mock('@/utils/logger', () => ({
 
 const mockCreatePromptPayCharge = jest.fn();
 
-jest.mock('@/app/api/payment/payment', () => ({
+jest.mock('@/services/api/payment/payment', () => ({
   createPromptPayCharge: (...args: unknown[]) => mockCreatePromptPayCharge(...args),
   PaymentClientError: class PaymentClientError extends Error {
     kind = 'unknown';
   },
 }));
 
-jest.mock('@/app/api/booking/booking', () => ({ createBooking: jest.fn() }));
+jest.mock('@/services/api/booking/booking', () => ({ createBooking: jest.fn() }));
 jest.mock('@/constants/api', () => ({ apiUrl: (route: string) => route }));
 jest.mock('@/utils/currency', () => ({ convertCurrency: (amount: number) => amount }));
 
