@@ -41,7 +41,7 @@ describe('chat-api service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockFetch.mockReset();
-    delete process.env.EXPO_PUBLIC_ENABLE_DEMO_MODE;
+    delete process.env.EXPO_PUBLIC_DEMO_MODE;
     mockGetItemAsync.mockImplementation(async (key) => key === 'authToken' ? 'token-123' : JSON.stringify({ id: 'ordinary-user', email: 'real@example.com' }));
   });
 
@@ -121,7 +121,7 @@ describe('chat-api service', () => {
   });
 
   test('does not restore fabricated chat even in an explicitly enabled demo session', async () => {
-    process.env.EXPO_PUBLIC_ENABLE_DEMO_MODE = 'true';
+    process.env.EXPO_PUBLIC_DEMO_MODE = 'true';
     mockGetItemAsync.mockImplementation(async (key) => key === 'authToken' ? 'token-123' : JSON.stringify({ id: 'demo_customer_001' }));
     await expect(getRoomDetail('demo_room_test_companion')).resolves.toBeNull();
     await expect(sendMessage('demo_room_test_companion', 'Can we meet at 10?')).resolves.toBeNull();

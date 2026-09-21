@@ -6,7 +6,7 @@ const { isDemoModeEnabled, getDemoModeEnabled, getReviewModeEnabled } = require(
 
 describe('explicit demo isolation', () => {
   afterEach(() => {
-    delete process.env.EXPO_PUBLIC_ENABLE_DEMO_MODE;
+    delete process.env.EXPO_PUBLIC_DEMO_MODE;
     delete process.env.EXPO_PUBLIC_REVIEW_MODE;
     jest.clearAllMocks();
   });
@@ -16,7 +16,7 @@ describe('explicit demo isolation', () => {
   });
 
   test('requires a known identity even when the flag is enabled', () => {
-    process.env.EXPO_PUBLIC_ENABLE_DEMO_MODE = 'true';
+    process.env.EXPO_PUBLIC_DEMO_MODE = 'true';
     expect(isDemoModeEnabled(null)).toBe(false);
     expect(isDemoModeEnabled({ email: 'ordinary@example.com' })).toBe(false);
     expect(isDemoModeEnabled({ id: 'demo_customer_001' })).toBe(true);
@@ -24,7 +24,7 @@ describe('explicit demo isolation', () => {
   });
 
   test('reads stored identity and fails closed for invalid storage', async () => {
-    process.env.EXPO_PUBLIC_ENABLE_DEMO_MODE = 'true';
+    process.env.EXPO_PUBLIC_DEMO_MODE = 'true';
     mockGetItemAsync.mockResolvedValueOnce(JSON.stringify({ id: 'demo_companion_001' })).mockResolvedValueOnce('broken-json');
     await expect(getDemoModeEnabled()).resolves.toBe(true);
     await expect(getDemoModeEnabled()).resolves.toBe(false);
@@ -49,7 +49,7 @@ describe('explicit demo isolation', () => {
     await expect(getReviewModeEnabled()).resolves.toBe(false);
     await expect(getReviewModeEnabled()).resolves.toBe(false);
     delete process.env.EXPO_PUBLIC_REVIEW_MODE;
-    process.env.EXPO_PUBLIC_ENABLE_DEMO_MODE = 'true';
+    process.env.EXPO_PUBLIC_DEMO_MODE = 'true';
     await expect(getReviewModeEnabled()).resolves.toBe(false);
   });
 });

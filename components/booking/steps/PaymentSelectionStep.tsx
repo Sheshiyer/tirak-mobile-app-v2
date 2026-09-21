@@ -404,7 +404,7 @@ export const PaymentSelectionStep: React.FC<PaymentSelectionStepProps> = ({
             <Text style={styles.sectionTitle}>{t('payments.safetyHeading')}</Text>
           </View>
           <Text style={styles.securityText}>
-            {t('payments.safetyBody')}
+            {t(promptPayVisible ? 'payments.safetyBody' : 'payments.cashOnlySafetyBody')}
           </Text>
         </Card> : null}
 

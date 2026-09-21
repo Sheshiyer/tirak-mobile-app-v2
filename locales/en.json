@@ -664,6 +664,7 @@
     "promptPayPendingState": "PromptPay payment pending.",
     "safetyHeading": "Payment safety",
     "safetyBody": "Cash goes directly to your guide. PromptPay is available only in this local test build and remains pending until server confirmation.",
+    "cashOnlySafetyBody": "Pay your guide directly in cash. Electronic payment is unavailable for this booking.",
     "continue": "Continue",
     "bookingReviewNote": "Review the guide rate now. Choose cash or an available payment method after the booking response.",
     "qrUnavailable": "QR details are not available. Keep this payment locked and check the booking later.",

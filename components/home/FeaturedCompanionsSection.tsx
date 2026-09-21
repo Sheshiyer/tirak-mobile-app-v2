@@ -13,7 +13,7 @@ import { router } from 'expo-router';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { designTokens, componentTokens } from '@/constants/design-tokens';
-import { MapPin, Heart, MessageCircle, Star, Verified, Send } from 'lucide-react-native';
+import { MapPin, Heart, MessageCircle, Star, Verified, Send, Camera } from 'lucide-react-native';
 import { Companion } from '@/types/companion';
 import { useTranslation } from 'react-i18next';
 import { useFavoritesStore } from '@/stores/favorites-store';
@@ -88,13 +88,24 @@ const EnhancedCompanionCard: React.FC<CompanionCardProps> = ({
       >
         {/* Image Container with Overlay Elements */}
         <View style={styles.imageContainer}>
-          <Image
-            source={{ uri: companion.image }}
-            style={styles.companionImage}
-            contentFit="cover"
-            onLoad={() => setImageLoaded(true)}
-            transition={300}
-          />
+          {companion.image ? (
+            <Image
+              source={{ uri: companion.image }}
+              style={styles.companionImage}
+              contentFit="cover"
+              onLoad={() => setImageLoaded(true)}
+              transition={300}
+            />
+          ) : (
+            <LinearGradient
+              colors={['#A85CF9', '#FFBAA0']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[styles.companionImage, styles.imagePlaceholder]}
+            >
+              <Camera size={36} color="rgba(255,255,255,0.75)" />
+            </LinearGradient>
+          )}
 
           {/* Gradient Overlay */}
           <LinearGradient
@@ -399,6 +410,10 @@ const styles = StyleSheet.create({
   companionImage: {
     width: '100%',
     height: '100%',
+  },
+  imagePlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   imageOverlay: {
     position: 'absolute',

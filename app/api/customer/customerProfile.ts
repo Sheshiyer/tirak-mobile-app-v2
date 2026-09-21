@@ -38,6 +38,10 @@ export interface CustomerProfileResponse {
   message?: string;
 }
 
+const isRemoteImageUrl = (value: unknown): value is string => {
+  return typeof value === 'string' && /^https?:\/\//i.test(value.trim());
+};
+
 // GET /users/profile
 export const fetchCustomerProfile = async (): Promise<CustomerProfileResponse> => {
   const token = await getAuthToken?.();
@@ -90,34 +94,45 @@ export const useCustomerProfile = (options?: any) => {
 // PUT /users/profile
 export const updateCustomerProfile = async (payload: any): Promise<CustomerProfileResponse> => {
   const token = await getAuthToken?.();
-  let headers: any = {
+  const authHeaders: any = {
     ...(token && { 'Authorization': `Bearer ${token}` }),
   };
-  let dataToSend = payload;
-  let url = apiUrl('/api/users/profile');
-  let method = 'PUT';
-
-  if (!(payload instanceof FormData)) {
-    headers['Content-Type'] = 'application/json';
-    dataToSend = JSON.stringify(payload);
-  }
   try {
-    const response = await axios({
-      url,
-      method,
-      headers,
-      data: dataToSend,
-    });
-    if (!(payload instanceof FormData) && payload.profileImage) {
-      return {
-        ...response.data,
-        data: {
-          ...response.data?.data,
-          profileImage: payload.profileImage,
-        },
-      };
+    const { id, profileImage, ...profileUpdates } = payload;
+    let storedProfileImage = isRemoteImageUrl(profileImage) ? profileImage : undefined;
+
+    if (profileImage && !storedProfileImage) {
+      if (!id) throw new Error('A signed-in user is required to upload a profile photo.');
+      const formData = new FormData();
+      formData.append('file', {
+        uri: profileImage,
+        name: 'profile.jpg',
+        type: 'image/jpeg',
+      } as any);
+      const upload = await axios.post(apiUrl(`/api/users/${id}/avatar`), formData, {
+        headers: { ...authHeaders, 'Content-Type': 'multipart/form-data' },
+      });
+      storedProfileImage = upload.data?.data?.imageUrl;
+      if (!isRemoteImageUrl(storedProfileImage)) {
+        throw new Error('The server did not return a public profile image URL.');
+      }
     }
-    return response.data;
+
+    const updatePayload = {
+      ...profileUpdates,
+      ...(storedProfileImage ? { profileImage: storedProfileImage } : {}),
+    };
+    const response = await axios.put(apiUrl('/api/users/profile'), updatePayload, {
+      headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    });
+    return {
+      ...response.data,
+      data: {
+        ...profileUpdates,
+        ...response.data?.data,
+        ...(storedProfileImage ? { profileImage: storedProfileImage } : {}),
+      },
+    };
   } catch (error) {
     const statusCode = axios.isAxiosError(error) ? error.response?.status : undefined;
     if (await getDemoModeEnabled()) {

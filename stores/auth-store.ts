@@ -504,11 +504,13 @@ export const useAuthStore = create<AuthState & AuthActions>()(
 // Listen for unauthorized events from browser API calls.
 if (Platform.OS !== 'web') {
   DeviceEventEmitter.addListener('auth:unauthorized', async () => {
+    if (isReviewModeEnabled() && isReviewAccountUser(useAuthStore.getState().user)) return;
     logger.warn('Auth:unauthorized event received - logging out');
     await useAuthStore.getState().invalidateAuth();
   });
 } else if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
   window.addEventListener('auth:unauthorized', async () => {
+    if (isReviewModeEnabled() && isReviewAccountUser(useAuthStore.getState().user)) return;
     logger.warn('Auth:unauthorized event received - logging out');
     await useAuthStore.getState().invalidateAuth();
   });

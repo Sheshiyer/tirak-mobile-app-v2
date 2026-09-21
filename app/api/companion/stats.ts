@@ -6,6 +6,9 @@ import { fetchBookings, BookingListItem } from '@/app/api/booking/booking';
 import { fetchCompanionProfile } from '@/app/api/companion/profile';
 import { apiUrl } from '@/constants/api';
 import { getDemoModeEnabled } from '@/utils/demo-mode';
+import { isReviewAccountUser, isReviewModeEnabled, REVIEW_ACCOUNTS } from '@/constants/review-mode';
+import { useAuthStore } from '@/stores/auth-store';
+import { useReviewBookingFixtureStore } from '@/stores/review-booking-fixture-store';
 
 export interface SupplierStatsResponse {
   success: boolean;
@@ -218,6 +221,44 @@ const getDemoStats = async (): Promise<SupplierStatsResponse> => buildStatsFromB
 }));
 
 export const fetchSupplierStats = async (): Promise<SupplierStatsResponse> => {
+  if (isReviewModeEnabled() && isReviewAccountUser(useAuthStore.getState().user)) {
+    const booking = useReviewBookingFixtureStore.getState().booking;
+    const count = booking ? 1 : 0;
+    return {
+      success: true,
+      message: 'Local app review statistics',
+      data: {
+        user: {
+          name: REVIEW_ACCOUNTS.guide.user.name,
+          bio: REVIEW_ACCOUNTS.guide.user.bio,
+          location: REVIEW_ACCOUNTS.guide.user.location,
+          languages: ['Thai', 'English'],
+          specialization: ['Cultural walks'],
+          status: 'active',
+          totalRatings: 1,
+          totalReviews: 1,
+        },
+        data: {
+          totalBookings: count,
+          completedBookings: 0,
+          cancelledBookings: 0,
+          totalEarnings: 0,
+          thisMonthEarnings: 0,
+          lastMonthEarnings: 0,
+          profileViews: 0,
+          responseRate: booking?.status === 'accepted' ? 100 : 0,
+          responseTime: 0,
+          averageRating: 5,
+          totalReviews: 1,
+          profileCompletion: 100,
+          monthlyStats: [],
+          weeklyStats: [],
+          quarterStats: [],
+          servicePerformance: [],
+        },
+      },
+    };
+  }
   try {
     const token = await getAuthToken();
     const response = await axios.get(apiUrl('/api/suppliers/stats'), {

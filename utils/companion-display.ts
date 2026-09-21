@@ -12,6 +12,11 @@ const normalizeText = (value: unknown): string => {
   return typeof value === 'string' ? value.trim() : '';
 };
 
+export const isRemoteImageUrl = (value: unknown): value is string => {
+  const normalized = normalizeText(value);
+  return /^https?:\/\//i.test(normalized);
+};
+
 export const isTestCompanionId = (id: unknown): boolean => {
   return normalizeText(id) === TEST_COMPANION_ID;
 };
@@ -65,10 +70,10 @@ export const getCompanionServices = (companion: any, allowDemoData = false): str
 
 export const getCompanionImage = (companion: any, allowDemoData = false): string => {
   const profileImage = normalizeText(companion?.profileImage);
-  if (profileImage) return profileImage;
+  if (isRemoteImageUrl(profileImage)) return profileImage;
 
   const gallery = Array.isArray(companion?.gallery) ? companion.gallery : [];
-  const galleryImage = gallery.find((image: unknown) => normalizeText(image));
+  const galleryImage = gallery.find(isRemoteImageUrl);
   if (galleryImage) return normalizeText(galleryImage);
 
   if (allowDemoData && isTestCompanion(companion)) {
@@ -80,7 +85,7 @@ export const getCompanionImage = (companion: any, allowDemoData = false): string
 
 export const getCompanionGallery = (companion: any, allowDemoData = false): string[] => {
   const gallery = Array.isArray(companion?.gallery)
-    ? companion.gallery.filter((image: unknown) => normalizeText(image))
+    ? companion.gallery.filter(isRemoteImageUrl)
     : [];
 
   const displayImage = getCompanionImage(companion, allowDemoData);

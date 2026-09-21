@@ -159,7 +159,7 @@ export default function LoginScreen() {
       setReviewAccountLoading(account);
       await switchReviewAccount(account);
       SoundManager.play('loginSuccess');
-      router.replace('/profile');
+      router.replace('/(app)/profile');
     } catch (error) {
       logger.warn('Review account login failed:', error instanceof Error ? error.message : error);
     } finally {

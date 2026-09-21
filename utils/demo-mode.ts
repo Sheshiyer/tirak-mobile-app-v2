@@ -27,7 +27,7 @@ export function isDemoIdentity(user?: DemoIdentity | null): boolean {
 
 /** Preview data requires both a deliberately enabled build and a review identity. */
 export function isDemoModeEnabled(user?: DemoIdentity | null): boolean {
-  return (process.env.EXPO_PUBLIC_ENABLE_DEMO_MODE === 'true' && isDemoIdentity(user))
+  return (process.env.EXPO_PUBLIC_DEMO_MODE === 'true' && isDemoIdentity(user))
     || (isReviewBuildEnabled() && Boolean(user?.id && isReviewAccountUser({ id: user.id })));
 }
 
@@ -41,7 +41,7 @@ async function getStoredIdentity(): Promise<DemoIdentity | null> {
 }
 
 export async function getDemoModeEnabled(): Promise<boolean> {
-  if (process.env.EXPO_PUBLIC_ENABLE_DEMO_MODE !== 'true' && !isReviewBuildEnabled()) return false;
+  if (process.env.EXPO_PUBLIC_DEMO_MODE !== 'true' && !isReviewBuildEnabled()) return false;
   return isDemoModeEnabled(await getStoredIdentity());
 }
 

@@ -4,9 +4,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { secureStorage } from '@/utils/secure-storage';
 import { API_BASE_URL, apiUrl } from '@/constants/api';
 import { isLocalPromptPayEnabled } from '@/constants/payment-capabilities';
-import { isReviewModeEnabled, REVIEW_ACCOUNTS } from '@/constants/review-mode';
+import { isReviewAccountUser, isReviewModeEnabled, REVIEW_ACCOUNTS } from '@/constants/review-mode';
 import {
   reviewBookingToBooking,
+  reviewBookingToListItem,
   useReviewBookingFixtureStore,
 } from '@/stores/review-booking-fixture-store';
 import { isTestCompanionId } from '@/utils/companion-display';
@@ -749,6 +750,20 @@ const updateDemoBookingStatus = async (
 
 // Fetch bookings list
 export const fetchBookings = async (params: BookingsQueryParams = {}): Promise<BookingsListResponse> => {
+  if (isReviewModeEnabled() && isReviewAccountUser(useAuthStore.getState().user)) {
+    const booking = useReviewBookingFixtureStore.getState().booking;
+    const items = booking ? [reviewBookingToListItem(booking)] : [];
+    const filtered = params.status ? items.filter((item) => item.status === params.status) : items;
+    const page = params.page || 1;
+    const limit = params.limit || 20;
+    return {
+      success: true,
+      data: {
+        items: filtered.slice((page - 1) * limit, page * limit),
+        pagination: { page, limit, total: filtered.length, totalPages: Math.ceil(filtered.length / limit) },
+      },
+    };
+  }
   try {
     const token = await getAuthToken();
     

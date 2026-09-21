@@ -99,6 +99,40 @@ describe('ordinary accounts never receive demo fallbacks', () => {
     expect(getCompanionServices(profile)).not.toEqual(['Temple walks', 'Market tasting']);
   });
 
+  test('phone-local guide images never enter public card data', () => {
+    const profile = {
+      profileImage: 'file:///data/user/0/com.tirak/cache/profile.jpg',
+      gallery: ['file:///phone/cover.jpg', 'https://cdn.example.test/guide.jpg'],
+    };
+    expect(getCompanionImage(profile)).toBe('https://cdn.example.test/guide.jpg');
+  });
+
+  test('customer photo changes upload first and persist only the public URL', async () => {
+    mockAxios.post.mockResolvedValue({ data: { success: true, data: { imageUrl: 'https://api.example.test/api/uploads/public/avatars/user/photo.jpg' } } });
+    mockAxios.put.mockResolvedValue({ data: { success: true, data: { updated: true } } });
+
+    const result = await updateCustomerProfile({
+      id: '123e4567-e89b-12d3-a456-426614174001',
+      name: 'Actual traveler',
+      profileImage: 'file:///data/user/0/com.tirak/cache/profile.jpg',
+    });
+
+    expect(mockAxios.post).toHaveBeenCalledWith(
+      'https://app.test/api/users/123e4567-e89b-12d3-a456-426614174001/avatar',
+      expect.any(FormData),
+      expect.objectContaining({ headers: expect.objectContaining({ 'Content-Type': 'multipart/form-data' }) }),
+    );
+    expect(mockAxios.put).toHaveBeenCalledWith(
+      'https://app.test/api/users/profile',
+      expect.objectContaining({
+        name: 'Actual traveler',
+        profileImage: 'https://api.example.test/api/uploads/public/avatars/user/photo.jpg',
+      }),
+      expect.any(Object),
+    );
+    expect(result.data.profileImage).toBe('https://api.example.test/api/uploads/public/avatars/user/photo.jpg');
+  });
+
   test('demo booking links and status updates are disabled without the gate', async () => {
     await expect(fetchBookingById('demo_booking_001')).rejects.toThrow();
     await expect(updateBookingStatus('demo_booking_001', { status: 'confirmed' })).rejects.toThrow();
