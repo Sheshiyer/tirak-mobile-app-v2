@@ -8,11 +8,12 @@ const eas = JSON.parse(read('eas.json'));
 const resolveConfig = require('../app.config.js');
 
 describe('release delivery boundaries', () => {
-  test('dynamic and both native configs use the existing project and fingerprint runtime', () => {
+  test('delivery config keeps Android fingerprinted and gives iOS a deterministic app-version runtime', () => {
     const resolved = resolveConfig({ config });
     const url = `https://u.expo.dev/${config.extra.eas.projectId}`;
     expect(resolved.updates.url).toBe(url);
     expect(resolved.runtimeVersion).toEqual({ policy: 'fingerprint' });
+    expect(resolved.ios.runtimeVersion).toEqual({ policy: 'appVersion' });
     const android = read('android/app/src/main/AndroidManifest.xml');
     expect(android).toContain('android:name="expo.modules.updates.ENABLED" android:value="true"');
     expect(android).toContain(`android:name="expo.modules.updates.EXPO_UPDATE_URL" android:value="${url}"`);
@@ -22,7 +23,7 @@ describe('release delivery boundaries', () => {
     const ios = read('ios/Tirak/Supporting/Expo.plist');
     expect(ios).toMatch(/<key>EXUpdatesEnabled<\/key>\s*<true\/>/);
     expect(ios).toContain(`<string>${url}</string>`);
-    expect(ios).toMatch(/<key>EXUpdatesRuntimeVersion<\/key>\s*<string>file:fingerprint<\/string>/);
+    expect(ios).toMatch(new RegExp(`<key>EXUpdatesRuntimeVersion<\\/key>\\s*<string>${config.version}<\\/string>`));
   });
 
   test.each(['development', 'preview', 'production'])('%s uses its own channel and environment with demo/payment gates off', (profile) => {

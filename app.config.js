@@ -12,6 +12,15 @@ module.exports = ({ config }) => {
     runtimeVersion: {
       policy: 'fingerprint',
     },
+    ios: {
+      ...config.ios,
+      // Keep iOS builds and OTA updates on a deterministic runtime. EAS mutates
+      // the native iOS project while preparing credentials, so a fingerprint of
+      // the bare ios directory can differ between the local upload and builder.
+      runtimeVersion: {
+        policy: 'appVersion',
+      },
+    },
     updates: {
       ...config.updates,
       url: `https://u.expo.dev/${projectId}`,

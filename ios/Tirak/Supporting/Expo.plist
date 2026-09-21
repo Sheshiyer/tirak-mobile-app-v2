@@ -8,8 +8,8 @@
     <true/>
     <key>EXUpdatesLaunchWaitMs</key>
     <integer>0</integer>
-    <key>EXUpdatesRuntimeVersion</key>
-    <string>file:fingerprint</string>
+	<key>EXUpdatesRuntimeVersion</key>
+	<string>1.5.1</string>
     <key>EXUpdatesURL</key>
     <string>https://u.expo.dev/ba0d6f3e-ed4c-4aaf-8cff-aa2fdb253cc5</string>
   </dict>
