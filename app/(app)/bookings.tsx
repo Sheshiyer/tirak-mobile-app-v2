@@ -25,7 +25,7 @@ import {
   useBookingsQuery, 
   useUpdateBookingStatus,
   BookingListItem,
-} from '@/app/api/booking/booking';
+} from '@/services/api/booking/booking';
 
 import {
   Calendar,

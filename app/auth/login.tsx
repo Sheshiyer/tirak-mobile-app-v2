@@ -14,26 +14,25 @@ import { useAuthStore } from '@/stores/auth-store';
 import { SimpleInput } from '@/components/ui/SimpleInput';
 import { useTranslation } from 'react-i18next';
 import { SoundManager } from '@/utils/sound-manager';
-import { usePostHog } from 'posthog-react-native';
 import {
   isReviewModeEnabled,
   REVIEW_ACCOUNT_LIST,
   type ReviewAccountKey,
 } from '@/constants/review-mode';
+import { isDemoModeEnabled } from '@/utils/demo-mode';
 
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
 export default function LoginScreen() {
   const { t } = useTranslation();
-  const posthog = usePostHog();
   const { demo } = useLocalSearchParams<{ demo?: string }>();
   const demoAccount = useMemo(() => {
-    if (!__DEV__) return undefined;
     const accounts: Record<string, { email: string }> = {
       customer: { email: 'test.customer.tirak@gmail.com' },
       companion: { email: 'test.companion.tirak@gmail.com' },
     };
-    return (demo === 'customer' || demo === 'companion') ? accounts[demo] : undefined;
+    const account = (demo === 'customer' || demo === 'companion') ? accounts[demo] : undefined;
+    return account && isDemoModeEnabled(account) ? account : undefined;
   }, [demo]);
   
   // Zod schema for login form validation
@@ -136,19 +135,10 @@ export default function LoginScreen() {
     if (validateForm()) {
       try {
         await login(formData.email, formData.password);
-        posthog.identify(formData.email, {
-          $set: { email: formData.email },
-          $set_once: { first_login_date: new Date().toISOString() },
-        });
-        posthog.capture('user_logged_in', { email: formData.email });
         SoundManager.play('loginSuccess');
         router.replace('/(app)');
       } catch (err) {
         logger.warn('Login failed:', err instanceof Error ? err.message : err);
-        posthog.capture('$exception', {
-          $exception_list: [{ type: (err as Error).name, value: (err as Error).message }],
-          $exception_source: 'login',
-        });
         // Don't navigate on error - stay on login screen to show error
       }
     }
@@ -169,7 +159,7 @@ export default function LoginScreen() {
       setReviewAccountLoading(account);
       await switchReviewAccount(account);
       SoundManager.play('loginSuccess');
-      router.replace('/profile');
+      router.replace('/(app)/profile');
     } catch (error) {
       logger.warn('Review account login failed:', error instanceof Error ? error.message : error);
     } finally {

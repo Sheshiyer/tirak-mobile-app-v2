@@ -28,7 +28,8 @@ import { ArrowLeft, Calendar, ChevronDown } from "lucide-react-native";
 import { UserRole } from "@/types/auth";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useAuthStore } from "@/stores/auth-store";
-import { usePostHog } from 'posthog-react-native';
+import { AccountConsentFields } from '@/components/AccountConsentFields';
+import { POLICY_VERSION } from '@/utils/account-consent';
 
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 import { useTranslation } from "react-i18next";
@@ -37,7 +38,6 @@ import { useTranslation } from "react-i18next";
 
 export default function RegisterScreen() {
   const { t } = useTranslation();
-  const posthog = usePostHog();
   const registerSchema = z
   .object({
   name: z
@@ -101,6 +101,10 @@ type FormErrors = {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showGenderPicker, setShowGenderPicker] = useState(false);
   const [showRolePicker, setShowRolePicker] = useState(false);
+  const [acceptedPolicies, setAcceptedPolicies] = useState(false);
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
+  const [analyticsOptIn, setAnalyticsOptIn] = useState(false);
+  const [consentError, setConsentError] = useState<string>();
 
   const animatedValue = useRef(new Animated.Value(0)).current;
 
@@ -245,7 +249,10 @@ type FormErrors = {
 
   const handleRegister = async () => {
     const result = registerSchema.safeParse(formData);
-    console.log('result', result);
+    if (!acceptedPolicies) {
+      setConsentError('Please read and accept the Terms of Service and Privacy Policy before creating your account.');
+      return;
+    }
     if (result.success) {
       let actualUserType: "customer" | "companion" | "supplier";
       if (roleParam === "companion") {
@@ -261,28 +268,12 @@ type FormErrors = {
           actualUserType,
           formData.contactNumber,
           formData.dateOfBirth,
-          formData.gender
+          formData.gender,
+          { policyAcceptance: { termsVersion: POLICY_VERSION, privacyVersion: POLICY_VERSION }, marketingOptIn, analyticsOptIn }
         );
-        posthog.identify(formData.email, {
-          $set: { name: formData.name, email: formData.email, user_type: actualUserType },
-          $set_once: { registration_date: new Date().toISOString() },
-        });
-        posthog.capture('user_registered', {
-          user_type: actualUserType,
-          has_contact_number: !!formData.contactNumber,
-          gender: formData.gender,
-        });
-        if (actualUserType === 'companion') {
-          router.replace('/supplier/profile/edit');
-        } else {
-          router.replace('/(app)/profile/edit');
-        }
+        router.replace('/auth/verify-email');
       } catch (err) {
         console.error('Registration error:', err);
-        posthog.capture('$exception', {
-          $exception_list: [{ type: (err as Error).name, value: (err as Error).message }],
-          $exception_source: 'register',
-        });
       }
     } else {
       const fieldErrors: FormErrors = {};
@@ -531,6 +522,15 @@ type FormErrors = {
               error={errors.confirmPassword}
             />
 
+            <AccountConsentFields
+              accepted={acceptedPolicies}
+              marketingOptIn={marketingOptIn}
+              analyticsOptIn={analyticsOptIn}
+              onAcceptedChange={(value) => { setAcceptedPolicies(value); setConsentError(undefined); }}
+              onMarketingChange={setMarketingOptIn}
+              onAnalyticsChange={setAnalyticsOptIn}
+              error={consentError}
+            />
             <Button
               title={t('register.createAccount')}
               onPress={handleRegister}

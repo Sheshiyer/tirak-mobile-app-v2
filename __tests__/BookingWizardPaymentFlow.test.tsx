@@ -101,7 +101,7 @@ jest.mock('@/components/booking/steps/PaymentSelectionStep', () => {
   };
 });
 jest.mock('@/components/booking/steps/BookingConfirmationStep', () => ({ BookingConfirmationStep: () => mockTextStep('CONFIRMATION_STEP') }));
-jest.mock('@/app/api/booking/booking', () => ({
+jest.mock('@/services/api/booking/booking', () => ({
   createBooking: jest.fn(),
   useCreateBooking: () => ({ mutateAsync: mockMutateAsync, isPending: false }),
 }));

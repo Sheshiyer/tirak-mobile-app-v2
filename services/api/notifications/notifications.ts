@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getAuthToken } from '../companion/companion';
 import { apiUrl } from '@/constants/api';
 import { secureStorage } from '@/utils/secure-storage';
+import { getDemoModeEnabled } from '@/utils/demo-mode';
 
 const notificationsUrl = (path = '') => apiUrl(`/api/notifications${path}`);
 const DEMO_BOOKINGS_STORAGE_KEY = 'tirak-demo-bookings';
@@ -122,6 +123,7 @@ const readStoredDemoBookings = async (): Promise<any[]> => {
 };
 
 const getLocalBookingNotifications = async (): Promise<Notification[]> => {
+    if (!(await getDemoModeEnabled())) return [];
     const [bookings, readIds] = await Promise.all([
         readStoredDemoBookings(),
         readLocalNotificationReadIds(),
@@ -234,7 +236,7 @@ export const getNotifications = async (params: { page?: number; limit?: number; 
         const response = await axios.get(notificationsUrl(), { params, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } });
         return mergeNotifications(response.data, localNotifications, params);
     } catch (error) {
-        if (isExpectedNotificationFallback(error)) {
+        if (isExpectedNotificationFallback(error) && await getDemoModeEnabled()) {
             logger.warn('Notifications backend unavailable; using empty notifications fallback', {
                 status: axios.isAxiosError(error) ? error.response?.status : undefined,
             });
@@ -253,11 +255,13 @@ export const getNotifications = async (params: { page?: number; limit?: number; 
 };
 
 export const markNotificationRead = async (id: string): Promise<{ success: boolean; message: string }> => {
-    await rememberLocalNotificationRead(id);
+    const demoEnabled = await getDemoModeEnabled();
+    if (demoEnabled) await rememberLocalNotificationRead(id);
 
     try {
         const token = await getAuthToken();
         if (!token || id.startsWith('local_booking_notification_')) {
+            if (!demoEnabled) throw new Error('Please sign in to update this notification.');
             return { success: true, message: 'Notification marked as read locally' };
         }
 
@@ -265,7 +269,7 @@ export const markNotificationRead = async (id: string): Promise<{ success: boole
         // logger.log("response", response.data); 
         return response.data;
     } catch (error) {
-        if (isExpectedNotificationFallback(error)) {
+        if (isExpectedNotificationFallback(error) && demoEnabled) {
             logger.warn('Notification read endpoint unavailable; marked notification locally', {
                 id,
                 status: axios.isAxiosError(error) ? error.response?.status : undefined,
@@ -283,6 +287,7 @@ export const markAllNotificationsRead = async (): Promise<{ success: boolean; me
 
         const token = await getAuthToken();
         if (!token) {
+            if (!(await getDemoModeEnabled())) throw new Error('Please sign in to update notifications.');
             return { success: true, message: 'Notifications marked as read locally' };
         }
 
@@ -290,7 +295,7 @@ export const markAllNotificationsRead = async (): Promise<{ success: boolean; me
         // logger.log("response", response.data);     
         return response.data;
     } catch (error) {
-        if (isExpectedNotificationFallback(error)) {
+        if (isExpectedNotificationFallback(error) && await getDemoModeEnabled()) {
             logger.warn('Notification read-all endpoint unavailable; marked notifications locally', {
                 status: axios.isAxiosError(error) ? error.response?.status : undefined,
             });

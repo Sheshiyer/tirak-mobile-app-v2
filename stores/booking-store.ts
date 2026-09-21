@@ -2,7 +2,7 @@ import { logger } from '@/utils/logger';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createBooking, CreateBookingRequest } from '../app/api/booking/booking';
+import { createBooking, CreateBookingRequest } from '../services/api/booking/booking';
 import { apiUrl } from '@/constants/api';
 import { convertCurrency } from '@/utils/currency';
 import axios from 'axios';
@@ -349,7 +349,7 @@ export const useBookingStore = create<BookingState & BookingActions>()(
             return true;
             
           case 5: // Summary (validation)
-            return !!bookingData.service && !!bookingData.dateTime && !!bookingData.location && !!bookingData.payment;
+            return !!bookingData.service && !!bookingData.dateTime && !!bookingData.location;
             
           case 6: // Payment
             if (!bookingData.payment) {

@@ -4,9 +4,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { secureStorage } from '@/utils/secure-storage';
 import { API_BASE_URL, apiUrl } from '@/constants/api';
 import { isLocalPromptPayEnabled } from '@/constants/payment-capabilities';
-import { isReviewModeEnabled, REVIEW_ACCOUNTS } from '@/constants/review-mode';
+import { isReviewAccountUser, isReviewModeEnabled, REVIEW_ACCOUNTS } from '@/constants/review-mode';
 import {
   reviewBookingToBooking,
+  reviewBookingToListItem,
   useReviewBookingFixtureStore,
 } from '@/stores/review-booking-fixture-store';
 import { isTestCompanionId } from '@/utils/companion-display';
@@ -17,6 +18,8 @@ import {
   showBookingCreatedNotification,
   syncBookingReminderNotifications,
 } from '@/utils/booking-notifications';
+import { BookingPaymentReadModel } from '@/types/payment';
+import { getDemoModeEnabled } from '@/utils/demo-mode';
 
 const DEMO_BOOKINGS_STORAGE_KEY = 'tirak-demo-bookings';
 
@@ -104,6 +107,7 @@ export interface Booking {
   currency?: string;
   paymentStatus: PaymentStatus;
   paymentMethod?: PaymentMethod;
+  payment?: BookingPaymentReadModel | null;
   timeline?: BookingTimelineItem[];
   createdAt: string;
   updatedAt: string;
@@ -441,7 +445,7 @@ export const createBooking = async (bookingData: CreateBookingRequest): Promise<
         },
       });
     } catch (error) {
-      if (axios.isAxiosError(error) && canUseLocalDemoBookingFallback(bookingData)) {
+      if (axios.isAxiosError(error) && canUseLocalDemoBookingFallback(bookingData) && await getDemoModeEnabled()) {
         logger.warn('[Booking] Live booking endpoint unavailable for explicit demo booking; using local review fallback.', {
           status: error.response?.status,
           serviceId: bookingData.serviceId,
@@ -746,6 +750,20 @@ const updateDemoBookingStatus = async (
 
 // Fetch bookings list
 export const fetchBookings = async (params: BookingsQueryParams = {}): Promise<BookingsListResponse> => {
+  if (isReviewModeEnabled() && isReviewAccountUser(useAuthStore.getState().user)) {
+    const booking = useReviewBookingFixtureStore.getState().booking;
+    const items = booking ? [reviewBookingToListItem(booking)] : [];
+    const filtered = params.status ? items.filter((item) => item.status === params.status) : items;
+    const page = params.page || 1;
+    const limit = params.limit || 20;
+    return {
+      success: true,
+      data: {
+        items: filtered.slice((page - 1) * limit, page * limit),
+        pagination: { page, limit, total: filtered.length, totalPages: Math.ceil(filtered.length / limit) },
+      },
+    };
+  }
   try {
     const token = await getAuthToken();
     
@@ -773,7 +791,7 @@ export const fetchBookings = async (params: BookingsQueryParams = {}): Promise<B
 
     logger.log("Bookings list response:", response.data);
 
-    if (__DEV__) {
+    if (await getDemoModeEnabled()) {
       const storedDemoBookings = await readStoredDemoBookings();
       if (storedDemoBookings.length > 0) {
         const storedItems = storedDemoBookings.map(toBookingListItem);
@@ -833,6 +851,7 @@ export const fetchBookings = async (params: BookingsQueryParams = {}): Promise<B
 export const fetchBookingById = async (id: string): Promise<BookingDetailsResponse> => {
   try {
     if (id.startsWith('demo_booking_')) {
+      if (!(await getDemoModeEnabled())) throw new Error('Demo bookings are not available.');
       return await getDemoBookingDetails(id);
     }
 
@@ -885,6 +904,7 @@ export const updateBookingStatus = async (
 ): Promise<UpdateBookingStatusResponse> => {
   try {
     if (isDemoBookingId(id)) {
+      if (!(await getDemoModeEnabled())) throw new Error('Demo bookings are not available.');
       const response = await updateDemoBookingStatus(id, statusData);
       await scheduleThreeHourBookingReminder(response.data.booking, 'companion');
       return response;
@@ -994,7 +1014,7 @@ export const useCreateBooking = () => {
           },
         });
       } catch (error) {
-        if (axios.isAxiosError(error) && canUseLocalDemoBookingFallback(bookingData)) {
+        if (axios.isAxiosError(error) && canUseLocalDemoBookingFallback(bookingData) && await getDemoModeEnabled()) {
           logger.warn('[Booking] Live booking endpoint unavailable for explicit demo booking; using local review fallback.', {
             status: error.response?.status,
             serviceId: bookingData.serviceId,

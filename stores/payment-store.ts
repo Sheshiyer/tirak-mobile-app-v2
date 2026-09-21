@@ -7,8 +7,8 @@ import {
   PaymentClientError,
   type PaymentErrorKind,
   type PromptPayCharge,
-} from '@/app/api/payment/payment';
-import type { PaymentStatus } from '@/app/api/booking/booking';
+} from '@/services/api/payment/payment';
+import type { PaymentStatus } from '@/services/api/booking/booking';
 import { secureStorage } from '@/utils/secure-storage';
 
 export type PaymentMethod = 'cash' | 'promptpay';

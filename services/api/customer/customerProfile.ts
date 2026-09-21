@@ -1,8 +1,9 @@
 import axios from 'axios';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { handleApiError, isUnauthorizedError } from '@/utils/api-errors';
+import { handleApiError } from '@/utils/api-errors';
 import { apiUrl } from '@/constants/api';
 import { logger } from '@/utils/logger';
+import { getDemoModeEnabled } from '@/utils/demo-mode';
 
 // Optionally import getAuthToken if you use auth
 import { getAuthToken } from '../companion/companion';
@@ -37,6 +38,10 @@ export interface CustomerProfileResponse {
   message?: string;
 }
 
+const isRemoteImageUrl = (value: unknown): value is string => {
+  return typeof value === 'string' && /^https?:\/\//i.test(value.trim());
+};
+
 // GET /users/profile
 export const fetchCustomerProfile = async (): Promise<CustomerProfileResponse> => {
   const token = await getAuthToken?.();
@@ -51,7 +56,7 @@ export const fetchCustomerProfile = async (): Promise<CustomerProfileResponse> =
   } catch (error) {
     handleApiError(error);
     const statusCode = axios.isAxiosError(error) ? error.response?.status : undefined;
-    if (__DEV__ || statusCode === 404 || isUnauthorizedError(error)) {
+    if (await getDemoModeEnabled()) {
       // Return demo data for unauthorized during review
       return {
         success: true,
@@ -89,37 +94,48 @@ export const useCustomerProfile = (options?: any) => {
 // PUT /users/profile
 export const updateCustomerProfile = async (payload: any): Promise<CustomerProfileResponse> => {
   const token = await getAuthToken?.();
-  let headers: any = {
+  const authHeaders: any = {
     ...(token && { 'Authorization': `Bearer ${token}` }),
   };
-  let dataToSend = payload;
-  let url = apiUrl('/api/users/profile');
-  let method = 'PUT';
-
-  if (!(payload instanceof FormData)) {
-    headers['Content-Type'] = 'application/json';
-    dataToSend = JSON.stringify(payload);
-  }
   try {
-    const response = await axios({
-      url,
-      method,
-      headers,
-      data: dataToSend,
-    });
-    if (!(payload instanceof FormData) && payload.profileImage) {
-      return {
-        ...response.data,
-        data: {
-          ...response.data?.data,
-          profileImage: payload.profileImage,
-        },
-      };
+    const { id, profileImage, ...profileUpdates } = payload;
+    let storedProfileImage = isRemoteImageUrl(profileImage) ? profileImage : undefined;
+
+    if (profileImage && !storedProfileImage) {
+      if (!id) throw new Error('A signed-in user is required to upload a profile photo.');
+      const formData = new FormData();
+      formData.append('file', {
+        uri: profileImage,
+        name: 'profile.jpg',
+        type: 'image/jpeg',
+      } as any);
+      const upload = await axios.post(apiUrl(`/api/users/${id}/avatar`), formData, {
+        headers: { ...authHeaders, 'Content-Type': 'multipart/form-data' },
+      });
+      storedProfileImage = upload.data?.data?.imageUrl;
+      if (!isRemoteImageUrl(storedProfileImage)) {
+        throw new Error('The server did not return a public profile image URL.');
+      }
     }
-    return response.data;
+
+    const updatePayload = {
+      ...profileUpdates,
+      ...(storedProfileImage ? { profileImage: storedProfileImage } : {}),
+    };
+    const response = await axios.put(apiUrl('/api/users/profile'), updatePayload, {
+      headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    });
+    return {
+      ...response.data,
+      data: {
+        ...profileUpdates,
+        ...response.data?.data,
+        ...(storedProfileImage ? { profileImage: storedProfileImage } : {}),
+      },
+    };
   } catch (error) {
     const statusCode = axios.isAxiosError(error) ? error.response?.status : undefined;
-    if (__DEV__ || statusCode === 404 || isUnauthorizedError(error)) {
+    if (await getDemoModeEnabled()) {
       logger.warn('Customer profile update backend unavailable; using local profile fallback', {
         status: statusCode,
       });

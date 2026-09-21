@@ -29,6 +29,7 @@ jest.mock('@/utils/secure-storage', () => ({
 
 jest.mock('@/utils/posthog', () => ({
   posthog: { capture: jest.fn(), reset: jest.fn() },
+  applyAnalyticsConsent: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock('@/stores/supplier-store', () => ({
@@ -49,14 +50,14 @@ jest.mock('@/utils/logger', () => ({
 
 const mockCreatePromptPayCharge = jest.fn();
 
-jest.mock('@/app/api/payment/payment', () => ({
+jest.mock('@/services/api/payment/payment', () => ({
   createPromptPayCharge: (...args: unknown[]) => mockCreatePromptPayCharge(...args),
   PaymentClientError: class PaymentClientError extends Error {
     kind = 'unknown';
   },
 }));
 
-jest.mock('@/app/api/booking/booking', () => ({ createBooking: jest.fn() }));
+jest.mock('@/services/api/booking/booking', () => ({ createBooking: jest.fn() }));
 jest.mock('@/constants/api', () => ({ apiUrl: (route: string) => route }));
 jest.mock('@/utils/currency', () => ({ convertCurrency: (amount: number) => amount }));
 
@@ -64,6 +65,7 @@ import { usePaymentStore } from '@/stores/payment-store';
 import { useBookingStore } from '@/stores/booking-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { DeviceEventEmitter } from 'react-native';
+import { applyAnalyticsConsent } from '@/utils/posthog';
 
 const pendingCharge = {
   contractVersion: 'tirak-payments-v1' as const,
@@ -166,6 +168,16 @@ describe('payment session isolation', () => {
     expect(mockSecureDeleteItem).toHaveBeenCalledWith('authToken');
     expect(mockSecureDeleteItem).toHaveBeenCalledWith('refreshToken');
     expect(mockSecureDeleteItem).toHaveBeenCalledWith('userCredentials');
+  });
+
+  test('auth invalidation also clears the previous account consent and verification state', async () => {
+    useAuthStore.setState({
+      consents: { marketingOptIn: true, analyticsOptIn: true, termsVersion: '2026-09-19', privacyVersion: '2026-09-19' },
+      emailVerification: { deliveryStatus: 'sent', retryAfterSeconds: 60, retryAt: Date.now() + 60000 },
+    });
+    await useAuthStore.getState().invalidateAuth();
+    expect(useAuthStore.getState()).toMatchObject({ consents: null, emailVerification: null, isAuthenticated: false });
+    expect(applyAnalyticsConsent).toHaveBeenCalledWith();
   });
 
   test('corrupt credentials invalidate auth and remove persisted payment state', async () => {

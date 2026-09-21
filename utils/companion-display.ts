@@ -12,6 +12,11 @@ const normalizeText = (value: unknown): string => {
   return typeof value === 'string' ? value.trim() : '';
 };
 
+export const isRemoteImageUrl = (value: unknown): value is string => {
+  const normalized = normalizeText(value);
+  return /^https?:\/\//i.test(normalized);
+};
+
 export const isTestCompanionId = (id: unknown): boolean => {
   return normalizeText(id) === TEST_COMPANION_ID;
 };
@@ -21,6 +26,12 @@ export const isTestCompanion = (companion: any): boolean => {
   const displayName = getCompanionDisplayName(companion).toLowerCase();
 
   return isTestCompanionId(companion?.id) || email === TEST_COMPANION_EMAIL || displayName === 'test companion';
+};
+
+/** Only explicit fixtures are hidden; ordinary vendor accounts are never guessed. */
+export const isDemoCompanion = (companion: any): boolean => {
+  const id = normalizeText(companion?.id);
+  return isTestCompanion(companion) || ['companion_001', 'companion_002', 'demo_companion_001'].includes(id);
 };
 
 export const getCompanionDisplayName = (companion: any): string => {
@@ -37,7 +48,7 @@ export const getCompanionLocation = (companion: any): string => {
   return normalizeText(companion?.location) || normalizeText(regions[0]) || 'Thailand';
 };
 
-export const getCompanionServices = (companion: any): string[] => {
+export const getCompanionServices = (companion: any, allowDemoData = false): string[] => {
   if (Array.isArray(companion?.services) && companion.services.length > 0) {
     return companion.services;
   }
@@ -50,33 +61,33 @@ export const getCompanionServices = (companion: any): string[] => {
     return companion.categories;
   }
 
-  if (isTestCompanion(companion)) {
+  if (allowDemoData && isTestCompanion(companion)) {
     return ['Temple walks', 'Market tasting'];
   }
 
   return ['Local experiences'];
 };
 
-export const getCompanionImage = (companion: any): string => {
+export const getCompanionImage = (companion: any, allowDemoData = false): string => {
   const profileImage = normalizeText(companion?.profileImage);
-  if (profileImage) return profileImage;
+  if (isRemoteImageUrl(profileImage)) return profileImage;
 
   const gallery = Array.isArray(companion?.gallery) ? companion.gallery : [];
-  const galleryImage = gallery.find((image: unknown) => normalizeText(image));
+  const galleryImage = gallery.find(isRemoteImageUrl);
   if (galleryImage) return normalizeText(galleryImage);
 
-  if (isTestCompanion(companion)) {
+  if (allowDemoData && isTestCompanion(companion)) {
     return FALLBACK_GUIDE_IMAGES[0];
   }
 
   return '';
 };
 
-export const getCompanionGallery = (companion: any): string[] => {
+export const getCompanionGallery = (companion: any, allowDemoData = false): string[] => {
   const gallery = Array.isArray(companion?.gallery)
-    ? companion.gallery.filter((image: unknown) => normalizeText(image))
+    ? companion.gallery.filter(isRemoteImageUrl)
     : [];
 
-  const displayImage = getCompanionImage(companion);
+  const displayImage = getCompanionImage(companion, allowDemoData);
   return gallery.length > 0 ? gallery : displayImage ? [displayImage] : [];
 };

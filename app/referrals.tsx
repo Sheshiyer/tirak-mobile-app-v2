@@ -14,7 +14,7 @@ import { router } from 'expo-router';
 import { ArrowLeft, Coins, Gift, Share2 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { designTokens } from '@/constants/design-tokens';
-import { useApplyReferralCode, useReferralAccount } from '@/app/api/referrals/referrals';
+import { useApplyReferralCode, useReferralAccount } from '@/services/api/referrals/referrals';
 
 export default function ReferralsScreen() {
   const { data, isLoading, error } = useReferralAccount();

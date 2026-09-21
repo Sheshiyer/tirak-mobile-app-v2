@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 import { REVIEW_ACCOUNTS, isReviewModeEnabled, type ReviewAccountKey } from '@/constants/review-mode';
-import type { Booking, BookingListItem, CreateBookingRequest } from '@/app/api/booking/booking';
+import type { Booking, BookingListItem, CreateBookingRequest } from '@/services/api/booking/booking';
 
 export const REVIEW_BOOKING_ID = 'review_booking_bangkok_001' as const;
 

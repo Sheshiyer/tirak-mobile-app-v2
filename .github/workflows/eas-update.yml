@@ -63,11 +63,14 @@ jobs:
 
       - name: Publish update
         env:
+          EXPO_PUBLIC_DEMO_MODE: "false"
+          EAS_ENVIRONMENT: ${{ inputs.channel == 'preview' && 'preview' || 'production' }}
           EXPO_PUBLIC_PROMPTPAY_ENABLED: "false"
           EXPO_PUBLIC_REVIEW_MODE: ${{ inputs.channel == 'review' && 'true' || 'false' }}
         run: |
           release_note="${UPDATE_NOTE:-Manual OTA update} | ${GITHUB_REF_NAME}@${GITHUB_SHA}"
           eas update \
             --channel "${{ inputs.channel }}" \
+            --environment "$EAS_ENVIRONMENT" \
             --message "$release_note" \
             --non-interactive

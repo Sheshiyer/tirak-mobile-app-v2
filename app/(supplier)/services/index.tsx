@@ -16,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { designTokens, componentTokens } from '@/constants/design-tokens';
 import { ArrowLeft, Save, Plus, X, Edit, Edit2 } from 'lucide-react-native';
-import { useExperiences, useCreateExperience, ExperienceCreateRequest, Experience, updateExperience } from '@/app/api/companion/experience';
+import { useExperiences, useCreateExperience, ExperienceCreateRequest, Experience, updateExperience } from '@/services/api/companion/experience';
 import { useAuthStore } from '@/stores/auth-store';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '@/stores/toast-store';

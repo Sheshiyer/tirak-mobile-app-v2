@@ -12,7 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import { router } from 'expo-router';
-import { useCustomerProfile, useUpdateCustomerProfile } from '../../api/customer/customerProfile';
+import { useCustomerProfile, useUpdateCustomerProfile } from '@/services/api/customer/customerProfile';
 
 import { RadialGradient } from '@/components/ui/RadialGradient';
 import { ProfileImage } from '@/components/ui/ProfileImage';
@@ -53,7 +53,7 @@ export default function ProfileEditScreen() {
     dateOfBirth: user?.dateOfBirth || '',
   });
   const [profileImage, setProfileImage] = useState<string>(
-    user?.profileImage || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1000&auto=format&fit=crop'
+    user?.profileImage || ''
   );
   const hasLocalProfileImageChange = React.useRef(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -78,6 +78,7 @@ export default function ProfileEditScreen() {
   const handleSave = () => {
     const nextProfile = {
       ...formData,
+      id: user?.id,
       profileImage,
     } as any;
 
@@ -86,7 +87,7 @@ export default function ProfileEditScreen() {
       {
         onSuccess: (response: any) => {
           const updatedProfile = response?.data || nextProfile;
-          const savedProfileImage = nextProfile.profileImage || updatedProfile.profileImage;
+          const savedProfileImage = updatedProfile.profileImage || nextProfile.profileImage;
           updateUser({
             name: updatedProfile.name || nextProfile.name,
             phone: updatedProfile.phone || nextProfile.phone,
@@ -126,14 +127,6 @@ export default function ProfileEditScreen() {
     if (!uri) return;
     hasLocalProfileImageChange.current = true;
     setProfileImage(uri);
-    updateUser({ profileImage: uri });
-    queryClient.setQueryData(['customerProfile'], (current: any) => ({
-      success: true,
-      data: {
-        ...(current?.data || (data as any)?.data || {}),
-        profileImage: uri,
-      },
-    }));
   };
 
   const pickFromGallery = async () => {

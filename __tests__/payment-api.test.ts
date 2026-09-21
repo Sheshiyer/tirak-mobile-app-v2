@@ -25,7 +25,7 @@ import {
   createPromptPayCharge,
   PaymentClientError,
   type PromptPayCharge,
-} from '@/app/api/payment/payment';
+} from '@/services/api/payment/payment';
 
 const contractPath = [
   path.resolve(__dirname, '../contracts/tirak-payments-v1/payment-api.json'),

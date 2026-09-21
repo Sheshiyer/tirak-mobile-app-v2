@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 interface Companion {
   id: string;
   name: string;
-  age: number;
+  age?: number;
   location: string;
   rating: number;
   reviews: number;

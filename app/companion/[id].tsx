@@ -28,15 +28,16 @@ import {
   getCompanionLocation,
   isTestCompanion,
 } from '@/utils/companion-display';
-import { buildPreviewAvailability, getDemoGuideAvailability } from '@/utils/preview-availability';
+import { getDemoGuideAvailability } from '@/utils/preview-availability';
 import { usePostHog } from 'posthog-react-native';
+import { isDemoModeEnabled } from '@/utils/demo-mode';
 
 // Import new API functions
 import { 
   useCompanionQuery, 
   useCompanionWeeklyAvailability,
   CompanionDetails 
-} from '@/app/api/companion/companion';
+} from '@/services/api/companion/companion';
 
 import { 
   ArrowLeft, 
@@ -72,8 +73,8 @@ const ShimmerBox = ({ width: w, height: h, style }: { width: number | string; he
 );
 
 // Helper to map API response to UI structure
-function mapCompanionDetails(data: any) {
-  const isTestProfile = isTestCompanion(data);
+function mapCompanionDetails(data: any, allowDemoData = false) {
+  const isTestProfile = allowDemoData && isTestCompanion(data);
   const demoExperiences = [
     {
       id: 'test-market-temple-walk',
@@ -114,8 +115,8 @@ function mapCompanionDetails(data: any) {
     email: data.email,
     name: getCompanionDisplayName(data),
     displayName: getCompanionDisplayName(data),
-    profileImage: getCompanionImage(data),
-    gallery: getCompanionGallery(data),
+    profileImage: getCompanionImage(data, allowDemoData),
+    gallery: getCompanionGallery(data, allowDemoData),
     location: getCompanionLocation(data),
     rating: data.rating?.average ?? data.rating ?? (isTestProfile ? 5 : 0),
     reviewCount: data.rating?.count ?? data.reviewCount ?? (isTestProfile ? demoReviews.length : 0),
@@ -171,7 +172,7 @@ export default function CompanionProfileScreen() {
   
   // API calls
   const { data: companionData, isLoading: isLoadingCompanion, error: companionError } = useCompanionQuery(id as string);
-  const { data: availabilityData, isLoading: isLoadingAvailability } = useCompanionWeeklyAvailability(id as string, '00:00', '23:59');
+  const { data: availabilityData, isLoading: isLoadingAvailability, error: availabilityError } = useCompanionWeeklyAvailability(id as string, '00:00', '23:59');
   
   // Currency conversion — called before early returns (React hook rules)
   const companionCurrency = companionData?.data?.currency || companionData?.data?.experiences?.[0]?.currency || 'THB';
@@ -223,8 +224,8 @@ export default function CompanionProfileScreen() {
     );
   }
   
-  const companion = mapCompanionDetails(companionData.data);
-  const isTestProfile = isTestCompanion(companion);
+  const companion = mapCompanionDetails(companionData.data, isDemoModeEnabled(user));
+  const isTestProfile = isDemoModeEnabled(user) && isTestCompanion(companion);
   const isOwnProfile =
     user?.id === companion.id ||
     (typeof user?.email === 'string' &&
@@ -388,7 +389,7 @@ export default function CompanionProfileScreen() {
   
   const testProfileDates = getDemoGuideAvailability();
 
-  // Transform availability data or use deterministic preview data when not available.
+  // Only show dates supplied by the backend, or explicitly enabled review data.
   const availableDates = isTestProfile
     ? testProfileDates
     : availabilityData?.success && availabilityData.data.availability && availabilityData.data.availability.length > 0
@@ -398,7 +399,7 @@ export default function CompanionProfileScreen() {
         weekday: new Date(day.date).toLocaleDateString('en', { weekday: 'short' }),
         available: day.available,
       }))
-      : buildPreviewAvailability(14, i => i % 4 !== 0);
+      : [];
   
   const renderDateItem = (item: any, index: number) => (
     <TouchableOpacity
@@ -815,6 +816,10 @@ export default function CompanionProfileScreen() {
                 <ShimmerBox key={i} width={60} height={80} style={{ borderRadius: 12 }} />
               ))}
             </View>
+          ) : availableDates.length === 0 ? (
+            <Text style={styles.availabilitySubtitle as TextStyle}>
+              {availabilityError ? 'Availability could not be loaded. Please try again later.' : 'This guide has not published available dates yet.'}
+            </Text>
           ) : (
             <ScrollView
               horizontal

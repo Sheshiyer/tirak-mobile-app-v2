@@ -4,7 +4,7 @@ import * as Notifications from 'expo-notifications';
 import { apiUrl } from '@/constants/api';
 import { secureStorage } from '@/utils/secure-storage';
 import { logger } from '@/utils/logger';
-import type { Booking, BookingListItem } from '@/app/api/booking/booking';
+import type { Booking, BookingListItem } from '@/services/api/booking/booking';
 import type { User } from '@/types/auth';
 
 const SCHEDULED_BOOKING_NOTIFICATIONS_KEY = 'tirak-scheduled-booking-notifications';

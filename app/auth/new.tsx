@@ -1,4 +1,3 @@
-import { logger } from '@/utils/logger';
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Image, Animated, Easing } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,7 +12,7 @@ import { ArrowLeft } from 'lucide-react-native';
 import { useAuthStore } from '@/stores/auth-store';
 import { SimpleInput } from '@/components/ui/SimpleInput';
 import { useTranslation } from 'react-i18next';
-import { resetPassword, PasswordResetError } from '@/app/api/auth/password-reset';
+import { resetPassword, PasswordResetError } from '@/services/api/auth/password-reset';
 
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
@@ -22,7 +21,6 @@ export default function NewPasswordScreen() {
   
   // Get token from URL parameters
   const { token } = useLocalSearchParams();
-  logger.log("token", token)
   
   // Zod schema for new password form validation
   const newPasswordSchema = z.object({
@@ -146,7 +144,6 @@ export default function NewPasswordScreen() {
           }, 2000);
         }
       } catch (err) {
-        console.error('Password reset error:', err);
         const resetError = err as PasswordResetError;
         setError(resetError.message || t('login.passwordResetError'));
       } finally {

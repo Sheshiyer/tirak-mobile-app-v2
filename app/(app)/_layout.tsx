@@ -20,7 +20,7 @@ import { ProfileImage } from "@/components/ui/ProfileImage";
 import { RadialGradient } from "@/components/ui/RadialGradient";
 import { AnimatedTabBar } from "@/components/ui/AnimatedTabBar";
 import { LinearGradient } from "expo-linear-gradient";
-import { useNotifications } from "@/app/api/notifications/notifications";
+import { useNotifications } from "@/services/api/notifications/notifications";
 import { useTranslation } from 'react-i18next';
 import { SoundManager } from '@/utils/sound-manager';
 import { registerForBookingPushNotifications } from '@/utils/booking-notifications';
@@ -402,7 +402,13 @@ export default function AppLayout() {
 
               <View style={styles.divider} />
 
-              
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => navigateTo('/(app)/profile')}
+              >
+                <Icons.User size={22} color={designTokens.colors.semantic.surface} />
+                <Text style={styles.menuItemText}>{t('customHeader.profile')}</Text>
+              </TouchableOpacity>
 
               <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
                 <Icons.LogOut
@@ -515,6 +521,7 @@ export default function AppLayout() {
 
       {/* Custom Animated Tab Bar */}
       <AnimatedTabBar
+        key={isCompanion ? 'guide' : 'traveler'}
         activeIndex={activeTabIndex}
         onTabPress={handleTabPress}
         tabs={currentTabRoutes}

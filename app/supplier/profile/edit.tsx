@@ -39,7 +39,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Heading, Subheading, Body, Caption } from '@/components/ui/Typography';
 import { designTokens, componentTokens } from '@/constants/design-tokens';
-import { useCompanionProfile, useCreateOrUpdateCompanionProfile, CompanionProfile, CompanionProfileRequest, CompanionProfileResponse } from '@/app/api/companion/profile';
+import { useCompanionProfile, useCreateOrUpdateCompanionProfile, CompanionProfile, CompanionProfileRequest, CompanionProfileResponse } from '@/services/api/companion/profile';
 import { useAuthStore } from '@/stores/auth-store';
 import { useQueryClient } from '@tanstack/react-query';
 import * as ExpoImagePicker from 'expo-image-picker';
@@ -143,7 +143,7 @@ export default function ProfileEditScreen() {
       setProfile({
         ...mappedProfile,
         profilePhoto: user?.profileImage || mappedProfile.profilePhoto,
-        displayName: mappedProfile.displayName || user?.name || 'Test Companion',
+        displayName: mappedProfile.displayName || user?.name || 'Local Guide',
       });
     }
   }, [profileData, user?.profileImage, user?.name]);
@@ -238,7 +238,6 @@ export default function ProfileEditScreen() {
     } else {
       hasLocalProfilePhotoChange.current = true;
       setProfilePhotoUri(uri);
-      updateUser({ profileImage: uri });
     }
 
     queryClient.setQueryData(['companionProfile'], (current: any) => ({
@@ -430,8 +429,6 @@ export default function ProfileEditScreen() {
       return;
     }
     // Prepare payload for API
-    const savedProfilePhoto = profilePhotoUri || profile.profilePhoto;
-    const savedCoverPhoto = coverPhotoUri || profile.coverPhoto;
     const payload: any = {
       first_name: profile.firstName,
       last_name: profile.lastName,
@@ -443,11 +440,10 @@ export default function ProfileEditScreen() {
       languages: profile.languages,
       specialization: profile.specialization,
       certifications: profile.certifications,
-      profile_photo: savedProfilePhoto,
-      cover_photo: savedCoverPhoto,
+      profile_photo: profilePhotoUri ? undefined : profile.profilePhoto || undefined,
+      cover_photo: coverPhotoUri ? undefined : profile.coverPhoto || undefined,
     };
     if (profile.dateOfBirth) payload.dateOfBirth = profile.dateOfBirth;
-    logger.log('payload:', payload);
     try {
       if (coverPhotoUri || profilePhotoUri) {
         // Use multipart/form-data
@@ -482,11 +478,17 @@ export default function ProfileEditScreen() {
         
         const response = await createOrUpdateProfile.mutateAsync(formData);
         const updatedProfile = mapProfileFromApi(response.data);
+        if (profilePhotoUri && !updatedProfile.profilePhoto) {
+          throw new Error('The profile photo uploaded, but the server did not return a public image URL.');
+        }
+        if (coverPhotoUri && !updatedProfile.coverPhoto) {
+          throw new Error('The cover photo uploaded, but the server did not return a public image URL.');
+        }
         const mergedProfile = {
           ...profile,
           ...updatedProfile,
-          profilePhoto: savedProfilePhoto || updatedProfile.profilePhoto,
-          coverPhoto: savedCoverPhoto || updatedProfile.coverPhoto,
+          profilePhoto: updatedProfile.profilePhoto || profile.profilePhoto,
+          coverPhoto: updatedProfile.coverPhoto || profile.coverPhoto,
         } as CompanionProfile;
         setProfile(mergedProfile);
         queryClient.setQueryData(['companionProfile'], {
@@ -520,8 +522,8 @@ export default function ProfileEditScreen() {
         const mergedProfile = {
           ...profile,
           ...updatedProfile,
-          profilePhoto: savedProfilePhoto || updatedProfile.profilePhoto,
-          coverPhoto: savedCoverPhoto || updatedProfile.coverPhoto,
+          profilePhoto: updatedProfile.profilePhoto || profile.profilePhoto,
+          coverPhoto: updatedProfile.coverPhoto || profile.coverPhoto,
         } as CompanionProfile;
         setProfile(mergedProfile);
         queryClient.setQueryData(['companionProfile'], {

@@ -8,8 +8,11 @@ import { designTokens } from '@/constants/design-tokens';
 import { Heart, Search, Filter, Grid3X3, List } from 'lucide-react-native';
 import { FavoriteCompanion, useFavoritesStore } from '@/stores/favorites-store';
 import { useQueries } from '@tanstack/react-query';
-import { fetchCompanionById } from '@/app/api/companion/companion';
+import { fetchCompanionById } from '@/services/api/companion/companion';
 import { useTranslation } from 'react-i18next';
+import { useAuthStore } from '@/stores/auth-store';
+import { isDemoModeEnabled } from '@/utils/demo-mode';
+import { isDemoCompanion } from '@/utils/companion-display';
 
 export default function FavoritesScreen() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -17,10 +20,12 @@ export default function FavoritesScreen() {
   const favoriteIds = useFavoritesStore((s) => s.favorites);
   const favoriteCompanions = useFavoritesStore((s) => s.favoriteCompanions);
   const { t } = useTranslation();
+  const user = useAuthStore(state => state.user);
+  const demoEnabled = isDemoModeEnabled(user);
   // Use useQueries to fetch all favorite companions by ID
   const favoriteQueries = useQueries({
     queries: favoriteIds.map((id) => ({
-      queryKey: ['companion', id],
+      queryKey: ['companion', id, user?.id || 'public', demoEnabled],
       queryFn: () => fetchCompanionById(id),
       enabled: !!id,
     })),
@@ -65,6 +70,7 @@ export default function FavoritesScreen() {
       return savedCompanion ? normalizeFavorite(savedCompanion) : null;
     })
     .filter((companion): companion is NonNullable<typeof companion> => Boolean(companion))
+    .filter(companion => demoEnabled || !isDemoCompanion(companion))
     .filter((companion) => {
       const query = searchQuery.trim().toLowerCase();
       if (!query) return true;
