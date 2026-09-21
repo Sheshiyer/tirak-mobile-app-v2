@@ -17,9 +17,8 @@ module.exports = ({ config }) => {
       // Keep iOS builds and OTA updates on a deterministic runtime. EAS mutates
       // the native iOS project while preparing credentials, so a fingerprint of
       // the bare ios directory can differ between the local upload and builder.
-      runtimeVersion: {
-        policy: 'appVersion',
-      },
+      // Bare projects require an explicit value instead of a policy object.
+      runtimeVersion: config.version,
     },
     updates: {
       ...config.updates,

@@ -13,7 +13,7 @@ describe('release delivery boundaries', () => {
     const url = `https://u.expo.dev/${config.extra.eas.projectId}`;
     expect(resolved.updates.url).toBe(url);
     expect(resolved.runtimeVersion).toEqual({ policy: 'fingerprint' });
-    expect(resolved.ios.runtimeVersion).toEqual({ policy: 'appVersion' });
+    expect(resolved.ios.runtimeVersion).toBe(config.version);
     const android = read('android/app/src/main/AndroidManifest.xml');
     expect(android).toContain('android:name="expo.modules.updates.ENABLED" android:value="true"');
     expect(android).toContain(`android:name="expo.modules.updates.EXPO_UPDATE_URL" android:value="${url}"`);
