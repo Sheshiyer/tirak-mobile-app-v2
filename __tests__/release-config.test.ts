@@ -26,6 +26,14 @@ describe('release delivery boundaries', () => {
     expect(ios).toMatch(new RegExp(`<key>EXUpdatesRuntimeVersion<\\/key>\\s*<string>${config.version}<\\/string>`));
   });
 
+  test('the native repair release has a new aligned app and iOS runtime version', () => {
+    expect(config.version).toBe('1.5.2');
+    expect(JSON.parse(read('package.json')).version).toBe(config.version);
+    expect(read('ios/Tirak/Info.plist')).toMatch(new RegExp(`<key>CFBundleShortVersionString<\\/key>\\s*<string>${config.version}<\\/string>`));
+    expect(read('ios/Tirak.xcodeproj/project.pbxproj')).toContain(`MARKETING_VERSION = ${config.version};`);
+    expect(read('android/app/build.gradle')).toContain(`versionName "${config.version}"`);
+  });
+
   test.each(['development', 'preview', 'production'])('%s uses its own channel and environment with demo/payment gates off', (profile) => {
     expect(eas.build[profile]).toMatchObject({
       channel: profile,
