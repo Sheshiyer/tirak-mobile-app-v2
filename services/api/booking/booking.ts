@@ -1049,6 +1049,8 @@ export const useCreateBooking = () => {
       // Invalidate and refetch bookings list
       queryClient.invalidateQueries({ queryKey: ['bookings'] });
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['supplierStats'] });
+      queryClient.invalidateQueries({ queryKey: ['companionAvailability'] });
     },
     onError: (error: Error) => {
       console.error("❌ Mutation failed:", {
@@ -1113,6 +1115,8 @@ export const useUpdateBookingStatus = () => {
       // Invalidate and refetch specific booking details
       queryClient.invalidateQueries({ queryKey: ['booking', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['supplierStats'] });
+      queryClient.invalidateQueries({ queryKey: ['companionAvailability'] });
       logger.log("Booking status updated successfully:", data.data.booking.status);
     },
     onError: (error: Error) => {

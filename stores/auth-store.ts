@@ -1,3 +1,4 @@
+import { unregisterBookingPushNotifications } from '@/utils/push-registration';
 import { logger } from '@/utils/logger';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
@@ -108,6 +109,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       },
 
       invalidateAuth: async () => {
+        await unregisterBookingPushNotifications();
         set({
           user: null,
           isAuthenticated: false,
@@ -141,6 +143,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           });
 
           if (response.success && response.data && response.data.user) {
+            await unregisterBookingPushNotifications();
             // Store tokens in secure storage
             await secureStorage.setItemAsync("authToken", response.data.accessToken);
             await secureStorage.setItemAsync("refreshToken", response.data.refreshToken);
@@ -198,6 +201,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           const response = await registerAPI(registrationData);
 
           if (response.success && response.token && response.user?.id) {
+            await unregisterBookingPushNotifications();
             // Store tokens if available
             if (response.token) {
               await secureStorage.setItemAsync("authToken", response.token);
@@ -361,6 +365,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             createdAt: new Date().toISOString(),
           };
 
+          await unregisterBookingPushNotifications();
           if (get().user?.id !== demoUser.id) usePaymentStore.getState().resetPayment();
           await secureStorage.deleteItemAsync('authToken');
           await secureStorage.deleteItemAsync('refreshToken');
@@ -398,6 +403,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           const reviewAccount = getReviewAccount(accountKey);
           const reviewUser = { ...reviewAccount.user };
 
+          await unregisterBookingPushNotifications();
           await clearAccountScopedState();
           await Promise.all([
             secureStorage.deleteItemAsync('authToken'),

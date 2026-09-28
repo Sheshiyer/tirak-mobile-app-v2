@@ -38,6 +38,7 @@ export default function SupplierLayout() {
           headerShown: false,
         }}
       />
+      <Stack.Screen name="availability/settings" options={{ headerShown: false }} />
       <Stack.Screen
         name="availability/add-slot"
         options={{

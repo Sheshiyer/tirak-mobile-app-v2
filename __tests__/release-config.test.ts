@@ -60,3 +60,14 @@ describe('release delivery boundaries', () => {
     }
   });
 });
+
+
+describe('tracked iOS push capability', () => {
+  test('native target entitlements select development versus distribution APNs', () => {
+    expect(read('ios/Tirak/Tirak.entitlements')).toContain('<key>aps-environment</key>');
+    expect(read('ios/Tirak/Tirak.entitlements')).toContain('<string>$(APS_ENVIRONMENT)</string>');
+    const project = read('ios/Tirak.xcodeproj/project.pbxproj');
+    expect(project).toMatch(/CODE_SIGN_ENTITLEMENTS = Tirak\/Tirak.entitlements;\s*APS_ENVIRONMENT = development;/);
+    expect(project).toMatch(/CODE_SIGN_ENTITLEMENTS = Tirak\/Tirak.entitlements;\s*APS_ENVIRONMENT = production;/);
+  });
+});

@@ -11,16 +11,17 @@ import {
   KeyboardAvoidingView,
   Platform,
   Modal,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { designTokens, componentTokens } from '@/constants/design-tokens';
 import { ArrowLeft, Save, Plus, X, Edit, Edit2 } from 'lucide-react-native';
-import { useExperiences, useCreateExperience, ExperienceCreateRequest, Experience, updateExperience } from '@/services/api/companion/experience';
+import { useExperiences, useCreateExperience, ExperienceCreateRequest, Experience, updateExperience, archiveExperience, invalidateExperienceQueries, readExperienceDrafts } from '@/services/api/companion/experience';
 import { useAuthStore } from '@/stores/auth-store';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '@/stores/toast-store';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 type NewExperienceForm = Omit<ExperienceCreateRequest, 'durationMinutes'> & { durationMinutes: string };
 
@@ -36,6 +37,12 @@ export default function EditServices() {
   // Fetch experiences
   const { data, isLoading, error, refetch } = useExperiences(companionId || '');
   const experiences: Experience[] = data?.data?.items || [];
+  const drafts = useQuery({ queryKey: ['experienceDrafts', companionId], queryFn: () => readExperienceDrafts(companionId!), enabled: !!companionId });
+  const [archiveTarget, setArchiveTarget] = useState<Experience | null>(null);
+  const archiveMutation = useMutation({
+    mutationFn: (experienceId: string) => archiveExperience(companionId!, experienceId),
+    onSuccess: async () => { await invalidateExperienceQueries(queryClient, companionId!); setArchiveTarget(null); },
+  });
 
   // Add experience mutation
   const createExperience = useCreateExperience(companionId || '');
@@ -57,8 +64,7 @@ export default function EditServices() {
     mutationFn: ({ experienceId, payload }: { experienceId: string; payload: ExperienceCreateRequest }) =>
       updateExperience(companionId || '', experienceId, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['experiences', companionId] });
-      queryClient.invalidateQueries({ queryKey: ['supplierStats'] });
+      void invalidateExperienceQueries(queryClient, companionId!);
       setEditingExperience(null);
       if (Platform.OS === 'web') {
         toast.success(t('editServices.experienceUpdated'));
@@ -137,15 +143,15 @@ export default function EditServices() {
       return;
     }
     const durationMinutes = parseInt(newExperience.durationMinutes);
-    if (durationMinutes < 30) {
-      setFormErrors({ duration: t('editServices.durationMinimum30') });
+    if (!Number.isInteger(Number(newExperience.durationMinutes)) || durationMinutes < 30 || durationMinutes > 1439) {
+      setFormErrors({ duration: t('editServices.durationRange') });
       return;
     }
-    if (!newExperience.currency || newExperience.currency.trim().length < 2) {
+    if (newExperience.keywords.length > 20 || newExperience.currency !== 'THB') {
       if (Platform.OS === 'web') {
-        toast.error(t('editServices.currencyRequired'));
+        toast.error(t('editServices.currencyAndKeywords'));
       } else {
-        Alert.alert(t('editServices.error'), t('editServices.currencyRequired'));
+        Alert.alert(t('editServices.error'), t('editServices.currencyAndKeywords'));
       }
       return;
     }
@@ -188,7 +194,7 @@ export default function EditServices() {
       durationMinutes: String(exp.durationMinutes),
       keywords: exp.keywords || [],
       price: exp.price,
-      currency: exp.currency,
+      currency: 'THB',
       is_active: exp.isActive,
     });
     setEditFormErrors({});
@@ -229,11 +235,15 @@ export default function EditServices() {
       return;
     }
     const durationMinutes = parseInt(editForm.durationMinutes);
-    if (durationMinutes < 30) {
-      setEditFormErrors({ duration: t('editServices.durationMinimum30') });
+    if (!Number.isInteger(Number(editForm.durationMinutes)) || durationMinutes < 30 || durationMinutes > 1439) {
+      setEditFormErrors({ duration: t('editServices.durationRange') });
       return;
     }
 
+    if (editForm.keywords.length > 20 || editForm.currency !== 'THB') {
+      toast.error(t('editServices.currencyAndKeywords'));
+      return;
+    }
     updateExperienceMutation.mutate({
       experienceId: editingExperience.id,
       payload: {
@@ -319,12 +329,15 @@ export default function EditServices() {
               experiences.map((exp: Experience) => (
                 <View key={exp.id} style={styles.serviceCard}>
                   <View style={styles.serviceHeader}>
-                    <Text style={styles.serviceTitle}>{exp.title}</Text>
-                    <TouchableOpacity onPress={() => handleEditClick(exp)}>
+                    <Text style={styles.serviceTitle}>{exp.title}{!exp.isActive ? ` (${t('editServices.inactive')})` : ''}</Text>
+                    <TouchableOpacity accessibilityLabel={t('editServices.editExperience')} onPress={() => handleEditClick(exp)}>
                       <Edit2 size={16} color={designTokens.colors.semantic.primary} />
                     </TouchableOpacity>
                   </View>
                   <Text style={styles.serviceDescription}>{exp.description}</Text>
+                  <TouchableOpacity accessibilityRole="button" onPress={() => { archiveMutation.reset(); setArchiveTarget(exp); }}>
+                    <Text style={styles.fieldErrorText}>{t('editServices.removeFromProfile')}</Text>
+                  </TouchableOpacity>
                   <View style={styles.serviceDetails}>
                     <Text style={styles.servicePrice}>฿{exp.price}</Text>
                     <Text style={styles.serviceDuration}>{Math.round(exp.durationMinutes / 60)}h</Text>
@@ -337,6 +350,10 @@ export default function EditServices() {
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('editServices.addNewExperience')}</Text>
+            {drafts.data && drafts.data.length > 0 && <Text style={styles.serviceDescription}>{t('editServices.localDraftsPreserved', { count: drafts.data.length })}</Text>}
+            {drafts.data?.map(draft => <TouchableOpacity key={draft.id} onPress={() => setNewExperience({ title: draft.title, description: draft.description, durationMinutes: String(draft.durationMinutes), price: draft.price, currency: 'THB', keywords: draft.keywords, is_active: true })}>
+              <Text style={styles.serviceDescription}>{t('editServices.restoreDraft')}: {draft.title}</Text>
+            </TouchableOpacity>)}
             <View style={styles.addServiceCard}>
               <TextInput
                 style={styles.input}
@@ -396,8 +413,8 @@ export default function EditServices() {
               <TextInput
                 style={styles.input}
                 placeholder={t('editServices.currency') + ' (e.g. THB)'}
-                value={newExperience.currency}
-                onChangeText={(text) => setNewExperience({ ...newExperience, currency: text })}
+                value="THB"
+                editable={false}
                 placeholderTextColor={designTokens.colors.components.input.placeholder}
               />
               <TouchableOpacity
@@ -419,6 +436,22 @@ export default function EditServices() {
         </ScrollView>
       </KeyboardAvoidingView>
 
+      <Modal visible={!!archiveTarget} transparent animationType="fade" onRequestClose={() => !archiveMutation.isPending && setArchiveTarget(null)}>
+        <View style={styles.modalOverlay}><View style={styles.modalContent}>
+          <View style={styles.modalBody}>
+            <Text style={styles.modalTitle}>{t('editServices.removeFromProfile')}</Text>
+            <Text style={styles.serviceDescription}>{archiveTarget?.title}</Text>
+            <Text style={styles.serviceDescription}>{t('editServices.archiveExplanation')}</Text>
+            {archiveMutation.isError && <Text accessibilityRole="alert" style={styles.errorText}>{t('editServices.archiveFailed')}</Text>}
+          </View>
+          <View style={styles.modalFooter}>
+            <TouchableOpacity style={styles.modalButton} disabled={archiveMutation.isPending} onPress={() => setArchiveTarget(null)}><Text>{t('common.cancel')}</Text></TouchableOpacity>
+            <TouchableOpacity style={styles.modalButton} disabled={archiveMutation.isPending} onPress={() => archiveTarget && archiveMutation.mutate(archiveTarget.id)}>
+              {archiveMutation.isPending ? <ActivityIndicator /> : <Text>{t('editServices.confirmRemove')}</Text>}
+            </TouchableOpacity>
+          </View>
+        </View></View>
+      </Modal>
       {/* Edit Experience Modal */}
       <Modal
         visible={!!editingExperience}
@@ -440,6 +473,7 @@ export default function EditServices() {
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.modalScrollContent}
             >
+              <View style={styles.serviceDetails}><Text>{t('editServices.acceptNewBookings')}</Text><Switch value={editForm.is_active} onValueChange={is_active => setEditForm({ ...editForm, is_active })} /></View>
               <TextInput
                 style={styles.input}
                 placeholder={t('editServices.experienceTitle')}
@@ -498,8 +532,8 @@ export default function EditServices() {
               <TextInput
                 style={styles.input}
                 placeholder={t('editServices.currency') + ' (e.g. THB)'}
-                value={editForm.currency}
-                onChangeText={(text) => setEditForm({ ...editForm, currency: text })}
+                value="THB"
+                editable={false}
                 placeholderTextColor={designTokens.colors.components.input.placeholder}
               />
             </ScrollView>

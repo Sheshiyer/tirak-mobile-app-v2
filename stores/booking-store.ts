@@ -1,3 +1,4 @@
+import { bookingDurationMinutes } from '@/utils/booking-schedule';
 import { logger } from '@/utils/logger';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
@@ -427,9 +428,9 @@ export const useBookingStore = create<BookingState & BookingActions>()(
           // }
 
           // Ensure minimum duration of 30 minutes
-          const durationInMinutes = bookingData.dateTime.duration * 60; // Convert hours to minutes
-          if (durationInMinutes < 30) {
-            throw new Error('Booking duration must be at least 30 minutes');
+          const durationInMinutes = bookingDurationMinutes(bookingData.dateTime.duration);
+          if (durationInMinutes !== bookingDurationMinutes(bookingData.service.duration)) {
+            throw new Error('Please select a time for the current experience duration');
           }
 
           // Prepare booking request data
@@ -505,9 +506,9 @@ export const useBookingStore = create<BookingState & BookingActions>()(
           // }
 
           // Ensure minimum duration of 30 minutes
-          const durationInMinutes = bookingData.dateTime.duration * 60; // Convert hours to minutes
-          if (durationInMinutes < 30) {
-            throw new Error('Booking duration must be at least 30 minutes');
+          const durationInMinutes = bookingDurationMinutes(bookingData.dateTime.duration);
+          if (durationInMinutes !== bookingDurationMinutes(bookingData.service.duration)) {
+            throw new Error('Please select a time for the current experience duration');
           }
 
           // Prepare booking request data
