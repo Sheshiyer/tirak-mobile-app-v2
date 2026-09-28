@@ -73,9 +73,12 @@ describe('release delivery boundaries', () => {
 describe('tracked iOS push capability', () => {
   test('native target entitlements select development versus distribution APNs', () => {
     expect(read('ios/Tirak/Tirak.entitlements')).toContain('<key>aps-environment</key>');
-    expect(read('ios/Tirak/Tirak.entitlements')).toContain('<string>$(APS_ENVIRONMENT)</string>');
+    expect(read('ios/Tirak/Tirak.entitlements')).toContain('<string>production</string>');
+    expect(read('ios/Tirak/Tirak.Debug.entitlements')).toContain('<string>development</string>');
+    expect(read('ios/Tirak/Tirak.entitlements')).not.toContain('$(');
+    expect(read('ios/Tirak/Tirak.Debug.entitlements')).not.toContain('$(');
     const project = read('ios/Tirak.xcodeproj/project.pbxproj');
-    expect(project).toMatch(/CODE_SIGN_ENTITLEMENTS = Tirak\/Tirak.entitlements;\s*APS_ENVIRONMENT = development;/);
-    expect(project).toMatch(/CODE_SIGN_ENTITLEMENTS = Tirak\/Tirak.entitlements;\s*APS_ENVIRONMENT = production;/);
+    expect(project).toContain('CODE_SIGN_ENTITLEMENTS = Tirak/Tirak.Debug.entitlements;');
+    expect(project).toContain('CODE_SIGN_ENTITLEMENTS = Tirak/Tirak.entitlements;');
   });
 });
