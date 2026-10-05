@@ -48,4 +48,3 @@ Use the existing App Store test accounts selected by the owner: Guide `test.comp
 - Payments, demo mode and review-mode shortcuts are disabled in both QA build profiles. Review fixture public hiding and booking history safeguards remain enforced.
 - No new build was necessary: the previously queued repair builds finished and are the verified native deliverables. No public App Store release was performed.
 - Detailed receipt: [native delivery evidence](native-delivery-20261005.json).
-
