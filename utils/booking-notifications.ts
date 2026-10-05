@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
-import { apiUrl } from '@/constants/api';
+import { registerBookingPushToken, unregisterBookingPushNotifications, getPushSessionGeneration } from '@/utils/push-registration';
 import { secureStorage } from '@/utils/secure-storage';
 import { logger } from '@/utils/logger';
 import type { Booking, BookingListItem } from '@/services/api/booking/booking';
@@ -58,6 +58,7 @@ const getExperienceName = (booking: BookingLike): string =>
 
 export const registerForBookingPushNotifications = async (user?: User | null): Promise<string | null> => {
   if (!user || Platform.OS === 'web') return null;
+  const generation = getPushSessionGeneration();
 
   try {
     initializeNotificationHandler();
@@ -71,6 +72,7 @@ export const registerForBookingPushNotifications = async (user?: User | null): P
     }
 
     if (finalStatus !== 'granted') {
+      await unregisterBookingPushNotifications();
       logger.warn('[Notifications] Push permission not granted');
       return null;
     }
@@ -79,6 +81,7 @@ export const registerForBookingPushNotifications = async (user?: User | null): P
       Constants.expoConfig?.extra?.eas?.projectId ||
       Constants.easConfig?.projectId;
 
+    if (!projectId) { logger.warn('[Notifications] Missing project configuration'); return null; }
     let pushToken: string | null = null;
     try {
       const tokenResponse = await Notifications.getExpoPushTokenAsync(
@@ -86,7 +89,7 @@ export const registerForBookingPushNotifications = async (user?: User | null): P
       );
       pushToken = tokenResponse.data;
     } catch (tokenError) {
-      logger.warn('[Notifications] Failed to get Expo push token (native module may not be available):', tokenError);
+      logger.warn('[Notifications] Failed to get Expo push token (check native capability and permissions)');
       return null;
     }
 
@@ -94,29 +97,12 @@ export const registerForBookingPushNotifications = async (user?: User | null): P
       return null;
     }
 
-    const authToken = await secureStorage.getItemAsync('authToken');
-
-    if (authToken) {
-      await fetch(apiUrl('/api/notifications/push-token'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({
-          token: pushToken,
-          deviceType: Platform.OS,
-          deviceInfo: {
-            appVersion: Constants.expoConfig?.version,
-            platform: Platform.OS,
-          },
-        }),
-      });
-    }
+    const registered = await registerBookingPushToken(user.id, pushToken, Platform.OS, Constants.expoConfig?.version, generation);
+    if (!registered) return null;
 
     return pushToken;
   } catch (error) {
-    logger.warn('[Notifications] Failed to register push token:', error);
+    logger.warn('[Notifications] Failed to register push notifications');
     return null;
   }
 };

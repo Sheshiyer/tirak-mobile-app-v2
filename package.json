@@ -1,7 +1,7 @@
 {
   "name": "tirak",
   "main": "expo-router/entry",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "Tirak connects travellers with trusted local guides in Thailand for authentic cultural experiences, booking, chat, and guide-led discovery.",
   "keywords": [
     "tirak",
@@ -24,6 +24,7 @@
     "start": "expo start",
     "start-web": "expo start --web --tunnel",
     "start-web-dev": "DEBUG=expo* expo start --web --tunnel",
+    "eas-build-post-install": "node ./eas-hooks/core-qa-prebuild.js",
     "build:web": "expo export --platform web && bun run copy:pwa",
     "build:pwa": "expo export --platform web && bun run copy:pwa",
     "copy:pwa": "cp -r public/* dist/ 2>/dev/null || cp -r public/* .output/ 2>/dev/null || true",

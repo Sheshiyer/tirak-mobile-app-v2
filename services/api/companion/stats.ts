@@ -28,38 +28,38 @@ export interface SupplierStatsResponse {
       totalBookings: number;
       completedBookings: number;
       cancelledBookings: number;
-      totalEarnings: number;
-      thisMonthEarnings: number;
-      lastMonthEarnings: number;
-      profileViews: number;
-      responseRate: number;
-      responseTime: number;
-      averageRating: number;
+      totalEarnings: number | null;
+      thisMonthEarnings: number | null;
+      lastMonthEarnings: number | null;
+      profileViews: number | null;
+      responseRate: number | null;
+      responseTime: number | null;
+      averageRating: number | null;
       totalReviews: number;
       profileCompletion: number;
       monthlyStats: {
         month: string;
         bookings: number;
-        earnings: number;
-        rating: number;
+        earnings: number | null;
+        rating: number | null;
       }[];
       weeklyStats: {
         week: string;
         bookings: number;
-        earnings: number;
-        rating: number;
+        earnings: number | null;
+        rating: number | null;
       }[];
       quarterStats: {
         quarter: string;
         bookings: number;
-        earnings: number;
-        rating: number;
+        earnings: number | null;
+        rating: number | null;
       }[];
       servicePerformance: {
         name: string;
         bookings: number;
-        rating: number;
-        earnings: number;
+        rating: number | null;
+        earnings: number | null;
       }[];
     };
   };
@@ -67,13 +67,13 @@ export interface SupplierStatsResponse {
 }
 
 const buildMonthlyStats = (bookings: BookingListItem[]) => {
-  const buckets = new Map<string, { month: string; bookings: number; earnings: number; rating: number }>();
+  const buckets = new Map<string, { month: string; bookings: number; earnings: number | null; rating: number }>();
   bookings.forEach((booking) => {
     const date = new Date(booking.date);
     const month = date.toLocaleDateString('en', { month: 'short' });
     const current = buckets.get(month) || { month, bookings: 0, earnings: 0, rating: 0 };
     current.bookings += 1;
-    current.earnings += booking.totalAmount || 0;
+    current.earnings = (current.earnings ?? 0) + (booking.totalAmount || 0);
     current.rating = booking.customer?.rating || current.rating || 0;
     buckets.set(month, current);
   });
@@ -81,12 +81,12 @@ const buildMonthlyStats = (bookings: BookingListItem[]) => {
 };
 
 const buildServicePerformance = (bookings: BookingListItem[]) => {
-  const buckets = new Map<string, { name: string; bookings: number; rating: number; earnings: number }>();
+  const buckets = new Map<string, { name: string; bookings: number; rating: number | null; earnings: number }>();
   bookings.forEach((booking) => {
     const name = booking.service?.name || 'Local Experience';
     const current = buckets.get(name) || { name, bookings: 0, rating: 0, earnings: 0 };
     current.bookings += 1;
-    current.earnings += booking.totalAmount || 0;
+    current.earnings = (current.earnings ?? 0) + (booking.totalAmount || 0);
     current.rating = booking.customer?.rating || current.rating || 0;
     buckets.set(name, current);
   });
@@ -268,6 +268,7 @@ export const fetchSupplierStats = async (): Promise<SupplierStatsResponse> => {
         ...(token && { 'Authorization': `Bearer ${token}` }),
       },
     });
+    if (response.data?.success !== true || !response.data?.data?.data) throw new Error('Invalid statistics response');
     return response.data;
   } catch (error: any) {
     // Return demo data for 404s (backend not set up) or in dev mode - handle FIRST before logging
@@ -283,8 +284,10 @@ export const fetchSupplierStats = async (): Promise<SupplierStatsResponse> => {
 };
 
 export const useSupplierStats = () => {
+  const user = useAuthStore(state => state.user);
   return useQuery({
-    queryKey: ['supplierStats'],
+    enabled: !!user?.id,
+    queryKey: ['supplierStats', user?.id],
     queryFn: fetchSupplierStats,
   });
 };

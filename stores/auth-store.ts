@@ -1,3 +1,4 @@
+import { unregisterBookingPushNotifications } from '@/utils/push-registration';
 import { logger } from '@/utils/logger';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
@@ -7,6 +8,7 @@ import { User, UserRole } from '@/types/auth';
 import { secureStorage } from '@/utils/secure-storage';
 import { usePaymentStore } from '@/stores/payment-store';
 import { useBookingStore } from '@/stores/booking-store';
+import { useSupplierStore } from '@/stores/supplier-store';
 import { API_BASE_URL } from '@/constants/api';
 import { isLocalPromptPayEnabled } from '@/constants/payment-capabilities';
 import {
@@ -58,6 +60,8 @@ async function clearAccountScopedState(): Promise<void> {
   await usePaymentStore.getState().clearPaymentSession();
   useBookingStore.getState().resetBooking();
   await useBookingStore.persist.clearStorage();
+  if (typeof useSupplierStore.getState().clearSupplierState === "function") { useSupplierStore.getState().clearSupplierState(); } else if (typeof useSupplierStore.getState().resetSignupData === "function") { useSupplierStore.getState().resetSignupData(); }
+  await useSupplierStore.persist?.clearStorage?.();
 }
 
 export const useAuthStore = create<AuthState & AuthActions>()(
@@ -108,6 +112,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       },
 
       invalidateAuth: async () => {
+        await unregisterBookingPushNotifications();
         set({
           user: null,
           isAuthenticated: false,
@@ -122,6 +127,14 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         await Promise.allSettled([
           cleanup(() => applyAnalyticsConsent()),
           cleanup(() => usePaymentStore.getState().clearPaymentSession()),
+          cleanup(async () => {
+            useBookingStore.getState().resetBooking();
+            await useBookingStore.persist?.clearStorage?.();
+          }),
+          cleanup(async () => {
+            if (typeof useSupplierStore.getState().clearSupplierState === "function") { useSupplierStore.getState().clearSupplierState(); } else if (typeof useSupplierStore.getState().resetSignupData === "function") { useSupplierStore.getState().resetSignupData(); }
+            await useSupplierStore.persist?.clearStorage?.();
+          }),
           cleanup(() => secureStorage.deleteItemAsync('authToken')),
           cleanup(() => secureStorage.deleteItemAsync('refreshToken')),
           cleanup(() => secureStorage.deleteItemAsync('userCredentials')),
@@ -141,6 +154,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           });
 
           if (response.success && response.data && response.data.user) {
+            await unregisterBookingPushNotifications();
             // Store tokens in secure storage
             await secureStorage.setItemAsync("authToken", response.data.accessToken);
             await secureStorage.setItemAsync("refreshToken", response.data.refreshToken);
@@ -156,7 +170,10 @@ export const useAuthStore = create<AuthState & AuthActions>()(
               createdAt: new Date().toISOString(),
             };
 
-            if (get().user?.id !== user.id) usePaymentStore.getState().resetPayment();
+            if (get().user?.id !== user.id) {
+              await clearAccountScopedState();
+              usePaymentStore.getState().resetPayment();
+            }
 
             // Store user credentials for token validation
             await secureStorage.setItemAsync("userCredentials", JSON.stringify(user));
@@ -198,6 +215,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           const response = await registerAPI(registrationData);
 
           if (response.success && response.token && response.user?.id) {
+            await unregisterBookingPushNotifications();
             // Store tokens if available
             if (response.token) {
               await secureStorage.setItemAsync("authToken", response.token);
@@ -219,7 +237,10 @@ export const useAuthStore = create<AuthState & AuthActions>()(
               createdAt: new Date().toISOString(),
             };
 
-            if (get().user?.id !== user.id) usePaymentStore.getState().resetPayment();
+            if (get().user?.id !== user.id) {
+              await clearAccountScopedState();
+              usePaymentStore.getState().resetPayment();
+            }
 
             // Store user credentials for token validation
             await secureStorage.setItemAsync("userCredentials", JSON.stringify(user));
@@ -257,15 +278,9 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           const { useBookingStore } = await import('./booking-store');
           useBookingStore.getState().resetBooking();
           
-          // Import and reset supplier store if user was a supplier
-          const { useSupplierStore } = await import('./supplier-store');
-          const supplierStore = useSupplierStore.getState();
-          if (supplierStore.isSupplier) {
-            supplierStore.setIsSupplier(false);
-            supplierStore.setProfile(null);
-            supplierStore.setStats(null);
-            supplierStore.resetSignupData();
-          }
+          // Reset supplier store unconditionally (independent of isSupplier)
+          if (typeof useSupplierStore.getState().clearSupplierState === "function") { useSupplierStore.getState().clearSupplierState(); } else if (typeof useSupplierStore.getState().resetSignupData === "function") { useSupplierStore.getState().resetSignupData(); }
+          await useSupplierStore.persist?.clearStorage?.();
           
           // Clear AsyncStorage of all persisted data
           // CRITICAL: Clear AsyncStorage BEFORE any navigation to prevent re-authentication
@@ -274,7 +289,10 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             await AsyncStorage.multiRemove([
               'tirak-auth-storage',
               'tirak-booking-storage',
+              'supplier-storage',
               'tirak-supplier-storage',
+              'tirak-local-availability',
+              'tirak-local-experiences',
             ]);
             logger.log('[Logout] AsyncStorage cleared via multiRemove');
           } catch (storageError) {
@@ -295,7 +313,10 @@ export const useAuthStore = create<AuthState & AuthActions>()(
               window.localStorage.removeItem('userCredentials');
               window.localStorage.removeItem('tirak-auth-storage');
               window.localStorage.removeItem('tirak-booking-storage');
+              window.localStorage.removeItem('supplier-storage');
               window.localStorage.removeItem('tirak-supplier-storage');
+              window.localStorage.removeItem('tirak-local-availability');
+              window.localStorage.removeItem('tirak-local-experiences');
               window.localStorage.removeItem('tirak-payment-session');
               logger.log('[Logout] localStorage cleared directly');
             } catch (localStorageError) {
@@ -361,6 +382,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             createdAt: new Date().toISOString(),
           };
 
+          await unregisterBookingPushNotifications();
           if (get().user?.id !== demoUser.id) usePaymentStore.getState().resetPayment();
           await secureStorage.deleteItemAsync('authToken');
           await secureStorage.deleteItemAsync('refreshToken');
@@ -398,6 +420,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           const reviewAccount = getReviewAccount(accountKey);
           const reviewUser = { ...reviewAccount.user };
 
+          await unregisterBookingPushNotifications();
           await clearAccountScopedState();
           await Promise.all([
             secureStorage.deleteItemAsync('authToken'),

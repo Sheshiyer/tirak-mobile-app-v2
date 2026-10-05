@@ -1,0 +1,54 @@
+{
+  "checkedOn": "2026-10-05",
+  "android": {
+    "apkSignatureV2Verified": true,
+    "signedContentDigestVerified": true,
+    "signingCertificateSHA256": "d6f5ba8805191d0d26d7b826cb1d3b38b666c1a6c2b65c34f564b4c6464b2f9f",
+    "sha256": "38cb989ce5520374bb07a034e16ca2335a86f9634cfe0d81e3278c61f5825086",
+    "bytes": 102019526,
+    "package": "com.tirak.pineapple",
+    "version": "1.5.2",
+    "versionCode": 8,
+    "minimumAndroidApi": 24,
+    "targetAndroidApi": 35,
+    "debuggable": false,
+    "buildId": "ea8145c5-3e54-44a3-b153-4a618c8dc429",
+    "sourceCommit": "ce31291676543c955ec24eaea7e19c7496064342"
+  },
+  "ios": {
+    "version": "1.5.2",
+    "buildNumber": "18",
+    "buildId": "2bb8a2b2-a325-4414-975a-24a782e6add2",
+    "sourceCommit": "58e97dfed00e0fcb38e2cbcea0313b771e36dee3",
+    "submissionId": "a7e69160-b580-43a9-a115-0eac7b8b0d9a",
+    "submissionStatus": "FINISHED",
+    "ascAppId": "6748445775",
+    "appleProcessingAndTesterAssignment": "not independently observed",
+    "pushSigningReceipt": "ios-1.5.2-18-artifact.json"
+  },
+  "mobileChecks": {
+    "typecheck": "passed",
+    "suites": 34,
+    "tests": 379
+  },
+  "liveChecks": [
+    {
+      "path": "/health",
+      "status": 200
+    },
+    {
+      "path": "/api/suppliers/stats",
+      "status": 401
+    },
+    {
+      "path": "/api/companions/34b53bda-1908-49d4-8950-373c39a5eeed",
+      "status": 404
+    },
+    {
+      "path": "/auth/new",
+      "status": 200
+    }
+  ],
+  "liveWorkerVersion": "ec46c7ab-b96a-4ba2-a907-53849c0f50dc",
+  "deviceAcceptance": "pending"
+}

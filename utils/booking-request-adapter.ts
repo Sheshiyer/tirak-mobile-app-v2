@@ -40,7 +40,7 @@ export const bookingToRequest = (booking: BookingLike): BookingRequest => {
   const requestedDate = booking.date.split('T')[0];
   const createdAt = booking.createdAt || new Date().toISOString();
   const expiresAt = new Date(new Date(createdAt).getTime() + 24 * 60 * 60 * 1000).toISOString();
-  const durationHours = Math.max(1, Math.round((booking.duration || 60) / 60));
+  const durationHours = (booking.duration || 60) / 60;
   const serviceFee = 'serviceFee' in booking ? booking.serviceFee || 0 : 0;
 
   return {

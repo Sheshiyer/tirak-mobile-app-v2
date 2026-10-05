@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { RadialGradient } from '@/components/ui/RadialGradient';
@@ -9,10 +9,25 @@ import { LottiePlayer } from '@/components/ui/LottiePlayer';
 import { SoundManager } from '@/utils/sound-manager';
 import { designTokens } from '@/constants/design-tokens';
 import { Calendar, MessageCircle, Home } from 'lucide-react-native';
+import { useBookingStore } from '@/stores/booking-store';
+import { usePaymentStore, deriveBookingPaymentPhase } from '@/stores/payment-store';
+import { formatBookingDate, formatBookingTime, formatBookingTotal } from '@/components/booking/booking-format';
+import { useTranslation } from 'react-i18next';
 
 export default function BookingConfirmationScreen() {
-  useEffect(() => {
-    // Staggered 2-beat success celebration
+  const { bookingData } = useBookingStore();
+  const { booking, selectedMethod, phase, errorKind } = usePaymentStore();
+  const { t, i18n } = useTranslation();
+  const language = i18n?.resolvedLanguage || i18n?.language || 'en';
+
+  // Real receipt data from payment store, or honest fallback
+  const bookingId = booking?.id ?? null;
+  const hasReceipt = bookingId !== null;
+
+  React.useEffect(() => {
+    if (!hasReceipt) {
+      return;
+    }
     if (Platform.OS !== 'web') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setTimeout(() => {
@@ -20,81 +35,130 @@ export default function BookingConfirmationScreen() {
       }, 300);
     }
     SoundManager.play('bookingSuccess');
-  }, []);
+  }, [hasReceipt]);
 
   const handleViewBooking = () => router.push('/bookings');
   const handleMessageCompanion = () => router.push('/messages');
   const handleBackToHome = () => router.push('/(app)');
 
+  const companionName = bookingData.companionData?.name ?? null;
+  const bookingDate = bookingData.dateTime?.date ?? null;
+  const bookingTime = bookingData.dateTime?.time ?? null;
+  const duration = bookingData.service?.duration ?? null;
+  const location = bookingData.location?.area ?? null;
+  const totalAmount = bookingData.bookingQuote?.totalAmount ?? null;
+  const currency = bookingData.bookingQuote?.currency ?? booking?.currency ?? 'THB';
+  const effectiveMethod = selectedMethod || bookingData.payment?.method || null;
+
+  const bookingPhase = booking ? deriveBookingPaymentPhase(booking.paymentStatus) : 'idle';
+  const effectivePhase = phase === 'idle' && bookingPhase !== 'idle' ? bookingPhase : phase;
+
+  let paymentLabel: string;
+  if (!hasReceipt) {
+    paymentLabel = t('bookingConfirmation.noReceipt', 'No payment receipt available');
+  } else if (effectivePhase === 'paid') {
+    paymentLabel = effectiveMethod === 'promptpay'
+      ? t('bookingConfirmation.paidPromptPay', 'Paid via PromptPay')
+      : t('bookingConfirmation.paidCash', 'Pay cash directly to your guide');
+  } else if (effectivePhase === 'pending' || effectivePhase === 'creating') {
+    paymentLabel = t('bookingConfirmation.paymentPending', 'Payment pending');
+  } else if (effectivePhase === 'failed' || effectivePhase === 'expired') {
+    paymentLabel = t('bookingConfirmation.paymentFailed', 'Payment was not completed');
+  } else {
+    paymentLabel = t('bookingConfirmation.paymentUnavailable', 'Payment status unavailable');
+  }
+
   return (
     <RadialGradient variant="primary" style={styles.container}>
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.successIcon}>
-          <LottiePlayer
-            name="bookingSuccess"
-            autoPlay
-            loop={false}
-            style={{ width: 120, height: 120 }}
-          />
-        </View>
-        
-        <Text style={styles.title}>Guide Request Sent</Text>
+        {hasReceipt ? (
+          <View style={styles.successIcon}>
+            <LottiePlayer
+              name="bookingSuccess"
+              autoPlay
+              loop={false}
+              style={{ width: 120, height: 120 }}
+            />
+          </View>
+        ) : null}
+
+        <Text style={styles.title}>{hasReceipt ? 'Guide Request Sent' : 'No booking available'}</Text>
         <Text style={styles.subtitle}>
-          Your Tirak guide has the details. Keep chat open for meeting-point updates.
+          {hasReceipt
+            ? 'Your Tirak guide has the details. Keep chat open for meeting-point updates.'
+            : 'We could not confirm a booking receipt for this request. Check your bookings before trying again.'}
         </Text>
-        
+
         <Card style={styles.bookingCard} padding={20}>
-          <Text style={styles.bookingTitle}>Request Details</Text>
-          
+          <Text style={styles.bookingTitle}>{hasReceipt ? 'Request Details' : 'No booking available'}</Text>
+
           <View style={styles.bookingDetail}>
             <Text style={styles.detailLabel}>Booking ID</Text>
-            <Text style={styles.detailValue}>TRK-12345678</Text>
+            <Text style={styles.detailValue}>
+              {bookingId ?? '—'}
+            </Text>
           </View>
-          
+
           <View style={styles.bookingDetail}>
             <Text style={styles.detailLabel}>Local Guide</Text>
-            <Text style={styles.detailValue}>Nisa Thanakit</Text>
+            <Text style={styles.detailValue}>
+              {companionName ?? '—'}
+            </Text>
           </View>
-          
+
           <View style={styles.bookingDetail}>
             <Text style={styles.detailLabel}>Date</Text>
-            <Text style={styles.detailValue}>Monday, June 15, 2024</Text>
+            <Text style={styles.detailValue}>
+              {bookingDate ? formatBookingDate(bookingDate, language) : '—'}
+            </Text>
           </View>
-          
+
           <View style={styles.bookingDetail}>
             <Text style={styles.detailLabel}>Time</Text>
-            <Text style={styles.detailValue}>09:00 AM</Text>
+            <Text style={styles.detailValue}>
+              {bookingTime ? formatBookingTime(bookingTime) : '—'}
+            </Text>
           </View>
-          
-          <View style={styles.bookingDetail}>
-            <Text style={styles.detailLabel}>Duration</Text>
-            <Text style={styles.detailValue}>Full Day (8 hours)</Text>
-          </View>
-          
-          <View style={styles.bookingDetail}>
-            <Text style={styles.detailLabel}>Location</Text>
-            <Text style={styles.detailValue}>Bangkok</Text>
-          </View>
-          
+
+          {duration != null && (
+            <View style={styles.bookingDetail}>
+              <Text style={styles.detailLabel}>Duration</Text>
+              <Text style={styles.detailValue}>
+                {duration >= 60 ? `${Math.floor(duration / 60)} hour${duration >= 120 ? 's' : ''}` : `${duration} min`}
+              </Text>
+            </View>
+          )}
+
+          {location && (
+            <View style={styles.bookingDetail}>
+              <Text style={styles.detailLabel}>Location</Text>
+              <Text style={styles.detailValue}>{location}</Text>
+            </View>
+          )}
+
           <View style={styles.divider} />
-          
-          <View style={styles.bookingDetail}>
-            <Text style={styles.detailLabel}>Guide Rate</Text>
-            <Text style={styles.totalValue}>฿2,750</Text>
-          </View>
-          
+
+          {totalAmount != null && (
+            <View style={styles.bookingDetail}>
+              <Text style={styles.detailLabel}>Guide Rate</Text>
+              <Text style={styles.totalValue}>
+                {formatBookingTotal(totalAmount, currency)}
+              </Text>
+            </View>
+          )}
+
           <View style={styles.bookingDetail}>
             <Text style={styles.detailLabel}>Payment</Text>
-            <Text style={styles.detailValue}>Paid in cash directly to the guide</Text>
+            <Text style={styles.detailValue}>{paymentLabel}</Text>
           </View>
         </Card>
-        
+
         <Card style={styles.nextStepsCard} padding={20}>
           <Text style={styles.nextStepsTitle}>Next steps</Text>
-          
+
           <View style={styles.stepItem}>
             <View style={styles.stepIcon}>
               <Calendar size={24} color={designTokens.colors.semantic.primary} />
@@ -106,7 +170,7 @@ export default function BookingConfirmationScreen() {
               </Text>
             </View>
           </View>
-          
+
           <View style={styles.stepItem}>
             <View style={styles.stepIcon}>
               <MessageCircle size={24} color={designTokens.colors.semantic.primary} />
@@ -119,7 +183,7 @@ export default function BookingConfirmationScreen() {
             </View>
           </View>
         </Card>
-        
+
         <View style={styles.actionsContainer}>
           <Button
             title="View Booking"

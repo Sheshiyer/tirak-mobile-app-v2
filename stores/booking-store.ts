@@ -1,3 +1,4 @@
+import { bookingDurationMinutes } from '@/utils/booking-schedule';
 import { logger } from '@/utils/logger';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
@@ -7,6 +8,7 @@ import { apiUrl } from '@/constants/api';
 import { convertCurrency } from '@/utils/currency';
 import axios from 'axios';
 import { usePaymentStore } from '@/stores/payment-store';
+import { isValidUuid, newIdempotencyKey } from '@/utils/idempotency';
 
 // Booking form data interfaces
 export interface BookingService {
@@ -90,6 +92,8 @@ export interface BookingFormData {
   currentStep: number;
   isComplete: boolean;
   errors: Record<string, string>;
+  idempotencyKey?: string | null;
+  attemptedBookingRequest?: CreateBookingRequest | null;
 }
 
 // Initial state
@@ -111,6 +115,8 @@ const initialBookingData: BookingFormData = {
   currentStep: 1,
   isComplete: false,
   errors: {},
+  idempotencyKey: null,
+  attemptedBookingRequest: null,
 };
 
 // Add new interface for service fetching
@@ -161,8 +167,12 @@ interface BookingActions {
   // Add new actions
   fetchServices: (companionId: string) => Promise<void>;
   setCompanionData: (companionData: CompanionData) => void;
+  ensureIdempotencyKey: () => string;
+  discardDraft: () => void;
   prepareBookingRequest: () => CreateBookingRequest | null;
+  retryOriginalBookingRequest: () => CreateBookingRequest | null;
   setBookingComplete: (isComplete: boolean) => void;
+  startNewBookingAttempt: () => string;
 }
 
 export const useBookingStore = create<BookingState & BookingActions>()(
@@ -217,6 +227,7 @@ export const useBookingStore = create<BookingState & BookingActions>()(
             service,
             bookingQuote: null,
             payment: null,
+            attemptedBookingRequest: null,
           },
         }));
       },
@@ -228,6 +239,7 @@ export const useBookingStore = create<BookingState & BookingActions>()(
             dateTime,
             bookingQuote: null,
             payment: null,
+            attemptedBookingRequest: null,
           },
         }));
       },
@@ -239,6 +251,7 @@ export const useBookingStore = create<BookingState & BookingActions>()(
             location,
             bookingQuote: null,
             payment: null,
+            attemptedBookingRequest: null,
           },
         }));
       },
@@ -251,6 +264,7 @@ export const useBookingStore = create<BookingState & BookingActions>()(
               ...state.bookingData.requests,
               ...requests,
             },
+            attemptedBookingRequest: null,
           },
         }));
       },
@@ -260,6 +274,7 @@ export const useBookingStore = create<BookingState & BookingActions>()(
           bookingData: {
             ...state.bookingData,
             payment,
+            attemptedBookingRequest: null,
           },
         }));
       },
@@ -269,6 +284,7 @@ export const useBookingStore = create<BookingState & BookingActions>()(
           bookingData: {
             ...state.bookingData,
             bookingQuote,
+            attemptedBookingRequest: null,
           },
         }));
       },
@@ -279,6 +295,7 @@ export const useBookingStore = create<BookingState & BookingActions>()(
           bookingData: {
             ...state.bookingData,
             companionId,
+            attemptedBookingRequest: null,
           },
         }));
       },
@@ -427,9 +444,9 @@ export const useBookingStore = create<BookingState & BookingActions>()(
           // }
 
           // Ensure minimum duration of 30 minutes
-          const durationInMinutes = bookingData.dateTime.duration * 60; // Convert hours to minutes
-          if (durationInMinutes < 30) {
-            throw new Error('Booking duration must be at least 30 minutes');
+          const durationInMinutes = bookingDurationMinutes(bookingData.dateTime.duration);
+          if (durationInMinutes !== bookingDurationMinutes(bookingData.service.duration)) {
+            throw new Error('Please select a time for the current experience duration');
           }
 
           // Prepare booking request data
@@ -477,8 +494,33 @@ export const useBookingStore = create<BookingState & BookingActions>()(
             ...state.bookingData,
             companionData,
             companionId: companionData.id,
+            attemptedBookingRequest: null,
           },
         }));
+      },
+
+      ensureIdempotencyKey: () => {
+        const currentKey = get().bookingData.idempotencyKey;
+        if (currentKey && isValidUuid(currentKey)) {
+          return currentKey;
+        }
+        const nextKey = newIdempotencyKey();
+        set((state) => ({
+          bookingData: {
+            ...state.bookingData,
+            idempotencyKey: nextKey,
+          },
+        }));
+        return nextKey;
+      },
+
+      discardDraft: () => {
+        usePaymentStore.getState().releasePaymentSessionIfSafe();
+        set({
+          bookingData: initialBookingData,
+          isLoading: false,
+          error: null,
+        });
       },
 
       prepareBookingRequest: (): CreateBookingRequest | null => {
@@ -505,13 +547,14 @@ export const useBookingStore = create<BookingState & BookingActions>()(
           // }
 
           // Ensure minimum duration of 30 minutes
-          const durationInMinutes = bookingData.dateTime.duration * 60; // Convert hours to minutes
-          if (durationInMinutes < 30) {
-            throw new Error('Booking duration must be at least 30 minutes');
+          const durationInMinutes = bookingDurationMinutes(bookingData.dateTime.duration);
+          if (durationInMinutes !== bookingDurationMinutes(bookingData.service.duration)) {
+            throw new Error('Please select a time for the current experience duration');
           }
 
-          // Prepare booking request data
-          return {
+          const idempotencyKey = get().ensureIdempotencyKey();
+
+          const request: CreateBookingRequest = {
             companionId: bookingData.companionId,
             serviceId: bookingData.service.id,
             date: bookingData.dateTime.date,
@@ -524,7 +567,17 @@ export const useBookingStore = create<BookingState & BookingActions>()(
             dietaryRestrictions: bookingData.requests.dietaryRestrictions,
             accessibilityNeeds: bookingData.requests.accessibilityNeeds,
             preferredLanguages: [bookingData.requests.languagePreference],
+            idempotencyKey,
           };
+
+          set((state) => ({
+            bookingData: {
+              ...state.bookingData,
+              attemptedBookingRequest: request,
+            },
+          }));
+
+          return request;
         } catch (error) {
           console.error("Error preparing booking request:", error);
           set({ 
@@ -533,6 +586,23 @@ export const useBookingStore = create<BookingState & BookingActions>()(
           });
           return null;
         }
+      },
+
+      retryOriginalBookingRequest: () => {
+        const attemptedBookingRequest = get().bookingData.attemptedBookingRequest;
+        return attemptedBookingRequest ? { ...attemptedBookingRequest } : null;
+      },
+
+      startNewBookingAttempt: () => {
+        const nextKey = newIdempotencyKey();
+        set((state) => ({
+          bookingData: {
+            ...state.bookingData,
+            idempotencyKey: nextKey,
+            attemptedBookingRequest: null,
+          },
+        }));
+        return nextKey;
       },
 
       setBookingComplete: (isComplete: boolean) => {

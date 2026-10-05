@@ -1,3 +1,4 @@
+import { experienceToBookingService } from '@/utils/experience-booking';
 import { logger } from '@/utils/logger';
 import React, { useState, useEffect, useRef } from 'react';
 import {
@@ -15,7 +16,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { BookingStepFooter } from '../BookingStepFooter';
 import { useBookingStore, BookingService } from '@/stores/booking-store';
-import { useExperiences, Experience } from '@/services/api/companion/experience';
+import { useExperiences } from '@/services/api/companion/experience';
 import { designTokens, componentTokens } from '@/constants/design-tokens';
 import { useTranslation } from 'react-i18next';
 import { formatOriginalCurrencyContext, formatTravelerCurrency } from '@/utils/currency';
@@ -23,22 +24,6 @@ import { formatOriginalCurrencyContext, formatTravelerCurrency } from '@/utils/c
 interface ServiceSelectionStepProps {
   onNext: () => void;
 }
-
-// Convert Experience to BookingService
-const experienceToBookingService = (experience: Experience): BookingService => ({
-  id: experience.id,
-  name: experience.title,
-  description: experience.description || '',
-  price: experience.price,
-  currency: experience.currency,
-  duration: Math.ceil(experience.durationMinutes / 60), // Convert minutes to hours
-  category: experience.keywords[0] || 'Experience', // Use first keyword as category
-  customizations: {
-    groupSize: 1,
-    addOns: [],
-    specialRequirements: [],
-  },
-});
 
 export const ServiceSelectionStep: React.FC<ServiceSelectionStepProps> = ({ onNext }) => {
   const { bookingData, updateService } = useBookingStore();
