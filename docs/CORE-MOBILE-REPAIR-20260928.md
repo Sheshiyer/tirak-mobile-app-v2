@@ -26,3 +26,7 @@ Date: 2026-09-28. Base: `6aedf64eb34a75bb7a9af9f849c968337c31b1f3`. Scope: Tirak
 `noesis-execute` returned exit 0 with only duplicated scan narration and no edits; it was rejected as unusable. The allowlisted `antigravity-claude-sonnet-5` attempt in its own Claude worktree timed out after 180 seconds without a result or edits. No resolved provider/model output is claimed. Implementation used the documented in-session fallback. The generated external worktree was preserved.
 
 A JavaScript export and build-settings readback do not prove a newly signed binary or provisioning entitlement. New signed iOS build, provider credentials/capability verification and physical foreground/background/terminated push/tap checks remain required. Offline logout may fail to remove a remote token; this is explicitly unconfirmed, its receipt is retained, and authenticated registration on a new account transfers token ownership server-side. Real inbox delivery/reset completion and connected admin/backend acceptance remain separate server/operator/device receipts.
+
+## Native delivery and acceptance — 2026-10-05
+
+Android1.5.2(8) is a verified signed APK; iOS1.5.2(18) has matching production APNs entitlements and a successful TestFlight upload. See [native delivery](release/native-delivery-20261005.md). Current TypeScript and34 suites/379 tests pass. Physical guide flows, actual inbox verification/reset and push delivery remain pending; builds do not constitute device acceptance.
