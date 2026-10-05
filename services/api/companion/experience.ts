@@ -2,7 +2,7 @@ import { getDemoModeEnabled, isDemoModeEnabled } from '@/utils/demo-mode';
 import { useAuthStore } from '@/stores/auth-store';
 import type { QueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getAuthToken } from './companion';
 import { isTestCompanionId } from '@/utils/companion-display';
 import { secureStorage } from '@/utils/secure-storage';
@@ -57,6 +57,12 @@ export interface ExperienceListResponse {
   message: string;
 }
 
+export interface ExperienceSearchParams {
+  page?: number;
+  limit?: number;
+  signal?: AbortSignal;
+}
+
 const testCompanionExperiences: Experience[] = [
   {
     id: 'test-market-temple-walk',
@@ -101,7 +107,8 @@ const localAdapterEnabled = async (companionId: string) =>
   await getDemoModeEnabled() && (isTestCompanionId(companionId) || companionId === 'demo_companion_001');
 
 const reviewExperiences = (): Experience[] => [{
-  ...testCompanionExperiences[0], id: 'review_experience_bangkok_001',
+  ...testCompanionExperiences[0],
+  id: 'review_experience_bangkok_001',
   title: 'Bangkok Old Town Culture Walk',
 }];
 
@@ -130,10 +137,16 @@ function requireSuccess<T extends { success: boolean }>(body: T): T {
 }
 
 const toExperience = (payload: ExperienceCreateRequest, id: string): Experience => ({
-  id, title: payload.title, description: payload.description,
-  durationMinutes: payload.durationMinutes, keywords: payload.keywords,
-  price: payload.price, currency: payload.currency, isActive: payload.is_active,
-  createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+  id,
+  title: payload.title,
+  description: payload.description,
+  durationMinutes: payload.durationMinutes,
+  keywords: payload.keywords,
+  price: payload.price,
+  currency: payload.currency,
+  isActive: payload.is_active,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
 });
 
 async function savePreview(companionId: string, payload: ExperienceCreateRequest, id?: string): Promise<ExperienceCreateResponse> {
@@ -144,13 +157,44 @@ async function savePreview(companionId: string, payload: ExperienceCreateRequest
   return { success: true, data: { experienceId: experience.id, created: !id }, message: 'Saved in local review only' };
 }
 
-export async function fetchExperiences(companionId: string): Promise<ExperienceListResponse> {
+export async function fetchExperiences(
+  companionId: string,
+  params: ExperienceSearchParams = {},
+): Promise<ExperienceListResponse> {
   if (!companionId) throw new Error('Companion ID is required');
   if (await localAdapterEnabled(companionId)) {
-    const items = (await previewItems(companionId)).filter(item => useAuthStore.getState().user?.id === companionId || item.isActive);
-    return { success: true, data: { items, pagination: { page: 1, limit: items.length, total: items.length, totalPages: 1 } }, message: 'Local review experiences' };
+    const all = (await previewItems(companionId)).filter(
+      (item) => useAuthStore.getState().user?.id === companionId || item.isActive,
+    );
+    const page = params.page || 1;
+    const limit = params.limit || (all.length > 0 ? all.length : 20);
+    const start = (page - 1) * limit;
+    const items = all.slice(start, start + limit);
+    return {
+      success: true,
+      data: {
+        items,
+        pagination: {
+          page,
+          limit,
+          total: all.length,
+          totalPages: Math.ceil(all.length / limit) || 1,
+        },
+      },
+      message: 'Local review experiences',
+    };
   }
-  const response = await axios.get(apiUrl(`/api/companions/${companionId}/experiences`), { headers: await headers() });
+
+  const queryParams = new URLSearchParams();
+  if (params.page !== undefined && params.page !== null) queryParams.append('page', String(params.page));
+  if (params.limit !== undefined && params.limit !== null) queryParams.append('limit', String(params.limit));
+  const queryString = queryParams.toString();
+  const url = apiUrl(`/api/companions/${companionId}/experiences${queryString ? `?${queryString}` : ''}`);
+
+  const response = await axios.get(url, {
+    headers: await headers(),
+    signal: params.signal,
+  });
   const body = requireSuccess<ExperienceListResponse>(response.data);
   if (!Array.isArray(body.data?.items)) throw new Error('Invalid experience response');
   return body;
@@ -185,16 +229,48 @@ export async function invalidateExperienceQueries(queryClient: QueryClient, comp
   ].map(queryKey => queryClient.invalidateQueries({ queryKey })));
 }
 
-export const useExperiences = (companionId: string) => {
+export const useExperiences = (
+  companionId: string,
+  params?: Omit<ExperienceSearchParams, 'signal'>,
+) => {
   const user = useAuthStore(state => state.user);
+  const queryKey = params !== undefined
+    ? ['experiences', companionId, user?.id || 'public', isDemoModeEnabled(user), params]
+    : ['experiences', companionId, user?.id || 'public', isDemoModeEnabled(user)];
   return useQuery({
-    queryKey: ['experiences', companionId, user?.id || 'public', isDemoModeEnabled(user)],
-    queryFn: () => fetchExperiences(companionId), enabled: !!companionId, retry: false,
+    queryKey,
+    queryFn: ({ signal }) => fetchExperiences(companionId, { ...params, signal }),
+    enabled: !!companionId,
+    retry: false,
   });
 };
 
 export const useCreateExperience = (companionId: string) => {
   const queryClient = useQueryClient();
-  return useMutation({ mutationFn: (payload: ExperienceCreateRequest) => createExperience(companionId, payload),
-    onSuccess: () => invalidateExperienceQueries(queryClient, companionId) });
+  return useMutation({
+    mutationFn: (payload: ExperienceCreateRequest) => createExperience(companionId, payload),
+    onSuccess: () => invalidateExperienceQueries(queryClient, companionId),
+  });
+};
+
+export const useInfiniteExperiences = (
+  companionId: string,
+  params?: { limit?: number },
+) => {
+  const user = useAuthStore((state) => state.user);
+  const pageSize = Math.min(Math.max(params?.limit || 50, 1), 100);
+  return useInfiniteQuery({
+    queryKey: ['experiences', companionId, user?.id || 'public', isDemoModeEnabled(user), 'infinite', { limit: pageSize }],
+    queryFn: ({ pageParam = 1, signal }) =>
+      fetchExperiences(companionId, { page: pageParam as number, limit: pageSize, signal }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const pagination = lastPage?.data?.pagination;
+      if (!pagination) return undefined;
+      const { page, totalPages } = pagination;
+      return page < totalPages ? page + 1 : undefined;
+    },
+    enabled: !!companionId,
+    retry: false,
+  });
 };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -17,7 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { designTokens, componentTokens } from '@/constants/design-tokens';
 import { ArrowLeft, Save, Plus, X, Edit, Edit2 } from 'lucide-react-native';
-import { useExperiences, useCreateExperience, ExperienceCreateRequest, Experience, updateExperience, archiveExperience, invalidateExperienceQueries, readExperienceDrafts } from '@/services/api/companion/experience';
+import { useExperiences, useInfiniteExperiences, useCreateExperience, ExperienceCreateRequest, Experience, updateExperience, archiveExperience, invalidateExperienceQueries, readExperienceDrafts } from '@/services/api/companion/experience';
 import { useAuthStore } from '@/stores/auth-store';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '@/stores/toast-store';
@@ -34,9 +34,39 @@ export default function EditServices() {
   const toast = useToast();
   const queryClient = useQueryClient();
   
-  // Fetch experiences
-  const { data, isLoading, error, refetch } = useExperiences(companionId || '');
-  const experiences: Experience[] = data?.data?.items || [];
+  // Fetch experiences with infinite query / load-more support
+  const {
+    data,
+    isLoading,
+    error,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteExperiences(companionId || '', { limit: 50 });
+
+  const experiences: Experience[] = useMemo(() => {
+    if (!data?.pages) {
+      const raw = (data as any)?.data?.items;
+      return Array.isArray(raw) ? raw : [];
+    }
+    const seen = new Set<string>();
+    const items: Experience[] = [];
+    for (const page of data.pages) {
+      for (const item of page?.data?.items || []) {
+        if (item && !seen.has(item.id)) {
+          seen.add(item.id);
+          items.push(item);
+        }
+      }
+    }
+    return items;
+  }, [data]);
+
+  const totalCount =
+    data?.pages?.[0]?.data?.pagination?.total ??
+    (data as any)?.data?.pagination?.total ??
+    experiences.length;
   const drafts = useQuery({ queryKey: ['experienceDrafts', companionId], queryFn: () => readExperienceDrafts(companionId!), enabled: !!companionId });
   const [archiveTarget, setArchiveTarget] = useState<Experience | null>(null);
   const archiveMutation = useMutation({
@@ -345,6 +375,25 @@ export default function EditServices() {
                   
                 </View>
               ))
+            )}
+            {hasNextPage && (
+              <TouchableOpacity
+                style={styles.loadMoreButton}
+                onPress={() => {
+                  if (!isFetchingNextPage) {
+                    void fetchNextPage();
+                  }
+                }}
+                disabled={isFetchingNextPage}
+              >
+                {isFetchingNextPage ? (
+                  <ActivityIndicator size="small" color={designTokens.colors.semantic.primary} />
+                ) : (
+                  <Text style={styles.loadMoreText}>
+                    {t('editServices.loadMore', { defaultValue: 'Load More Experiences' })} ({experiences.length}/{totalCount})
+                  </Text>
+                )}
+              </TouchableOpacity>
             )}
           </View>
 
@@ -807,5 +856,20 @@ const styles = StyleSheet.create({
   },
   modalButtonTextPrimary: {
     color: designTokens.colors.components.button.text,
+  },
+  loadMoreButton: {
+    paddingVertical: designTokens.spacing.scale.md,
+    backgroundColor: designTokens.colors.semantic.surface,
+    borderWidth: 1,
+    borderColor: designTokens.colors.semantic.primary,
+    borderRadius: designTokens.borderRadius.components.button,
+    alignItems: 'center',
+    marginTop: designTokens.spacing.scale.sm,
+    marginBottom: designTokens.spacing.scale.md,
+  },
+  loadMoreText: {
+    ...componentTokens.text.body,
+    color: designTokens.colors.semantic.primary,
+    fontWeight: '600',
   },
 });

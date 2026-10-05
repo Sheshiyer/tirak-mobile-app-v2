@@ -7,9 +7,39 @@ const config = JSON.parse(read('app.json')).expo;
 const eas = JSON.parse(read('eas.json'));
 const resolveConfig = require('../app.config.js');
 
+const RELEASE_ENV_KEYS = [
+  'EXPO_PUBLIC_ENV_NAME',
+  'EXPO_PUBLIC_API_URL',
+  'EXPO_PUBLIC_DEMO_MODE',
+  'EXPO_PUBLIC_REVIEW_MODE',
+  'EXPO_PUBLIC_PROMPTPAY_ENABLED',
+];
+
+function withEnv<T>(overrides: Record<string, string | undefined>, run: () => T): T {
+  const previous = new Map<string, string | undefined>();
+  for (const key of RELEASE_ENV_KEYS) {
+    previous.set(key, process.env[key]);
+    delete process.env[key];
+  }
+  for (const [key, value] of Object.entries(overrides)) {
+    if (value === undefined) delete process.env[key];
+    else process.env[key] = value;
+  }
+
+  try {
+    return run();
+  } finally {
+    for (const key of RELEASE_ENV_KEYS) {
+      const value = previous.get(key);
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+}
+
 describe('release delivery boundaries', () => {
   test('delivery config keeps Android fingerprinted and gives iOS a deterministic app-version runtime', () => {
-    const resolved = resolveConfig({ config });
+    const resolved = withEnv({}, () => resolveConfig({ config }));
     const url = `https://u.expo.dev/${config.extra.eas.projectId}`;
     expect(resolved.updates.url).toBe(url);
     expect(resolved.runtimeVersion).toEqual({ policy: 'fingerprint' });
@@ -48,6 +78,28 @@ describe('release delivery boundaries', () => {
       channel: 'review', extends: 'production',
       env: { EXPO_PUBLIC_REVIEW_MODE: 'true', EXPO_PUBLIC_PROMPTPAY_ENABLED: 'false' },
     });
+  });
+
+  test('core-qa build profile isolates API URL and disables demo/review/payment gates', () => {
+    expect(eas.build['core-qa']).toMatchObject({
+      channel: 'core-qa',
+      environment: 'preview',
+      autoIncrement: true,
+      android: { buildType: 'apk' },
+      env: {
+        EXPO_PUBLIC_API_URL: 'https://tirak-core-qa-20261005.tirak-court.workers.dev/api',
+        EXPO_PUBLIC_ENV_NAME: 'core-qa',
+        EXPO_PUBLIC_DEMO_MODE: 'false',
+        EXPO_PUBLIC_REVIEW_MODE: 'false',
+        EXPO_PUBLIC_PROMPTPAY_ENABLED: 'false',
+      },
+    });
+  });
+
+  test('EAS post-install hook is wired through package.json and targets the narrow QA stamper', () => {
+    const scripts = JSON.parse(read('package.json')).scripts;
+    expect(scripts['eas-build-post-install']).toBe('node ./eas-hooks/core-qa-prebuild.js');
+    expect(read('eas-hooks/core-qa-prebuild.js')).toContain('non-QA build — skipping.');
   });
 
   test('OTA workflow selects an explicit environment and guards production main', () => {

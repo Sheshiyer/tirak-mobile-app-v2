@@ -5,13 +5,13 @@ let mockUser = { id: 'owner-1' };
 let mockDemo = false;
 const mockQuery = jest.fn();
 jest.mock('axios', () => ({ __esModule: true, default: mockAxios }));
-jest.mock('@tanstack/react-query', () => ({ useQuery: (options: unknown) => mockQuery(options), useMutation: jest.fn(), useQueryClient: jest.fn() }));
+jest.mock('@tanstack/react-query', () => ({ useQuery: (options: unknown) => mockQuery(options), useInfiniteQuery: (options: unknown) => mockQuery(options), useMutation: jest.fn(), useQueryClient: jest.fn() }));
 jest.mock('@/services/api/companion/companion', () => ({ getAuthToken: async () => 'session' }));
 jest.mock('@/constants/api', () => ({ apiUrl: (path: string) => path }));
 jest.mock('@/utils/demo-mode', () => ({ getDemoModeEnabled: async () => mockDemo, isDemoModeEnabled: () => mockDemo }));
 jest.mock('@/stores/auth-store', () => ({ useAuthStore: Object.assign((selector: any) => selector({ user: mockUser }), { getState: () => ({ user: mockUser }) }) }));
 jest.mock('@/utils/secure-storage', () => ({ secureStorage: { getItemAsync: async (key: string) => mockStorage.get(key) || null, setItemAsync: (...args: [string, string]) => mockWrite(...args) } }));
-const { createExperience, updateExperience, archiveExperience, fetchExperiences, readExperienceDrafts, invalidateExperienceQueries, useExperiences } = require('@/services/api/companion/experience');
+const { createExperience, updateExperience, archiveExperience, fetchExperiences, readExperienceDrafts, invalidateExperienceQueries, useExperiences, useInfiniteExperiences } = require('@/services/api/companion/experience');
 const payload = { title: 'Canal walk', description: 'A three hour cultural walk', durationMinutes: 180, keywords: ['Culture'], price: 1800, currency: 'THB', is_active: true };
 beforeEach(() => { jest.clearAllMocks(); mockWrite.mockImplementation(async (key, value) => { mockStorage.set(key, value); }); mockStorage.clear(); mockUser = { id: 'owner-1' }; mockDemo = false; });
 
@@ -78,4 +78,134 @@ test('queries differ across authenticated viewer identity', () => {
   useExperiences('guide'); mockUser = { id: 'other' }; useExperiences('guide');
   expect(mockQuery.mock.calls[0][0].queryKey).toEqual(['experiences', 'guide', 'owner-1', false]);
   expect(mockQuery.mock.calls[1][0].queryKey).toEqual(['experiences', 'guide', 'other', false]);
+});
+
+test("fetchExperiences forwards pagination parameters and AbortSignal to backend", async () => {
+  const controller = new AbortController();
+  mockAxios.get.mockResolvedValue({
+    data: {
+      success: true,
+      data: {
+        items: [{ id: "exp-51", title: "Experience 51" }],
+        pagination: { page: 2, limit: 50, total: 75, totalPages: 2 },
+      },
+    },
+  });
+
+  const result = await fetchExperiences("owner-1", { page: 2, limit: 50, signal: controller.signal });
+  expect(result.data.items).toHaveLength(1);
+  expect(mockAxios.get).toHaveBeenCalledWith(
+    "/api/companions/owner-1/experiences?page=2&limit=50",
+    expect.objectContaining({
+      signal: controller.signal,
+    }),
+  );
+});
+
+test("pagination reaches records 51 and 101 via distinct pages with limit <= 100", async () => {
+  const page1Items = Array.from({ length: 50 }, (_, i) => ({
+    id: `exp-${i + 1}`,
+    title: `Experience ${i + 1}`,
+    price: 1000,
+    currency: "THB",
+    durationMinutes: 60,
+    keywords: [],
+    isActive: true,
+  }));
+  const page2Items = Array.from({ length: 50 }, (_, i) => ({
+    id: `exp-${i + 51}`,
+    title: `Experience ${i + 51}`,
+    price: 1000,
+    currency: "THB",
+    durationMinutes: 60,
+    keywords: [],
+    isActive: true,
+  }));
+  const page3Items = [
+    {
+      id: "exp-101",
+      title: "Experience 101",
+      price: 1000,
+      currency: "THB",
+      durationMinutes: 60,
+      keywords: [],
+      isActive: true,
+    },
+  ];
+
+  mockAxios.get
+    .mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: {
+          items: page1Items,
+          pagination: { page: 1, limit: 50, total: 101, totalPages: 3 },
+        },
+      },
+    })
+    .mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: {
+          items: page2Items,
+          pagination: { page: 2, limit: 50, total: 101, totalPages: 3 },
+        },
+      },
+    })
+    .mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: {
+          items: page3Items,
+          pagination: { page: 3, limit: 50, total: 101, totalPages: 3 },
+        },
+      },
+    });
+
+  const res1 = await fetchExperiences("owner-1", { page: 1, limit: 50 });
+  expect(res1.data.items).toHaveLength(50);
+  expect(res1.data.items[0].id).toBe("exp-1");
+  expect(mockAxios.get).toHaveBeenLastCalledWith(
+    "/api/companions/owner-1/experiences?page=1&limit=50",
+    expect.any(Object),
+  );
+
+  const res2 = await fetchExperiences("owner-1", { page: 2, limit: 50 });
+  expect(res2.data.items).toHaveLength(50);
+  expect(res2.data.items[0].id).toBe("exp-51");
+  expect(mockAxios.get).toHaveBeenLastCalledWith(
+    "/api/companions/owner-1/experiences?page=2&limit=50",
+    expect.any(Object),
+  );
+
+  const res3 = await fetchExperiences("owner-1", { page: 3, limit: 50 });
+  expect(res3.data.items).toHaveLength(1);
+  expect(res3.data.items[0].id).toBe("exp-101");
+  expect(mockAxios.get).toHaveBeenLastCalledWith(
+    "/api/companions/owner-1/experiences?page=3&limit=50",
+    expect.any(Object),
+  );
+});
+
+test("useInfiniteExperiences configures getNextPageParam and clamps page size to 100", () => {
+  useInfiniteExperiences("owner-1", { limit: 150 });
+  const call = mockQuery.mock.calls[mockQuery.mock.calls.length - 1][0];
+  expect(call.queryKey).toContain("infinite");
+  expect(call.queryKey).toContainEqual({ limit: 100 });
+  expect(call.initialPageParam).toBe(1);
+
+  const next1 = call.getNextPageParam({
+    data: { pagination: { page: 1, totalPages: 3 } },
+  });
+  expect(next1).toBe(2);
+
+  const next2 = call.getNextPageParam({
+    data: { pagination: { page: 2, totalPages: 3 } },
+  });
+  expect(next2).toBe(3);
+
+  const nextEnd = call.getNextPageParam({
+    data: { pagination: { page: 3, totalPages: 3 } },
+  });
+  expect(nextEnd).toBeUndefined();
 });

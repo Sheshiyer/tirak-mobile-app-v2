@@ -1,307 +1,247 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Alert,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Check, AlertCircle } from 'lucide-react-native';
+import { AlertCircle, Shield, FileText, MapPin, Clock } from 'lucide-react-native';
 import { designTokens } from '@/constants/design-tokens';
 import { Button } from '@/components/ui/Button';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { useSupplierStore } from '@/stores/supplier-store';
+import { mockRegions } from '@/mocks/supplier-data';
+import { mockCategories } from '@/mocks/supplier-data';
+import {
+  SupplierApplicationIdempotencyConflictError,
+  type SupplierApplicationError,
+} from '@/services/api/supplier/applications';
 
-export default function PaymentScreen() {
+export default function ReviewSubmitScreen() {
   const router = useRouter();
-  const { signupData, updateSignupData, submitSignup } = useSupplierStore();
-  
-  const [selectedPlan, setSelectedPlan] = useState<'basic' | 'premium' | 'pro'>(
-    signupData.subscription.plan
-  );
-  const [paymentMethod, setPaymentMethod] = useState<'promptpay' | 'credit_card' | 'bank_transfer'>(
-    signupData.subscription.paymentMethod
-  );
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
-  const handleSelectPlan = (plan: 'basic' | 'premium' | 'pro') => {
-    setSelectedPlan(plan);
-    updateSignupData({
-      subscription: {
-        ...signupData.subscription,
-        plan,
-      },
-    });
-  };
-  
-  const handleSelectPaymentMethod = (method: 'promptpay' | 'credit_card' | 'bank_transfer') => {
-    setPaymentMethod(method);
-    updateSignupData({
-      subscription: {
-        ...signupData.subscription,
-        paymentMethod: method,
-      },
-    });
-  };
-  
-  const handleCompletePayment = async () => {
-    setIsLoading(true);
-    setError(null);
-    
+  const {
+    signupData,
+    submitApplication,
+    retryOriginalApplication,
+    startNewApplicationAttempt,
+    isSubmitting,
+    submissionError,
+    clearSubmission,
+  } = useSupplierStore();
+
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  const { basicInfo, categories, services, regions, availability, languages } =
+    signupData;
+
+  const regionLabels = regions.map((id) => {
+    const region = mockRegions.find((r) => r.id === id);
+    return region?.name || id;
+  });
+
+  const categoryLabels = categories.map((id) => {
+    const cat = mockCategories.find((c) => c.id === id);
+    return cat?.name || id;
+  });
+
+  const daysWithSlots = Object.entries(availability.weeklySchedule)
+    .filter(([_, slots]) => slots.length > 0)
+    .map(([day]) => day.charAt(0).toUpperCase() + day.slice(1));
+
+  const handleSubmit = async () => {
+    setLocalError(null);
+    clearSubmission();
+
     try {
-      // Update subscription data
-      updateSignupData({
-        subscription: {
-          ...signupData.subscription,
-          paymentComplete: true,
-        },
-      });
-      
-      // Submit signup data
-      const success = await submitSignup();
-      
-      if (success) {
-        router.push('/supplier/signup/success');
-      } else {
-        setError('Failed to complete registration. Please try again.');
+      await submitApplication();
+      router.push('/supplier/signup/success');
+    } catch (error) {
+      if (error instanceof SupplierApplicationIdempotencyConflictError) {
+        Alert.alert(
+          'Application Already Sent?',
+          'Your earlier application request may already have succeeded. Retry the original submission to check safely, or start a new application attempt with your current edits.',
+          [
+            {
+              text: 'Retry Original',
+              onPress: () => {
+                void retryOriginalApplication()
+                  .then(() => {
+                    router.push('/supplier/signup/success');
+                  })
+                  .catch((retryError: SupplierApplicationError) => {
+                    setLocalError(retryError.message || 'Could not retry the original application.');
+                  });
+              },
+            },
+            {
+              text: 'New Attempt',
+              onPress: () => {
+                startNewApplicationAttempt();
+                setLocalError('Started a new application attempt. Submit again only if you are sure the earlier request did not succeed.');
+              },
+            },
+            { text: 'Cancel', style: 'cancel' },
+          ],
+        );
+        return;
       }
-    } catch (err) {
-      setError('An error occurred. Please try again.');
-    } finally {
-      setIsLoading(false);
+      const appError = error as SupplierApplicationError;
+      setLocalError(
+        appError.message || 'Submission failed. You can retry without losing your draft.',
+      );
     }
   };
-  
+
   const handleBack = () => {
     router.back();
   };
-  
-  const getPlanPrice = (plan: 'basic' | 'premium' | 'pro') => {
-    switch (plan) {
-      case 'basic':
-        return 499;
-      case 'premium':
-        return 999;
-      case 'pro':
-        return 1999;
-      default:
-        return 0;
-    }
-  };
-  
-  const getPlanFeatures = (plan: 'basic' | 'premium' | 'pro') => {
-    const features = {
-      basic: [
-        'Profile listing',
-        'Up to 5 photos',
-        'Basic analytics',
-        'In-app messaging',
-        'Standard support',
-      ],
-      premium: [
-        'Everything in Basic',
-        'Up to 10 photos',
-        'Featured in search results',
-        'Advanced analytics',
-        'Priority support',
-      ],
-      pro: [
-        'Everything in Premium',
-        'Unlimited photos',
-        'Top placement in search',
-        'Comprehensive analytics',
-        'Dedicated support',
-        'Custom profile customization',
-      ],
-    };
-    
-    return features[plan];
-  };
-  
+
+  const displayError =
+    localError || submissionError?.message || null;
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <Text style={styles.title}>Subscription Payment</Text>
+          <Text style={styles.title}>Review & Submit</Text>
           <Text style={styles.subtitle}>
-            Choose a subscription plan and complete payment to activate your supplier account.
+            Review your guide application before submitting. Your application
+            will be reviewed by our team.
           </Text>
-          
-          <ProgressBar
-            currentStep={8}
-            totalSteps={8}
+          <ProgressBar currentStep={8} totalSteps={8} />
+        </View>
+
+        {/* Profile Summary */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Profile</Text>
+          <Text style={styles.summaryValue}>
+            {basicInfo.displayName ||
+              [basicInfo.firstName, basicInfo.lastName]
+                .filter(Boolean)
+                .join(' ')}
+          </Text>
+          <Text style={styles.summaryLabel}>{basicInfo.email}</Text>
+          <Text style={styles.summaryLabel}>{basicInfo.phone}</Text>
+          {basicInfo.bio ? (
+            <Text style={styles.summaryBio}>{basicInfo.bio}</Text>
+          ) : null}
+        </View>
+
+        {/* Categories */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Categories</Text>
+          {categoryLabels.length > 0 ? (
+            <View style={styles.tagRow}>
+              {categoryLabels.map((name) => (
+                <View key={name} style={styles.tag}>
+                  <Text style={styles.tagText}>{name}</Text>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.emptyText}>No categories selected</Text>
+          )}
+        </View>
+
+        {/* Experiences */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>
+            <FileText size={16} color={designTokens.colors.semantic.text} />{' '}
+            Experiences ({services.length})
+          </Text>
+          {services.length > 0 ? (
+            services.map((s, i) => (
+              <View key={s.id || i} style={styles.serviceRow}>
+                <Text style={styles.serviceName}>{s.name}</Text>
+                <Text style={styles.serviceDetail}>
+                  ฿{s.price} · {s.duration}h
+                </Text>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.emptyText}>No experiences added</Text>
+          )}
+        </View>
+
+        {/* Regions */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>
+            <MapPin size={16} color={designTokens.colors.semantic.text} />{' '}
+            Regions
+          </Text>
+          {regionLabels.length > 0 ? (
+            <View style={styles.tagRow}>
+              {regionLabels.map((name) => (
+                <View key={name} style={styles.tag}>
+                  <Text style={styles.tagText}>{name}</Text>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.emptyText}>No regions selected</Text>
+          )}
+        </View>
+
+        {/* Availability */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>
+            <Clock size={16} color={designTokens.colors.semantic.text} />{' '}
+            Availability
+          </Text>
+          {daysWithSlots.length > 0 ? (
+            <Text style={styles.summaryLabel}>
+              {daysWithSlots.join(', ')}
+            </Text>
+          ) : (
+            <Text style={styles.emptyText}>No availability set</Text>
+          )}
+        </View>
+
+        {/* Payment unavailable notice */}
+        <View style={styles.noticeCard}>
+          <Shield
+            size={20}
+            color={designTokens.colors.semantic.textSecondary}
           />
+          <Text style={styles.noticeText}>
+            Supplier application payment status is currently unavailable. If approved,
+            provisioning happens first, then account activation and profile verification
+            complete before your profile can be listed publicly.
+          </Text>
         </View>
-        
-        <View style={styles.form}>
-          <Text style={styles.sectionTitle}>Select a Plan</Text>
-          
-          <View style={styles.plansContainer}>
-            <TouchableOpacity
-              style={[
-                styles.planCard,
-                selectedPlan === 'basic' && styles.selectedPlanCard,
-              ]}
-              onPress={() => handleSelectPlan('basic')}
-            >
-              <View style={styles.planHeader}>
-                <Text style={styles.planName}>Basic</Text>
-                {selectedPlan === 'basic' && (
-                  <View style={styles.selectedPlanCheck}>
-                    <Check size={16} color="white" />
-                  </View>
-                )}
-              </View>
-              <Text style={styles.planPrice}>฿{getPlanPrice('basic')}/month</Text>
-              <View style={styles.planFeatures}>
-                {getPlanFeatures('basic').map((feature, index) => (
-                  <View key={index} style={styles.featureItem}>
-                    <View style={styles.featureBullet} />
-                    <Text style={styles.featureText}>{feature}</Text>
-                  </View>
-                ))}
-              </View>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={[
-                styles.planCard,
-                selectedPlan === 'premium' && styles.selectedPlanCard,
-              ]}
-              onPress={() => handleSelectPlan('premium')}
-            >
-              <View style={styles.planHeader}>
-                <Text style={styles.planName}>Premium</Text>
-                {selectedPlan === 'premium' && (
-                  <View style={styles.selectedPlanCheck}>
-                    <Check size={16} color="white" />
-                  </View>
-                )}
-              </View>
-              <Text style={styles.planPrice}>฿{getPlanPrice('premium')}/month</Text>
-              <View style={styles.planFeatures}>
-                {getPlanFeatures('premium').map((feature, index) => (
-                  <View key={index} style={styles.featureItem}>
-                    <View style={styles.featureBullet} />
-                    <Text style={styles.featureText}>{feature}</Text>
-                  </View>
-                ))}
-              </View>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={[
-                styles.planCard,
-                selectedPlan === 'pro' && styles.selectedPlanCard,
-              ]}
-              onPress={() => handleSelectPlan('pro')}
-            >
-              <View style={styles.planHeader}>
-                <Text style={styles.planName}>Pro</Text>
-                {selectedPlan === 'pro' && (
-                  <View style={styles.selectedPlanCheck}>
-                    <Check size={16} color="white" />
-                  </View>
-                )}
-              </View>
-              <Text style={styles.planPrice}>฿{getPlanPrice('pro')}/month</Text>
-              <View style={styles.planFeatures}>
-                {getPlanFeatures('pro').map((feature, index) => (
-                  <View key={index} style={styles.featureItem}>
-                    <View style={styles.featureBullet} />
-                    <Text style={styles.featureText}>{feature}</Text>
-                  </View>
-                ))}
-              </View>
-            </TouchableOpacity>
+
+        {/* Errors */}
+        {displayError && (
+          <View style={styles.errorContainer}>
+            <AlertCircle
+              size={20}
+              color={designTokens.colors.semantic.error}
+            />
+            <Text style={styles.errorText}>{displayError}</Text>
           </View>
-          
-          <Text style={styles.sectionTitle}>Payment Method</Text>
-          
-          <View style={styles.paymentMethodsContainer}>
-            <TouchableOpacity
-              style={[
-                styles.paymentMethodCard,
-                paymentMethod === 'promptpay' && styles.selectedPaymentMethod,
-              ]}
-              onPress={() => handleSelectPaymentMethod('promptpay')}
-            >
-              <Text style={styles.paymentMethodName}>PromptPay</Text>
-              {paymentMethod === 'promptpay' && (
-                <View style={styles.selectedPaymentCheck}>
-                  <Check size={16} color="white" />
-                </View>
-              )}
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={[
-                styles.paymentMethodCard,
-                paymentMethod === 'credit_card' && styles.selectedPaymentMethod,
-              ]}
-              onPress={() => handleSelectPaymentMethod('credit_card')}
-            >
-              <Text style={styles.paymentMethodName}>Credit Card</Text>
-              {paymentMethod === 'credit_card' && (
-                <View style={styles.selectedPaymentCheck}>
-                  <Check size={16} color="white" />
-                </View>
-              )}
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={[
-                styles.paymentMethodCard,
-                paymentMethod === 'bank_transfer' && styles.selectedPaymentMethod,
-              ]}
-              onPress={() => handleSelectPaymentMethod('bank_transfer')}
-            >
-              <Text style={styles.paymentMethodName}>Bank Transfer</Text>
-              {paymentMethod === 'bank_transfer' && (
-                <View style={styles.selectedPaymentCheck}>
-                  <Check size={16} color="white" />
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
-          
-          {paymentMethod === 'promptpay' && (
-            <View style={styles.promptpayContainer}>
-              <Text style={styles.promptpayTitle}>Scan QR Code to Pay</Text>
-              <Image
-                source={{ uri: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80' }}
-                style={styles.qrCode}
-                resizeMode="contain"
-              />
-              <Text style={styles.promptpayAmount}>
-                Amount: ฿{getPlanPrice(selectedPlan)}
-              </Text>
-              <Text style={styles.promptpayRef}>
-                Reference: TIRAK-{Date.now().toString().slice(-6)}
-              </Text>
-            </View>
-          )}
-          
-          {error && (
-            <View style={styles.errorContainer}>
-              <AlertCircle size={20} color={designTokens.colors.semantic.error} />
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
-          )}
-        </View>
-        
+        )}
+
+        {/* Actions */}
         <View style={styles.actions}>
           <Button
             title="Back"
             onPress={handleBack}
             variant="outline"
             style={styles.backButton}
+            disabled={isSubmitting}
           />
           <Button
-            title="Complete Payment"
-            onPress={handleCompletePayment}
+            title={isSubmitting ? 'Submitting...' : 'Submit Application'}
+            onPress={handleSubmit}
             style={styles.nextButton}
-            loading={isLoading}
+            loading={isSubmitting}
+            disabled={isSubmitting}
           />
         </View>
       </ScrollView>
@@ -333,152 +273,106 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     lineHeight: 22,
   },
-  form: {
+  card: {
     backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: designTokens.colors.semantic.text,
-    marginBottom: 16,
-    marginTop: 8,
-  },
-  plansContainer: {
-    marginBottom: 24,
-  },
-  planCard: {
-    backgroundColor: designTokens.colors.semantic.surface,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: designTokens.colors.semantic.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  selectedPlanCard: {
-    borderColor: designTokens.colors.semantic.primary,
-    backgroundColor: designTokens.colors.semantic.background,
-  },
-  planHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: designTokens.colors.semantic.text,
     marginBottom: 8,
   },
-  planName: {
+  summaryValue: {
     fontSize: 18,
     fontWeight: 'bold',
     color: designTokens.colors.semantic.text,
+    marginBottom: 4,
   },
-  selectedPlanCheck: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: designTokens.colors.semantic.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  planPrice: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: designTokens.colors.semantic.primary,
-    marginBottom: 16,
-  },
-  planFeatures: {
-    marginTop: 8,
-  },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  featureBullet: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: designTokens.colors.semantic.primary,
-    marginRight: 8,
-  },
-  featureText: {
+  summaryLabel: {
     fontSize: 14,
     color: designTokens.colors.semantic.textSecondary,
+    marginBottom: 2,
   },
-  paymentMethodsContainer: {
+  summaryBio: {
+    fontSize: 14,
+    color: designTokens.colors.semantic.textSecondary,
+    marginTop: 8,
+    lineHeight: 20,
+  },
+  tagRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 24,
+    gap: 8,
   },
-  paymentMethodCard: {
-    backgroundColor: designTokens.colors.semantic.surface,
-    borderRadius: 12,
-    padding: 16,
+  tag: {
+    backgroundColor: designTokens.colors.semantic.primary + '20',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: designTokens.colors.semantic.border,
-    minWidth: 100,
+    borderColor: designTokens.colors.semantic.primary,
+  },
+  tagText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: designTokens.colors.semantic.primary,
+  },
+  serviceRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: designTokens.colors.semantic.border,
   },
-  selectedPaymentMethod: {
-    borderColor: designTokens.colors.semantic.primary,
-    backgroundColor: designTokens.colors.semantic.primary + '20',
-  },
-  paymentMethodName: {
+  serviceName: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: '500',
     color: designTokens.colors.semantic.text,
+    flex: 1,
   },
-  selectedPaymentCheck: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: designTokens.colors.semantic.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 8,
+  serviceDetail: {
+    fontSize: 14,
+    color: designTokens.colors.semantic.textSecondary,
   },
-  promptpayContainer: {
-    alignItems: 'center',
-    marginBottom: 24,
+  emptyText: {
+    fontSize: 14,
+    color: designTokens.colors.semantic.textSecondary,
+    fontStyle: 'italic',
+  },
+  noticeCard: {
     backgroundColor: designTokens.colors.semantic.surface,
     borderRadius: 12,
     padding: 16,
+    marginTop: 4,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    borderWidth: 1,
+    borderColor: designTokens.colors.semantic.border,
   },
-  promptpayTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: designTokens.colors.semantic.text,
-    marginBottom: 16,
-  },
-  qrCode: {
-    width: 200,
-    height: 200,
-    marginBottom: 16,
-  },
-  promptpayAmount: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: designTokens.colors.semantic.primary,
-    marginBottom: 8,
-  },
-  promptpayRef: {
-    fontSize: 14,
+  noticeText: {
+    flex: 1,
+    fontSize: 13,
     color: designTokens.colors.semantic.textSecondary,
+    lineHeight: 19,
   },
   errorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: designTokens.colors.semantic.error + '20',
+    backgroundColor: designTokens.colors.semantic.error + '15',
     borderRadius: 8,
     padding: 12,
-    marginTop: 16,
+    marginBottom: 12,
   },
   errorText: {
     color: designTokens.colors.semantic.error,
@@ -488,8 +382,8 @@ const styles = StyleSheet.create({
   },
   actions: {
     flexDirection: 'row',
-    marginTop: 24,
-    marginBottom: 16,
+    marginTop: 16,
+    marginBottom: 24,
     gap: 12,
   },
   backButton: {
