@@ -1,0 +1,51 @@
+{
+  "scope": "isolated Tirak Core QA; payments and outgoing email disabled",
+  "source": {
+    "native": "bb1fc069cac8887022f4cceb61503ca6f920d51d",
+    "api": "ea58fcb280e885dfdb27789fb2b620c473174ca5",
+    "admin": "a9932c56461a8e668229b57665a661e153455293",
+    "website": "4a1bd83bde8f762412525552a6eef348d88e76c4"
+  },
+  "apiOrigin": "https://tirak-core-qa-20261005.tirak-court.workers.dev/api",
+  "runtime": "1.5.3-core-qa",
+  "channel": "core-qa",
+  "ios": {
+    "buildId": "631541b9-0604-45e2-9f87-efa83b867d1c1",
+    "version": "1.5.3",
+    "build": "19",
+    "status": "FINISHED",
+    "sha256": "a6236f64f0ec927aee7676ba3e0ec29c706933377d272571973bc29eea69978c",
+    "strictSignatureVerified": true,
+    "productionApnsProvisioningMatch": true,
+    "submissionId": "4b3028fa-842c-481a-abf4-5e2a1b85d1c1",
+    "submissionStatus": "IN_QUEUE"
+  },
+  "android": {
+    "buildId": "656922c3-05dc-4646-b3fe-d27224f7b4ab",
+    "expectedVersion": "1.5.3",
+    "expectedBuild": "9",
+    "status": "IN_QUEUE",
+    "artifactVerified": false
+  },
+  "checks": {
+    "apiTests": 722,
+    "mobileTests": 452,
+    "adminContracts": 36,
+    "websiteTestsBeforeFinalCopy": 62,
+    "websiteFinalFocusedTests": 6,
+    "typechecks": true,
+    "localWorkerdSteps": 110,
+    "hostedSteps": 106,
+    "hostedNetworkCalls": 154,
+    "sameBrowserOriginSteps": 15,
+    "sameBrowserApplicationGuideBooking": true,
+    "confirmedPaymentStatus": "pending",
+    "foreignKeyViolations": 0,
+    "webSocketUpgrade": 101,
+    "ticketReplayRejected": 401,
+    "realRestSocketBroadcast": true
+  },
+  "physicalAcceptance": "open: availability, archive/history, profiles, analytics, email/deep links and delivered push",
+  "canonicalRelease": "not performed",
+  "updated": "2026-10-05T19:20:00Z"
+}
