@@ -65,6 +65,49 @@ export interface SupplierStats {
   profileViews: number;
 }
 
+// --- Supplier onboarding application types ---
+
+export type SupplierEvidenceKind = 'id_front' | 'id_back' | 'selfie' | 'portfolio';
+
+export interface SupplierApplicationReceipt {
+  applicationId: string;
+  statusToken: string;
+}
+
+export interface SupplierApplicationBlockers {
+  account?: string;
+  profile?: string;
+  publication?: string;
+  evidence?: string;
+}
+
+export interface SupplierEvidenceItem {
+  evidenceId: string;
+  kind: SupplierEvidenceKind;
+}
+
+export interface SupplierApplicationStatusResponse {
+  applicationId: string;
+  status: 'pending' | 'approved' | 'rejected';
+  accountStatus?: string;
+  profileStatus?: string;
+  blockers: SupplierApplicationBlockers;
+  evidence?: SupplierEvidenceItem[];
+  expiresAt?: string | null;
+  paymentStatus?: string;
+  invitationDelivery?: {
+    status?: string;
+  };
+}
+
+export interface EvidenceUploadRecord {
+  kind: SupplierEvidenceKind;
+  uri: string;
+  evidenceId: string | null;
+  status: 'pending' | 'uploading' | 'uploaded' | 'failed';
+  error: string | null;
+}
+
 export interface SupplierSignupData {
   step: number;
   basicInfo: {
@@ -84,10 +127,10 @@ export interface SupplierSignupData {
   categories: string[];
   services: Service[];
   regions: string[];
+  languages: string[];
+  interests: string[];
   availability: Availability;
-  subscription: {
-    plan: 'basic' | 'premium' | 'pro';
-    paymentMethod: 'promptpay' | 'credit_card' | 'bank_transfer';
-    paymentComplete: boolean;
-  };
+  applicationReceipt: SupplierApplicationReceipt | null;
+  idempotencyKey: string | null;
+  attemptedApplicationPayload?: unknown;
 }

@@ -17,6 +17,9 @@ import { designTokens } from '@/constants/design-tokens';
 import { useCompanionWeeklyAvailability } from '@/services/api/companion/companion';
 import { useTranslation } from 'react-i18next';
 import { isTestCompanionId } from '@/utils/companion-display';
+import { useAuthStore } from '@/stores/auth-store';
+import { isDemoModeEnabled } from '@/utils/demo-mode';
+import { buildBookableTimeSlots } from '@/utils/booking-schedule';
 import { getDemoGuideAvailability } from '@/utils/preview-availability';
 
 interface TimeSlot {
@@ -38,49 +41,10 @@ interface DateTimePickerStepProps {
   onPrevious: () => void;
 }
 
-const timeToMinutes = (time: string) => {
-  const [hours = '0', minutes = '0'] = time.split(':');
-  return Number(hours) * 60 + Number(minutes);
-};
-
-const minutesToTime = (totalMinutes: number) => {
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-};
-
 const getDaySlots = (day?: DayAvailability): TimeSlot[] => {
   if (!day) return [];
   const slots = Array.isArray(day.slots) ? day.slots : day.timeSlots;
-  return Array.isArray(slots) ? slots.filter(slot => slot.available !== false) : [];
-};
-
-const buildBookableTimeSlots = (slots: TimeSlot[], durationHours: number): TimeSlot[] => {
-  const sortedSlots = [...slots].sort((a, b) => timeToMinutes(a.start) - timeToMinutes(b.start));
-  const latestAvailableEnd = sortedSlots.reduce(
-    (latest, slot) => Math.max(latest, timeToMinutes(slot.end)),
-    0
-  );
-  const durationMinutes = Math.max(Math.round(durationHours * 60), 30);
-  const seenStarts = new Set<string>();
-
-  return sortedSlots
-    .map(slot => {
-      const startMinutes = timeToMinutes(slot.start);
-      const endMinutes = startMinutes + durationMinutes;
-
-      if (seenStarts.has(slot.start) || endMinutes > latestAvailableEnd) {
-        return null;
-      }
-
-      seenStarts.add(slot.start);
-      return {
-        ...slot,
-        end: minutesToTime(endMinutes),
-        available: true,
-      };
-    })
-    .filter((slot): slot is TimeSlot => Boolean(slot));
+  return Array.isArray(slots) ? slots : [];
 };
 
 export const DateTimePickerStep: React.FC<DateTimePickerStepProps> = ({
@@ -89,6 +53,7 @@ export const DateTimePickerStep: React.FC<DateTimePickerStepProps> = ({
 }) => {
   const { bookingData, updateDateTime } = useBookingStore();
   const { t } = useTranslation();
+  const user = useAuthStore(state => state.user);
   const [selectedDate, setSelectedDate] = useState<string | null>(
     bookingData.dateTime?.date || null
   );
@@ -109,7 +74,7 @@ export const DateTimePickerStep: React.FC<DateTimePickerStepProps> = ({
   logger.log('companionId:', companionId);
   logger.log('Raw Availability Data:', availabilityData);
 
-  const demoAvailabilityDates = isTestCompanionId(companionId) ? getDemoGuideAvailability() : [];
+  const demoAvailabilityDates = isDemoModeEnabled(user) && isTestCompanionId(companionId) ? getDemoGuideAvailability() : [];
 
   // Get available dates and time slots from API response
   const availableDates = demoAvailabilityDates.length > 0
@@ -180,7 +145,7 @@ export const DateTimePickerStep: React.FC<DateTimePickerStepProps> = ({
   };
 
   const handleNext = () => {
-    if (selectedDate && selectedTime) {
+    if (selectedDate && selectedTime && selectedSlot) {
       onNext();
     } else {
       Alert.alert(t('dateTimePicker.selectionRequired'), t('dateTimePicker.pleaseSelectBothDateAndTime'));
@@ -348,7 +313,7 @@ export const DateTimePickerStep: React.FC<DateTimePickerStepProps> = ({
         onPrevious={onPrevious}
         onNext={handleNext}
         nextTitle={t('dateTimePicker.continue')}
-        nextDisabled={!selectedDate || !selectedTime}
+        nextDisabled={!selectedDate || !selectedTime || !selectedSlot}
         showPrevious={true}
         showNext={true}
       />

@@ -204,7 +204,7 @@ export default function AvailabilityCalendarScreen() {
           <View style={styles.headerActions}>
             <TouchableOpacity
               style={styles.settingsButton}
-              onPress={() => router.push('/supplier/availability/settings')}
+              onPress={() => router.push('/(supplier)/availability/settings')}
             >
               <Settings size={20} color={designTokens.colors.semantic.primary} />
             </TouchableOpacity>

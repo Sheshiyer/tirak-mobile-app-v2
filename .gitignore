@@ -53,3 +53,6 @@ credentials.json
 .worktrees/
 .superset/
 .temperance/
+
+# Local Metro verification exports are not release source.
+proof-exports/

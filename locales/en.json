@@ -167,7 +167,7 @@
     "newPassword": "New Password",
     "newPasswordDescription": "Enter your new password",
     "submit": "Submit",
-    "resetLinkSent": "Check your email for a secure reset link.",
+    "resetLinkSent": "If an account matches, we will try to send a secure reset link. Check your inbox and spam folder.",
     "redirecting": "Redirecting...",
     "tokenRequired": "Token is required",
     "passwordMinEight": "Password must be at least 8 characters",
@@ -177,7 +177,8 @@
     "passwordsDoNotMatch": "Passwords do not match",
     "resetToken": "Reset Token",
     "resetTokenPlaceholder": "Enter your reset token",
-    "redirectingToLogin": "Returning to login"
+    "redirectingToLogin": "Returning to login",
+    "resetRequested": "Request received"
   },
   "register": {
     "nameRequired": "Name is required",
@@ -886,7 +887,17 @@
     "maxPrice": "Max Price",
     "durationHours": "Duration Hours",
     "durationMinimum30": "Duration must be at least 30 minutes",
-    "error": "Error"
+    "error": "Error",
+    "removeFromProfile": "Remove from profile",
+    "archiveExplanation": "This experience will no longer accept new bookings. Existing bookings and their history remain available.",
+    "archiveFailed": "Could not remove this experience. Please retry.",
+    "confirmRemove": "Remove experience",
+    "localDraftsPreserved": "{{count}} earlier local drafts are saved on this device. They are not published.",
+    "restoreDraft": "Copy draft to form",
+    "inactive": "Inactive",
+    "acceptNewBookings": "Accept new bookings",
+    "durationRange": "Duration must be 30 to 1439 whole minutes (same day).",
+    "currencyAndKeywords": "Experiences use THB and may have at most 20 keywords."
   },
   "analytics": {
     "loadingAnalytics": "Loading guide activity...",
@@ -911,7 +922,9 @@
     "bookings": "Bookings",
     "week": "Week",
     "month": "Month",
-    "quarter": "Quarter"
+    "quarter": "Quarter",
+    "unavailable": "Unavailable",
+    "cashEarningsUnavailable": "Cash collection is not recorded here. Earnings and payment settlement metrics are unavailable."
   },
   "customHeader": {
     "culturalGuideDashboard": "Tirak Guide Dashboard",
@@ -1110,5 +1123,15 @@
         "Nakhon Si Train Station"
       ]
     }
-  ]
+  ],
+  "availabilitySettings": {
+    "title": "Weekly availability",
+    "description": "Set recurring working hours. Specific date changes override these hours. Enter times as HH:mm.",
+    "timeZone": "All hours use Thailand time (Asia/Bangkok).",
+    "start": "Start time",
+    "end": "End time",
+    "saved": "Weekly availability saved.",
+    "loadFailed": "Could not load availability. Please retry.",
+    "saveFailed": "Could not save. Use valid HH:mm times with an end later than the start, and check your connection."
+  }
 }

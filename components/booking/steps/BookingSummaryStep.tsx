@@ -24,7 +24,7 @@ import { BookingStepFooter } from '../BookingStepFooter';
 import { ProfileImage } from '@/components/ui/ProfileImage';
 import { useBookingStore } from '@/stores/booking-store';
 import { designTokens, componentTokens } from '@/constants/design-tokens';
-import { useCreateBooking } from '@/services/api/booking/booking';
+import { useCreateBooking, BookingIdempotencyConflictError } from '@/services/api/booking/booking';
 import { useTranslation } from 'react-i18next';
 import { formatOriginalCurrencyContext } from '@/utils/currency';
 import { usePostHog } from 'posthog-react-native';
@@ -111,8 +111,10 @@ export const BookingSummaryStep: React.FC<BookingSummaryStepProps> = ({
     calculateTotal,
     goToStep,
     prepareBookingRequest,
+    retryOriginalBookingRequest,
     setBookingComplete,
     setBookingQuote,
+    startNewBookingAttempt,
   } = useBookingStore();
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -169,7 +171,7 @@ export const BookingSummaryStep: React.FC<BookingSummaryStepProps> = ({
     setIsSubmitting(true);
 
     try {
-      // Get the prepared booking request from the store
+      // Capture the first outbound payload and UUID so retries reuse the exact request.
       logger.log('📝 Getting prepared booking request from store');
       const bookingRequest = await prepareBookingRequest();
       
@@ -238,6 +240,72 @@ export const BookingSummaryStep: React.FC<BookingSummaryStepProps> = ({
         throw new Error('Invalid booking response format');
       }
     } catch (error) {
+      if (error instanceof BookingIdempotencyConflictError) {
+        const retryOriginal = async () => {
+          const retryRequest = retryOriginalBookingRequest();
+          if (!retryRequest) {
+            Alert.alert(t('bookingSummary.error'), t('bookingSummary.failedToPrepareBookingRequest'));
+            return;
+          }
+
+          submissionLatch.current = true;
+          setIsSubmitting(true);
+          try {
+            const retryResult = await createBookingMutation.mutateAsync(retryRequest);
+            if (!retryResult.success || !retryResult.data.booking.id) {
+              throw new Error('Invalid booking response format');
+            }
+            const responseCurrency = retryResult.data.booking.currency;
+            const paymentSessionAccepted = setPaymentBooking({
+              id: retryResult.data.booking.id,
+              status: retryResult.data.booking.status,
+              paymentStatus: retryResult.data.booking.paymentStatus,
+              ...(responseCurrency !== undefined ? { currency: responseCurrency } : {}),
+            });
+            if (!paymentSessionAccepted) {
+              throw new Error('An existing payment session must be resolved before starting another booking.');
+            }
+            setBookingQuote({
+              totalAmount: retryResult.data.booking.totalAmount,
+              currency: responseCurrency ?? 'THB',
+            });
+            setBookingComplete(true);
+            onNext();
+          } catch (retryError) {
+            console.error('❌ Retry with original request failed:', retryError);
+            Alert.alert(t('bookingSummary.bookingFailed'), t('payments.uncertainOutcome'));
+          } finally {
+            submissionLatch.current = false;
+            setIsSubmitting(false);
+          }
+        };
+
+        Alert.alert(
+          t('bookingSummary.bookingFailed'),
+          'This booking request may already have succeeded. Retry the original request to check safely, or start a new booking attempt with your current edits.',
+          [
+            {
+              text: 'Retry Original',
+              onPress: () => {
+                void retryOriginal();
+              },
+            },
+            {
+              text: 'New Attempt',
+              onPress: () => {
+                startNewBookingAttempt();
+                setBookingComplete(false);
+              },
+            },
+            {
+              text: t('bookingSummary.ok'),
+              style: 'cancel',
+            },
+          ]
+        );
+        return;
+      }
+
       console.error('❌ Booking creation failed:', {
         timestamp: new Date().toISOString(),
         error: error instanceof Error ? error.message : 'Unknown error'

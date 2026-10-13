@@ -3,7 +3,7 @@
     "name": "Tirak",
     "slug": "tirak-companion-marketplace",
     "description": "Tirak connects travellers with trusted local guides across Thailand for authentic cultural experiences, booking, chat, and guide-led discovery.",
-    "version": "1.5.1",
+    "version": "1.5.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "tirak",

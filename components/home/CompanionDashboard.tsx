@@ -435,17 +435,17 @@ const CompanionDashboardContent: React.FC<CompanionDashboardProps> = ({ userName
         
         <View style={styles.statsRow as ViewStyle}>
           <View style={styles.statItem as ViewStyle}>
-            <Text style={styles.statValue as TextStyle}>{stats?.totalBookings ?? 0}</Text>
+            <Text style={styles.statValue as TextStyle}>{stats?.totalBookings ?? t('analytics.unavailable')}</Text>
             <Text style={styles.statLabel as TextStyle}>{t('userHome.companion.bookings')}</Text>
           </View>
           <Divider orientation="vertical" margin="sm" />
           <View style={styles.statItem as ViewStyle}>
-            <Text style={styles.statValue as TextStyle}>{stats?.averageRating ?? 0}</Text>
+            <Text style={styles.statValue as TextStyle}>{stats?.averageRating ?? t('analytics.unavailable')}</Text>
             <Text style={styles.statLabel as TextStyle}>{t('userHome.companion.rating')}</Text>
           </View>
           <Divider orientation="vertical" margin="sm" />
           <View style={styles.statItem as ViewStyle}>
-            <Text style={styles.statValue as TextStyle}>{stats?.thisMonthEarnings ?? 0}</Text>
+            <Text style={styles.statValue as TextStyle}>{stats?.thisMonthEarnings ?? t('analytics.unavailable')}</Text>
             <Text style={styles.statLabel as TextStyle}>{t('userHome.companion.thisWeek')}</Text>
           </View>
         </View>

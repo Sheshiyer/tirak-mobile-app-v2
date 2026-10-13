@@ -16,6 +16,7 @@ import { registerServiceWorker } from '@/utils/pwa';
 import PWAHead from '@/components/PWAHead';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { SimpleToast } from '@/components/ui/SimpleToast';
+import { QaEnvironmentBadge } from '@/components/ui/QaEnvironmentBadge';
 import { SoundManager } from '@/utils/sound-manager';
 import {
   consumePendingSceneLink,
@@ -210,6 +211,7 @@ export default Sentry.wrap(function RootLayout() {
           {Platform.OS === 'web' && <PWAHead />}
           {Platform.OS === 'web' && <PWAInstallPrompt />}
           <SimpleToast />
+          <QaEnvironmentBadge />
           <StatusBar style={Platform.OS === 'ios' ? 'dark' : 'auto'} />
           <RootLayoutNav />
         </QueryClientProvider>

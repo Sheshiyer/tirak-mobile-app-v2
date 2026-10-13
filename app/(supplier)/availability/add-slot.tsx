@@ -38,8 +38,10 @@ function getDefaultEndTime() {
   return d;
 }
 
+function formatLocalDate(date: Date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`; }
+
 function formatTime(date: Date) {
-  return date.toISOString().slice(11, 16); // 'HH:MM'
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`; // Selected Thailand wall-clock time
 }
 
 const AddSlot = () => {
@@ -189,9 +191,10 @@ const AddSlot = () => {
       return;
     }
 
+    if (formatTime(endTime) <= formatTime(startTime)) { toast.error(t('availabilitySettings.saveFailed')); return; }
     const slot = {
-      startDate: startDate.toISOString().split('T')[0],
-      endDate: endDate.toISOString().split('T')[0],
+      startDate: formatLocalDate(startDate),
+      endDate: formatLocalDate(endDate),
       startTime: formatTime(startTime),
       endTime: formatTime(endTime),
       isAvailable: true,

@@ -1,0 +1,22 @@
+{
+  "checkedAt": "2026-09-28T19:58:12.466881+00:00",
+  "buildId": "2bb8a2b2-a325-4414-975a-24a782e6add2",
+  "sha256": "d6886f6bef7dace13631710c7c7b74a267703938b7ff74d70212189f4a03b0c5",
+  "bundleIdentifier": "com.tirak.pineapple",
+  "version": "1.5.2",
+  "buildNumber": "18",
+  "sdk": "iphoneos26.5",
+  "xcode": "2660",
+  "appApsEnvironment": "production",
+  "profileApsEnvironment": "production",
+  "appIdentifier": "BS6SZR4929.com.tirak.pineapple",
+  "profileAppIdentifier": "BS6SZR4929.com.tirak.pineapple",
+  "team": [
+    "BS6SZR4929"
+  ],
+  "profileName": "*[expo] com.tirak.pineapple AppStore 2026-09-28T19:48:41.024Z",
+  "profileExpiry": "2027-03-16T05:23:10",
+  "getTaskAllow": false,
+  "provisionedDevices": false,
+  "pushSigningMatch": true
+}
