@@ -62,11 +62,16 @@ export default function ProfileEditScreen() {
   };
   const goBack = () => router.canGoBack() ? router.back() : router.replace('/(app)');
   const hasLocalProfileImageChange = React.useRef(false);
+  const hasLocalFormChange = React.useRef(false);
+  const updateFormField = (field: keyof typeof formData, value: string) => {
+    hasLocalFormChange.current = true;
+    setFormData(previous => ({ ...previous, [field]: value }));
+  };
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [tempDate, setTempDate] = useState<Date | null>(null);
 
   React.useEffect(() => {
-    if ((data as any)?.data) {
+    if ((data as any)?.data && !hasLocalFormChange.current && !updateProfile.isPending) {
       setFormData({
         name: (data as any).data.name || '',
         email: (data as any).data.email || '',
@@ -79,7 +84,7 @@ export default function ProfileEditScreen() {
         setProfileImage(storedProfileImage);
       }
     }
-  }, [data, user?.profileImage]);
+  }, [data, user?.profileImage, updateProfile.isPending]);
 
   const handleSave = () => {
     if (updateProfile.isPending) return;
@@ -111,6 +116,7 @@ export default function ProfileEditScreen() {
               profileImage: savedProfileImage,
             },
           });
+          hasLocalFormChange.current = false;
           notify(
             t('profile.customer.profileUpdated'),
             t('profile.customer.profileUpdatedDescription'),
@@ -159,6 +165,7 @@ export default function ProfileEditScreen() {
 
   const handleDatePickerDone = () => {
     if (tempDate) {
+      hasLocalFormChange.current = true;
       setFormData({
         ...formData,
         dateOfBirth: tempDate.toISOString().split('T')[0],
@@ -220,14 +227,14 @@ export default function ProfileEditScreen() {
           <SimpleInput
             label={t('profile.customer.fullName')}
             value={formData.name}
-            onChangeText={(text: string) => setFormData({ ...formData, name: text })}
+            onChangeText={(text: string) => updateFormField('name', text)}
             placeholder={t('profile.customer.enterFullName')}
           />
 
           <SimpleInput
             label={t('profile.customer.email')}
             value={formData.email}
-            onChangeText={(text) => setFormData({ ...formData, email: text })}
+            onChangeText={(text) => updateFormField('email', text)}
             placeholder={t('profile.customer.enterEmail')}
             keyboardType="email-address"
             disabled={true}
@@ -236,7 +243,7 @@ export default function ProfileEditScreen() {
           <SimpleInput
             label={t('profile.customer.phoneNumber')}
             value={formData.phone}
-            onChangeText={(text) => setFormData({ ...formData, phone: text })}
+            onChangeText={(text) => updateFormField('phone', text)}
             placeholder={t('profile.customer.enterPhoneNumber')}
             keyboardType="phone-pad"
           />
@@ -244,7 +251,7 @@ export default function ProfileEditScreen() {
           {Platform.OS === 'web' ? (
             <View style={{ gap: 8, marginBottom: 16 }}>
               <Text style={{ fontSize: 14, fontWeight: '600', color: designTokens.colors.semantic.text }}>{t('profile.customer.dateOfBirth')}</Text>
-              <input aria-label={t('profile.customer.dateOfBirth')} type="date" max={[new Date().getFullYear(), String(new Date().getMonth() + 1).padStart(2, '0'), String(new Date().getDate()).padStart(2, '0')].join('-')} value={formData.dateOfBirth?.split('T')[0] || ''} onChange={event => setFormData({ ...formData, dateOfBirth: event.target.value })} style={{ boxSizing: 'border-box', width: '100%', minHeight: 48, padding: '12px 16px', fontSize: 16, fontFamily: 'inherit', borderRadius: 12, border: `1px solid ${designTokens.colors.semantic.border}`, color: designTokens.colors.semantic.text, backgroundColor: designTokens.colors.semantic.surface }} />
+              <input aria-label={t('profile.customer.dateOfBirth')} type="date" max={[new Date().getFullYear(), String(new Date().getMonth() + 1).padStart(2, '0'), String(new Date().getDate()).padStart(2, '0')].join('-')} value={formData.dateOfBirth?.split('T')[0] || ''} onInput={event => updateFormField('dateOfBirth', event.currentTarget.value)} onChange={event => updateFormField('dateOfBirth', event.currentTarget.value)} style={{ boxSizing: 'border-box', width: '100%', minHeight: 48, padding: '12px 16px', fontSize: 16, fontFamily: 'inherit', borderRadius: 12, border: `1px solid ${designTokens.colors.semantic.border}`, color: designTokens.colors.semantic.text, backgroundColor: designTokens.colors.semantic.surface }} />
             </View>
           ) : <>
           <SimpleInput
@@ -289,6 +296,7 @@ export default function ProfileEditScreen() {
                 onChange={(event, selectedDate) => {
                   setShowDatePicker(false);
                   if (selectedDate) {
+                    hasLocalFormChange.current = true;
                     setFormData({
                       ...formData,
                       dateOfBirth: selectedDate.toISOString().split('T')[0],
@@ -305,7 +313,7 @@ export default function ProfileEditScreen() {
           <SimpleInput
             label={t('profile.customer.bio')}
             value={formData.bio}
-            onChangeText={(text) => setFormData({ ...formData, bio: text })}
+            onChangeText={(text) => updateFormField('bio', text)}
             placeholder={t('profile.customer.enterBio')}
             multiline
             numberOfLines={4}

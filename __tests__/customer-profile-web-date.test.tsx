@@ -2,7 +2,7 @@ import React from 'react';
 const Renderer=require('react-test-renderer');const {act}=Renderer;
 const mockMutate=jest.fn();
 const mockUser={id:'traveler-1',name:'Traveler',email:'synthetic@example.com',profileImage:'',dateOfBirth:''};
-const mockProfile={data:{name:'Traveler',email:'synthetic@example.com',dateOfBirth:''}};
+let mockProfile={data:{name:'Traveler',email:'synthetic@example.com',dateOfBirth:''}};
 jest.mock('react-native',()=>({Platform:{OS:'web',select:(options:any)=>options.web ?? options.default},StyleSheet:{create:(s:any)=>s},View:'View',Text:'Text',ScrollView:'ScrollView',TouchableOpacity:'TouchableOpacity',Alert:{alert:jest.fn()},Modal:'Modal',SafeAreaView:'SafeAreaView'}));
 jest.mock('expo-router',()=>({router:{canGoBack:()=>false,replace:jest.fn(),back:jest.fn()}}));
 jest.mock('../services/api/customer/customerProfile',()=>({useCustomerProfile:()=>({data:mockProfile,isLoading:false,error:null}),useUpdateCustomerProfile:()=>({mutate:mockMutate,isPending:false})}));
@@ -19,11 +19,25 @@ jest.mock('lucide-react-native',()=>({ArrowLeft:'ArrowLeft',Camera:'Camera',Save
 jest.mock('@react-native-community/datetimepicker',()=>()=>{throw new Error('Native date picker must not render on web');});
 jest.mock('../utils/profile-image-picker',()=>({chooseProfileImage:jest.fn()}));
 import Screen from '../app/(app)/profile/edit';
+beforeEach(()=>{jest.clearAllMocks();mockProfile={data:{name:'Traveler',email:'synthetic@example.com',dateOfBirth:''}};});
 it('web birth date is empty until chosen and saves literal calendar date without native picker or timezone conversion',async()=>{
  let tree:any;await act(async()=>{tree=Renderer.create(<Screen/>);});
  const input=tree.root.findByType('input');expect(input.props.type).toBe('date');expect(input.props.value).toBe('');expect(input.props.max).toMatch(/^\d{4}-\d{2}-\d{2}$/);
- await act(async()=>input.props.onChange({target:{value:'1990-01-02'}}));
+ await act(async()=>input.props.onChange({currentTarget:{value:'1990-01-02'}}));
  const save=tree.root.findAllByType('Button').find((b:any)=>b.props.title==='profile.customer.saveChanges');
  await act(async()=>save.props.onPress());expect(mockMutate).toHaveBeenCalledWith(expect.objectContaining({dateOfBirth:'1990-01-02'}),expect.anything());
+ await act(async()=>tree.unmount());
+});
+
+it('onInput synchronizes the selected day and a background profile refresh cannot overwrite the unsaved date',async()=>{
+ let tree:any;await act(async()=>{tree=Renderer.create(<Screen/>);});
+ await act(async()=>tree.root.findByType('input').props.onInput({currentTarget:{value:'1990-02-03'}}));
+ expect(tree.root.findByType('input').props.value).toBe('1990-02-03');
+ mockProfile={data:{name:'Traveler',email:'synthetic@example.com',dateOfBirth:'1990-02-02'}};
+ await act(async()=>tree.update(<Screen/>));
+ expect(tree.root.findByType('input').props.value).toBe('1990-02-03');
+ const save=tree.root.findAllByType('Button').find((b:any)=>b.props.title==='profile.customer.saveChanges');
+ await act(async()=>save.props.onPress());
+ expect(mockMutate).toHaveBeenCalledWith(expect.objectContaining({dateOfBirth:'1990-02-03'}),expect.anything());
  await act(async()=>tree.unmount());
 });
