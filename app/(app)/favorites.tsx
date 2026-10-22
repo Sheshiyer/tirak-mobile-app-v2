@@ -49,7 +49,7 @@ export default function FavoritesScreen() {
     category: favorite.category || favorite.categories?.[0] || 'general',
   });
 
-  const favorites = favoriteIds
+  const savedFavorites = favoriteIds
     .map((id, index) => {
       const apiCompanion = favoriteQueries[index]?.data?.data;
       const savedCompanion = favoriteCompanions[id];
@@ -70,8 +70,8 @@ export default function FavoritesScreen() {
       return savedCompanion ? normalizeFavorite(savedCompanion) : null;
     })
     .filter((companion): companion is NonNullable<typeof companion> => Boolean(companion))
-    .filter(companion => demoEnabled || !isDemoCompanion(companion))
-    .filter((companion) => {
+    .filter(companion => demoEnabled || !isDemoCompanion(companion));
+  const favorites = savedFavorites.filter((companion) => {
       const query = searchQuery.trim().toLowerCase();
       if (!query) return true;
       return [companion.name, companion.location, companion.category, ...companion.services]
@@ -91,20 +91,24 @@ export default function FavoritesScreen() {
     router.push(`/chat/${id}`);
   };
   
+  const hasSearchNoMatch = savedFavorites.length > 0 && searchQuery.trim() !== '' && favorites.length === 0;
+
   const renderEmptyState = () => (
     <Card style={styles.emptyStateCard} padding={40}>
       <View style={styles.emptyStateIcon}>
         <Heart size={40} color={designTokens.colors.semantic.accent} />
       </View>
-      <Text style={styles.emptyStateTitle}>{t('favorites.noFavorites')}</Text>
+      <Text style={styles.emptyStateTitle}>{hasSearchNoMatch ? `${t('search.noResultsFor')} “${searchQuery.trim()}”` : t('favorites.noFavorites')}</Text>
       <Text style={styles.emptyStateText}>
-        {t('favorites.noFavoritesDescription')}
+        {hasSearchNoMatch ? t('search.noCompanionsFound') : t('favorites.noFavoritesDescription')}
       </Text>
       <TouchableOpacity 
         style={styles.exploreButton}
-        onPress={() => router.push('/search')}
+        accessibilityRole="button"
+        accessibilityLabel={hasSearchNoMatch ? t('search.clearSearch') : t('favorites.exploreCompanions')}
+        onPress={() => hasSearchNoMatch ? setSearchQuery('') : router.push('/search')}
       >
-        <Text style={styles.exploreButtonText}>{t('favorites.exploreCompanions')}</Text>
+        <Text style={styles.exploreButtonText}>{hasSearchNoMatch ? t('search.clearSearch') : t('favorites.exploreCompanions')}</Text>
       </TouchableOpacity>
     </Card>
   );
