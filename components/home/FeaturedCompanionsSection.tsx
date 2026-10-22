@@ -17,6 +17,7 @@ import { MapPin, Heart, MessageCircle, Star, Verified, Send, Camera } from 'luci
 import { Companion } from '@/types/companion';
 import { useTranslation } from 'react-i18next';
 import { useFavoritesStore } from '@/stores/favorites-store';
+import { GuideStartingPrice } from '@/components/ui/GuideStartingPrice';
 
 const { width: screenWidth } = Dimensions.get('window');
 const CARD_WIDTH = screenWidth * 0.75; // 75% of screen width
@@ -193,8 +194,7 @@ const EnhancedCompanionCard: React.FC<CompanionCardProps> = ({
 
           {companion.price > 0 ? (
             <View style={styles.priceContainer}>
-              <Text style={styles.priceText}>{displayPrice}</Text>
-              <Text style={styles.priceUnit}>/day</Text>
+              <GuideStartingPrice style={styles.priceText} amount={displayPrice} />
             </View>
           ) : (
             <TouchableOpacity
