@@ -14,6 +14,7 @@ import {
   Modal,
 } from 'react-native';
 import { useToast } from '@/stores/toast-store';
+import { bookingDateTimeToInstant, CORE_BOOKING_TIME_ZONE } from '@/utils/booking-timezone';
 import { useAuthStore } from '@/stores/auth-store';
 import { Card } from '@/components/ui/Card';
 import { ProfileImage } from '@/components/ui/ProfileImage';
@@ -70,15 +71,22 @@ interface BookingCardProps {
 interface CountdownTimerProps {
   targetDate: string;
   targetTime: string;
+  timeZone?: string;
 }
 
 // Countdown Timer Component
-const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate, targetTime }) => {
+export const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate, targetTime, timeZone = CORE_BOOKING_TIME_ZONE }) => {
   const [timeLeft, setTimeLeft] = useState('');
 
   useEffect(() => {
     const calculateTimeLeft = () => {
-      const target = new Date(`${targetDate}T${targetTime}:00`);
+      let target: Date;
+      try {
+        target = bookingDateTimeToInstant(targetDate, targetTime, timeZone);
+      } catch {
+        setTimeLeft('Schedule unavailable');
+        return;
+      }
       const now = new Date();
       const difference = target.getTime() - now.getTime();
 
@@ -95,7 +103,7 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate, targetTime 
           setTimeLeft(`${minutes}m`);
         }
       } else {
-        setTimeLeft('Now');
+        setTimeLeft('Start time reached');
       }
     };
 
@@ -103,7 +111,7 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate, targetTime 
     const timer = setInterval(calculateTimeLeft, 60000); // Update every minute
 
     return () => clearInterval(timer);
-  }, [targetDate, targetTime]);
+  }, [targetDate, targetTime, timeZone]);
 
   return (
     <View style={styles.countdownContainer}>
@@ -501,7 +509,7 @@ export default function BookingsScreen() {
             <Subheading style={styles.serviceName}>{serviceData.name}</Subheading>
 
             {isUpcoming && (
-              <CountdownTimer targetDate={booking.date} targetTime={bookingDetails.time} />
+              <CountdownTimer targetDate={booking.date} targetTime={bookingDetails.time} timeZone={(booking as any).timeZone || (booking as any).timezone || CORE_BOOKING_TIME_ZONE} />
             )}
           </View>
 
