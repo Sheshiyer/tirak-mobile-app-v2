@@ -289,6 +289,7 @@ export default function BookingsScreen() {
   };
 
   const getPaymentDisplayText = (booking: BookingListItem) => {
+    if (booking.status === 'cancelled') return 'Cancelled request';
     if (booking.id === REVIEW_BOOKING_ID) return 'Cash — no provider charge';
     if (isCompanion) {
       if (booking.status === 'pending') return 'Pending approval';
