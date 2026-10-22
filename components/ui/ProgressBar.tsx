@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { designTokens } from '@/constants/design-tokens';
@@ -20,6 +20,8 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   variant = 'gradient',
   accessibilityLabel,
 }) => {
+  const [availableWidth, setAvailableWidth] = useState(0);
+  const compact = !showLabels && availableWidth < totalSteps * 40 + 64;
   const animationValues = useRef(
     Array.from({ length: totalSteps }, () => new Animated.Value(0))
   ).current;
@@ -111,12 +113,20 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   return (
     <View
       style={styles.container}
+      onLayout={event => setAvailableWidth(event.nativeEvent.layout.width)}
       accessible
       accessibilityRole="progressbar"
       accessibilityLabel={accessibilityLabel}
       accessibilityValue={{ min: 1, max: totalSteps, now: currentStep }}
     >
-      <View
+      {compact ? (
+        <View accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.compactContainer}>
+          <Text style={styles.compactCount}>{currentStep} / {totalSteps}</Text>
+          <View style={styles.compactTrack}>
+            <View style={[styles.compactFill, { width: `${Math.min(100, Math.max(0, currentStep / totalSteps * 100))}%` }]} />
+          </View>
+        </View>
+      ) : <View
         style={styles.progressContainer}
         accessible={false}
         accessibilityElementsHidden
@@ -201,7 +211,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
             </View>
           );
         })}
-      </View>
+      </View>}
 
       {showLabels && labels.length > 0 && (
         <View
@@ -230,6 +240,10 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
 };
 
 const styles = StyleSheet.create({
+  compactContainer: { width: '100%', gap: 8 },
+  compactCount: { color: designTokens.colors.semantic.primary, fontWeight: '700', fontSize: 14, lineHeight: 20, textAlign: 'center' },
+  compactTrack: { height: 5, width: '100%', borderRadius: 3, overflow: 'hidden', backgroundColor: designTokens.colors.semantic.border },
+  compactFill: { height: '100%', borderRadius: 3, backgroundColor: designTokens.colors.semantic.primary },
   container: {
     width: '100%',
     paddingHorizontal: designTokens.spacing.scale.lg,
