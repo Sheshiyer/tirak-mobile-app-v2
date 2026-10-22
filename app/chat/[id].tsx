@@ -205,7 +205,15 @@ export default function ChatScreen() {
 
     // UUIDs can be either room IDs from Messages or participant IDs from profiles.
     // If no room exists, find an eligible booking before opening a participant chat.
-    const roomDetail = await getRoomDetail(rawId);
+    let roomDetail;
+    try {
+      roomDetail = await getRoomDetail(rawId);
+    } catch {
+      if (generation !== initGenerationRef.current) return;
+      setChatError('We could not load this conversation. Check your connection and try again.');
+      setIsLoading(false);
+      return;
+    }
     if (generation !== initGenerationRef.current) return;
     if (roomDetail) {
       setRoomId(rawId);
