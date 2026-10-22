@@ -23,6 +23,15 @@ import { useTranslation } from 'react-i18next';
 import { useToast } from '@/stores/toast-store';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+// Keep the exact minute-based service contract; rounding fractional hours
+// would turn the minimum 30-minute experience into a misleading one-hour card.
+function formatExperienceDuration(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  if (!hours) return `${remainingMinutes}min`;
+  return remainingMinutes ? `${hours}h ${remainingMinutes}min` : `${hours}h`;
+}
+
 type NewExperienceForm = Omit<ExperienceCreateRequest, 'durationMinutes'> & { durationMinutes: string };
 
 export default function EditServices() {
@@ -370,7 +379,7 @@ export default function EditServices() {
                   </TouchableOpacity>
                   <View style={styles.serviceDetails}>
                     <Text style={styles.servicePrice}>฿{exp.price}</Text>
-                    <Text style={styles.serviceDuration}>{Math.round(exp.durationMinutes / 60)}h</Text>
+                    <Text style={styles.serviceDuration}>{formatExperienceDuration(exp.durationMinutes)}</Text>
                   </View>
                   
                 </View>
