@@ -20,6 +20,7 @@ import {
 } from '@/utils/booking-notifications';
 import { BookingPaymentReadModel } from '@/types/payment';
 import { getDemoModeEnabled } from '@/utils/demo-mode';
+import { collectBookingHistory } from '@/utils/booking-history';
 
 const DEMO_BOOKINGS_STORAGE_KEY = 'tirak-demo-bookings';
 
@@ -795,7 +796,7 @@ const updateDemoBookingStatus = async (
 };
 
 // Fetch bookings list
-export const fetchBookings = async (params: BookingsQueryParams = {}): Promise<BookingsListResponse> => {
+export const fetchBookings = async (params: BookingsQueryParams = {}, options?: {signal?: AbortSignal; syncReminders?: boolean}): Promise<BookingsListResponse> => {
   if (isReviewModeEnabled() && isReviewAccountUser(useAuthStore.getState().user)) {
     const booking = useReviewBookingFixtureStore.getState().booking;
     const items = booking ? [reviewBookingToListItem(booking)] : [];
@@ -828,6 +829,7 @@ export const fetchBookings = async (params: BookingsQueryParams = {}): Promise<B
     logger.log("Fetching bookings:", url);
     
     const response = await axios.get(url, {
+      signal: options?.signal,
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -859,16 +861,17 @@ export const fetchBookings = async (params: BookingsQueryParams = {}): Promise<B
             },
           },
         };
-        await syncBookingReminderNotifications(mergedResponse.data.items || [], getCurrentNotificationRole());
+        if (options?.syncReminders !== false) await syncBookingReminderNotifications(mergedResponse.data.items || [], getCurrentNotificationRole());
         return mergedResponse;
       }
     }
 
     const responseItems = response.data?.data?.bookings || response.data?.data?.items || [];
-    await syncBookingReminderNotifications(responseItems, getCurrentNotificationRole());
+    if (options?.syncReminders !== false) await syncBookingReminderNotifications(responseItems, getCurrentNotificationRole());
 
     return response.data;
   } catch (error: any) {
+    if (options?.signal?.aborted) throw error;
     handleApiError(error);
     if (isUnauthorizedError(error)) {
       throw new Error("Please log in again to view your bookings.");
@@ -1029,6 +1032,40 @@ export const useCreateBooking = () => {
       });
       throw error; // Re-throw to be caught by the component
     },
+  });
+};
+
+// Complete account history for global filters/counts; existing paged consumers stay unchanged.
+export const fetchBookingHistory = async (ownerId: string, signal?: AbortSignal): Promise<BookingsListResponse> => {
+  const assertOwner = () => {
+    if (signal?.aborted) throw new Error('Booking history request cancelled.');
+    const auth = useAuthStore.getState();
+    if (!ownerId || !auth.isAuthenticated || auth.user?.id !== ownerId) {
+      throw new Error('Please sign in again to load your booking history.');
+    }
+  };
+  assertOwner();
+  const complete = await collectBookingHistory(async page => {
+    assertOwner();
+    const response = await fetchBookings({page,limit:100}, {signal,syncReminders:false});
+    assertOwner();
+    return response;
+  }, signal);
+  assertOwner();
+  await syncBookingReminderNotifications(complete.data.items || [], getCurrentNotificationRole());
+  return complete;
+};
+
+export const useBookingHistoryQuery = (options?: {enabled?: boolean}) => {
+  const {user,isAuthenticated} = useAuthStore();
+  return useQuery({
+    queryKey:['bookings','history',user?.id ?? null],
+    queryFn:({signal})=>fetchBookingHistory(user?.id || '',signal),
+    enabled:!!user?.id && isAuthenticated && options?.enabled !== false,
+    staleTime:2 * 60 * 1000,
+    gcTime:5 * 60 * 1000,
+    refetchOnWindowFocus:true,
+    retry:false,
   });
 };
 
