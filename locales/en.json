@@ -17,7 +17,13 @@
     "selectLanguage": "Select Language",
     "selectPreferredLanguage": "Select your preferred language",
     "english": "English",
-    "thai": "Thai"
+    "thai": "Thai",
+    "save": "Save language",
+    "saving": "Saving…",
+    "saved": "Language saved on this device.",
+    "saveFailed": "Language could not be saved. Please try again.",
+    "unsaved": "Save to apply your selected language.",
+    "back": "Back to settings"
   },
   "profile": {
     "profile": "Profile",
@@ -671,7 +677,8 @@
     "qrUnavailable": "QR details are not available. Keep this payment locked and check the booking later.",
     "expires": "Expires",
     "chargeReference": "Reference",
-    "pendingQrA11y": "PromptPay QR for the pending booking payment"
+    "pendingQrA11y": "PromptPay QR for the pending booking payment",
+    "existingChargeWarning": "An earlier electronic payment may still be pending. Do not pay again in cash. Confirm the existing payment status with support before making another payment."
   },
   "bookingConfirmation": {
     "noCompanionData": "No guide data available",
@@ -1133,5 +1140,40 @@
     "saved": "Weekly availability saved.",
     "loadFailed": "Could not load availability. Please retry.",
     "saveFailed": "Could not save. Use valid HH:mm times with an end later than the start, and check your connection."
+  },
+  "settingsFlow": {
+    "emailVerified": "Email verified",
+    "verifyEmail": "Verify your email",
+    "emailConfirmed": "Your account email is confirmed",
+    "emailCode": "Receive a code to confirm your account email",
+    "bookingAlerts": "Booking Alerts",
+    "pushAlerts": "Push Alerts",
+    "pushDescription": "Booking requests, guide reminders, and traveler messages",
+    "emailAlerts": "Email Alerts",
+    "emailDescription": "Booking and message updates sent to your email",
+    "coins": "Tirak Coins",
+    "invite": "Invite & Earn",
+    "inviteDescription": "Share Tirak with travelers or guides and earn future benefits",
+    "privacyLoadError": "Your preferences could not be loaded. Please retry when you are connected.",
+    "privacySaved": "Your preferences are saved.",
+    "privacySaveError": "We could not save your preferences. Please retry. If you switched analytics off, it is off on this device for this session.",
+    "privacyLoading": "Loading privacy preferences",
+    "privacyUnavailable": "Privacy preferences are unavailable for this account.",
+    "privacyRetry": "Retry loading preferences",
+    "marketing": "Tirak news and offers by email",
+    "marketingLabel": "Marketing emails",
+    "analytics": "Optional app usage analytics",
+    "analyticsLabel": "Optional usage analytics",
+    "privacyNote": "These choices are optional. Essential account and booking messages continue regardless of marketing preferences. Analytics helps us understand how the app is used; it does not include message contents.",
+    "privacySave": "Save privacy preferences",
+    "yourAccount": "Your Tirak Account",
+    "editProfile": "Edit Profile",
+    "editDescription": "Keep your photo, contact details, and travel style current",
+    "preferences": "Preferences",
+    "notifications": "Notifications",
+    "notificationsDescription": "Choose booking, message, and reminder alerts",
+    "coinsDescription": "Invite travelers or guides and earn future benefits",
+    "trustSafety": "Trust & Safety",
+    "accountAccess": "Account Access"
   }
 }

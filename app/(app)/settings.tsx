@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import {
   View,
@@ -82,6 +83,7 @@ const SettingsItem: React.FC<SettingsItemProps> = ({
 );
 
 export default function SettingsScreen() {
+  const { t } = useTranslation();
   const { user, logout } = useAuthStore();
   const [deletingAccount, setDeletingAccount] = useState(false);
 
@@ -170,19 +172,19 @@ export default function SettingsScreen() {
         {/* Profile Section */}
         <Card style={styles.profileCard}>
           <View style={styles.profileHeader}>
-            <Text style={styles.sectionTitle}>Your Tirak Account</Text>
+            <Text style={styles.sectionTitle}>{t('settingsFlow.yourAccount')}</Text>
           </View>
           
           <SettingsItem
             icon={<User size={22} color={designTokens.colors.semantic.primary} />}
-            title="Edit Profile"
-            subtitle="Keep your photo, contact details, and travel style current"
+            title={t('settingsFlow.editProfile')}
+            subtitle={t('settingsFlow.editDescription')}
             onPress={() => router.push('/profile/edit')}
           />
           <SettingsItem
             icon={<Mail size={22} color={designTokens.colors.semantic.primary} />}
-            title={user?.verified ? 'Email verified' : 'Verify your email'}
-            subtitle={user?.verified ? 'Your account email is confirmed' : 'Receive a code to confirm your account email'}
+            title={user?.verified ? t('settingsFlow.emailVerified') : t('settingsFlow.verifyEmail')}
+            subtitle={user?.verified ? t('settingsFlow.emailConfirmed') : t('settingsFlow.emailCode')}
             onPress={() => router.push('/auth/verify-email')}
           />
         </Card>
@@ -190,19 +192,19 @@ export default function SettingsScreen() {
         {/* App Settings */}
         <Card style={styles.settingsCard}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Preferences</Text>
+            <Text style={styles.sectionTitle}>{t('settingsFlow.preferences')}</Text>
           </View>
           
           <SettingsItem
             icon={<Bell size={22} color={designTokens.colors.semantic.primary} />}
-            title="Notifications"
-            subtitle="Choose booking, message, and reminder alerts"
+            title={t('settingsFlow.notifications')}
+            subtitle={t('settingsFlow.notificationsDescription')}
             onPress={() =>  router.push('/(app)/profile/notificationSettings')}
           />
           <SettingsItem
             icon={<Gift size={22} color={designTokens.colors.semantic.primary} />}
-            title="Tirak Coins"
-            subtitle="Invite travelers or guides and earn future benefits"
+            title={t('settingsFlow.coins')}
+            subtitle={t('settingsFlow.coinsDescription')}
             onPress={() => router.push('/referrals' as any)}
           />
           
@@ -210,30 +212,28 @@ export default function SettingsScreen() {
           
           <SettingsItem
             icon={<Globe size={22} color={designTokens.colors.semantic.primary} />}
-            title="Language"
-            subtitle="English"
-            onPress={() => {
-              Alert.alert('Language pass coming soon', 'English is active now. Thai copy will be reviewed separately.');
-            }}
+            title={t('settings.language')}
+            subtitle={t('settings.languageDescription')}
+            onPress={() => router.push('/supplier/profile/language')}
           />
         </Card>
 
         {/* Privacy & Security */}
         <Card style={styles.settingsCard}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Trust & Safety</Text>
+            <Text style={styles.sectionTitle}>{t('settingsFlow.trustSafety')}</Text>
           </View>
           
           <SettingsItem
             icon={<Shield size={22} color={designTokens.colors.semantic.primary} />}
-            title="Privacy Policy"
-            subtitle="See how Tirak protects your data"
+            title={t('settings.privacyPolicy')}
+            subtitle={t('settings.privacyPolicyDescription')}
             onPress={() => router.push('/auth/legal?type=privacy')}
           />
           <SettingsItem
             icon={<FileText size={22} color={designTokens.colors.semantic.primary} />}
-            title="Terms of Service"
-            subtitle="Review the rules for travelers and guides"
+            title={t('settings.termsOfService')}
+            subtitle={t('settings.termsOfServiceDescription')}
             onPress={() => router.push('/auth/legal?type=terms')}
           />
           <AccountPrivacyPreferences />
@@ -272,7 +272,7 @@ export default function SettingsScreen() {
         {/* Danger Zone */}
         <Card style={styles.settingsCard}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Account Access</Text>
+            <Text style={styles.sectionTitle}>{t('settingsFlow.accountAccess')}</Text>
           </View>
           <SettingsItem
             icon={

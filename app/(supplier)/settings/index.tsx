@@ -205,7 +205,7 @@ function SupplierSettingsScreen() {
         </View>
         
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Booking Alerts</Text>
+          <Text style={styles.sectionTitle}>{t('settingsFlow.bookingAlerts')}</Text>
           
           <View style={styles.card}>
             <View style={styles.settingItem}>
@@ -213,12 +213,13 @@ function SupplierSettingsScreen() {
                 <Smartphone size={20} color={designTokens.colors.semantic.surface} />
               </View>
               <View style={styles.settingContent}>
-                <Text style={styles.settingTitle}>Push Alerts</Text>
+                <Text style={styles.settingTitle}>{t('settingsFlow.pushAlerts')}</Text>
                 <Text style={styles.settingDescription}>
-                  Booking requests, guide reminders, and traveler messages
+                  {t('settingsFlow.pushDescription')}
                 </Text>
               </View>
               <Switch
+                accessibilityLabel={t('settingsFlow.pushAlerts')}
                 value={notificationsEnabled}
                 onValueChange={(value) => updatePreference('push', value)}
                 trackColor={{ false: colors.lightGray, true: colors.primaryLight }}
@@ -233,12 +234,13 @@ function SupplierSettingsScreen() {
                 <Mail size={20} color={designTokens.colors.semantic.surface} />
               </View>
               <View style={styles.settingContent}>
-                <Text style={styles.settingTitle}>Email Alerts</Text>
+                <Text style={styles.settingTitle}>{t('settingsFlow.emailAlerts')}</Text>
                 <Text style={styles.settingDescription}>
-                  Booking and message updates sent to your email
+                  {t('settingsFlow.emailDescription')}
                 </Text>
               </View>
               <Switch
+                accessibilityLabel={t('settingsFlow.emailAlerts')}
                 value={emailNotificationsEnabled}
                 onValueChange={(value) => updatePreference('email', value)}
                 trackColor={{ false: colors.lightGray, true: colors.primaryLight }}
@@ -249,7 +251,7 @@ function SupplierSettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tirak Coins</Text>
+          <Text style={styles.sectionTitle}>{t('settingsFlow.coins')}</Text>
           <View style={styles.card}>
             <TouchableOpacity
               style={styles.settingItem}
@@ -259,9 +261,9 @@ function SupplierSettingsScreen() {
                 <Gift size={20} color={designTokens.colors.semantic.surface} />
               </View>
               <View style={styles.settingContent}>
-                <Text style={styles.settingTitle}>Invite & Earn</Text>
+                <Text style={styles.settingTitle}>{t('settingsFlow.invite')}</Text>
                 <Text style={styles.settingDescription}>
-                  Share Tirak with travelers or guides and earn future benefits
+                  {t('settingsFlow.inviteDescription')}
                 </Text>
               </View>
               <ChevronRight size={20} color={designTokens.colors.semantic.text} />
@@ -290,8 +292,8 @@ function SupplierSettingsScreen() {
             </TouchableOpacity>
             <TouchableOpacity style={styles.settingItem} onPress={() => router.push('/auth/legal?type=terms')}>
               <View style={styles.settingContent}>
-                <Text style={styles.settingTitle}>Terms of Service</Text>
-                <Text style={styles.settingDescription}>Review the rules for travelers and guides</Text>
+                <Text style={styles.settingTitle}>{t('settings.termsOfService')}</Text>
+                <Text style={styles.settingDescription}>{t('settings.termsOfServiceDescription')}</Text>
               </View>
               <ChevronRight size={20} color={designTokens.colors.semantic.text} />
             </TouchableOpacity>
