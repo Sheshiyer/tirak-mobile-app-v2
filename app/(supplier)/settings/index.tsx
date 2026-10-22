@@ -38,6 +38,7 @@ import {
 import { Smartphone, Mail } from 'lucide-react-native';
 import CustomerSettingsScreen from '@/app/(app)/settings';
 import { AccountEmailVerification } from '@/components/AccountEmailVerification';
+import { AccountClosureConfirmation, ACCOUNT_CLOSURE_MESSAGE } from '@/components/AccountClosureConfirmation';
 import { AccountPrivacyPreferences } from '@/components/AccountPrivacyPreferences';
 
 
@@ -97,42 +98,32 @@ function SupplierSettingsScreen() {
     }
   };
 
-  const handleDeleteAccount = async () => {
-    const performDelete = async () => {
-      if (user?.userType === 'supplier') {
-        logger.log('Deleting supplier account...');
-        await deleteSupplierAccount(user?.id || '');
-        await logout();
-      } else if (user?.userType === 'companion') {
-        logger.log('Deleting companion account...');
-        await deleteCompanionAccount(user?.id || '');
-        await logout();
-      } else {
-        logger.log('Deleting user account...');
-        await deleteUserAccount(user?.id || '');
-        await logout();
-      }
-      
-      // On web, force a page reload to ensure complete cleanup
-      if (typeof window !== 'undefined') {
-        window.location.href = '/auth';
-      } else {
-        router.replace("/auth");
-      }
-    };
-
-    // Web-compatible confirmation
-    if (Platform.OS === 'web') {
-      const confirmed = window.confirm(`${t('settings.deleteAccount')}\n\n${'Close your account and disable sign-in. Booking and message history may be retained for records and safety.'}`);
-      if (confirmed) {
-        await performDelete();
-      }
-    } else {
-      Alert.alert(t('settings.deleteAccount'), 'Close your account and disable sign-in. Booking and message history may be retained for records and safety.', [
-        { text: t('settings.cancel'), style: "cancel" },
-        { text: t('settings.deleteAccount'), onPress: performDelete },
-      ]);
-    }
+  const [showClosure, setShowClosure] = React.useState(false);
+  const deletingRef = React.useRef(false);
+  const performDelete = async () => {
+    if (deletingRef.current) return;
+    if (!user?.id) throw new Error('Please sign in again before closing your account.');
+    deletingRef.current = true;
+    try {
+      const response = user.userType === 'supplier'
+        ? await deleteSupplierAccount(user.id)
+        : user.userType === 'companion'
+          ? await deleteCompanionAccount(user.id)
+          : await deleteUserAccount(user.id);
+      if (!response.success) throw new Error(response.message || 'Unable to close your account. Please try again.');
+      await logout();
+      if (typeof window !== 'undefined') window.location.href = '/auth';
+      else router.replace('/auth');
+    } finally { deletingRef.current = false; }
+  };
+  const handleDeleteAccount = () => {
+    if (Platform.OS === 'web') setShowClosure(true);
+    else Alert.alert(t('settings.deleteAccount'), ACCOUNT_CLOSURE_MESSAGE, [
+      {text:t('settings.cancel'),style:'cancel'},
+      {text:t('settings.deleteAccount'),onPress:()=>{
+        void performDelete().catch(error=>Alert.alert('Error', error instanceof Error ? error.message : 'Network error. Please try again.'));
+      }},
+    ]);
   };
   
   return (
@@ -371,6 +362,7 @@ function SupplierSettingsScreen() {
         
         <Text style={styles.versionText}>{`${t('settings.version')} ${Constants.expoConfig?.version}`}</Text>
       </ScrollView>
+      <AccountClosureConfirmation visible={showClosure} onClose={()=>setShowClosure(false)} onConfirm={performDelete} />
     </SafeAreaView>
   );
 }

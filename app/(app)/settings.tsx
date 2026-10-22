@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { designTokens } from '@/constants/design-tokens';
 import { RadialGradient } from '@/components/ui/RadialGradient';
 import { Card } from '@/components/ui/Card';
+import { AccountClosureConfirmation, ACCOUNT_CLOSURE_MESSAGE } from '@/components/AccountClosureConfirmation';
 import { AccountPrivacyPreferences } from '@/components/AccountPrivacyPreferences';
 import {
   User,
@@ -86,6 +87,8 @@ export default function SettingsScreen() {
   const { t } = useTranslation();
   const { user, logout } = useAuthStore();
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [showClosure, setShowClosure] = useState(false);
+  const deletingRef = useRef(false);
 
   const openExternalLink = async (url: string, fallbackMessage: string) => {
     try {
@@ -116,54 +119,35 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleDeleteAccount = () => {
-    const confirmDelete = () => {
-      Alert.alert(
-        'Delete Account',
-        'Close your account and disable sign-in. Booking and message history may be retained for records and safety.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Delete Account',
-            style: 'destructive',
-            onPress: performDeleteAccount,
-          },
-        ]
-      );
-    };
-
-    const performDeleteAccount = async () => {
-      if (!user?.id) return;
-      setDeletingAccount(true);
-      try {
-        const token = await secureStorage.getItemAsync('authToken');
-        const res = await fetch(`${BACKEND_URL}/api/users/${user.id}`, {
-          method: 'DELETE',
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        if (res.ok) {
-          await logout();
-          if (typeof window !== 'undefined') {
-            window.location.href = '/auth';
-          } else {
-            router.replace('/auth');
-          }
-        } else {
-          Alert.alert('Error', `Failed to delete account. Please contact ${SUPPORT_EMAIL}.`);
-        }
-      } catch {
-        Alert.alert('Error', 'Network error. Please try again.');
-      } finally {
-        setDeletingAccount(false);
-      }
-    };
-
-    if (Platform.OS === 'web') {
-      const confirmed = window.confirm('Delete Account\n\nClose your account and disable sign-in. Booking and message history may be retained for records and safety.');
-      if (confirmed) performDeleteAccount();
-    } else {
-      confirmDelete();
+  const performDeleteAccount = async () => {
+    if (deletingRef.current) return;
+    if (!user?.id) throw new Error('Please sign in again before closing your account.');
+    deletingRef.current = true;
+    setDeletingAccount(true);
+    try {
+      const token = await secureStorage.getItemAsync('authToken');
+      const res = await fetch(`${BACKEND_URL}/api/users/${user.id}`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error(`Unable to close your account. Please try again or contact ${SUPPORT_EMAIL}.`);
+      await logout();
+      if (typeof window !== 'undefined') window.location.href = '/auth';
+      else router.replace('/auth');
+    } finally {
+      deletingRef.current = false;
+      setDeletingAccount(false);
     }
+  };
+
+  const handleDeleteAccount = () => {
+    if (Platform.OS === 'web') setShowClosure(true);
+    else Alert.alert('Delete Account', ACCOUNT_CLOSURE_MESSAGE, [
+      {text:'Cancel',style:'cancel'},
+      {text:'Delete Account',style:'destructive',onPress:()=>{
+        void performDeleteAccount().catch(error=>Alert.alert('Error', error instanceof Error ? error.message : 'Network error. Please try again.'));
+      }},
+    ]);
   };
 
   return (
@@ -304,6 +288,7 @@ export default function SettingsScreen() {
           <Text style={styles.copyrightText}>© {CURRENT_YEAR} Tirak. All rights reserved.</Text>
         </View>
       </ScrollView>
+      <AccountClosureConfirmation visible={showClosure} onClose={()=>setShowClosure(false)} onConfirm={performDeleteAccount} />
     </RadialGradient>
   );
 }
