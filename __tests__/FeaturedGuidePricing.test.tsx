@@ -20,3 +20,33 @@ it('keeps an unknown guide price as a request rather than inventing a minimum am
   expect(screen.getByText('Request guide rate')).toBeTruthy();
   expect(screen.queryByText(/฿0/)).toBeNull();
 });
+
+import { act, fireEvent } from '@testing-library/react-native';
+import { Dimensions, StyleSheet, FlatList } from 'react-native';
+it('recomputes rendered home card widths and carousel snap geometry after desktop to phone resize', () => {
+  const resize = (width: number) => act(() => Dimensions.set({ window: { width, height: 844, scale: 1, fontScale: 1 }, screen: { width, height: 844, scale: 1, fontScale: 1 } }));
+  const original = Dimensions.get('window');
+  resize(1170);
+  const screen = render(<FeaturedCompanionsSection companions={[guide]} onSeeAll={jest.fn()} />);
+  const width = () => StyleSheet.flatten(screen.getByTestId('featured-guide-card-real-guide').props.style).width as number;
+  expect(width()).toBe(360);
+  resize(390);
+  expect(width()).toBeCloseTo(331.5);
+  expect(width()).toBeLessThanOrEqual(390 - 32);
+  let list = screen.UNSAFE_getByType(FlatList);
+  expect(list.props.snapToInterval).toBeCloseTo(width() + 16);
+  expect(list.props.getItemLayout(null, 1).offset).toBeCloseTo(width() + 16);
+  resize(300);
+  expect(width()).toBe(255);
+  list = screen.UNSAFE_getByType(FlatList);
+  expect(list.props.snapToInterval).toBe(271);
+  fireEvent(screen.getByTestId('featured-guides-section'), 'layout', { nativeEvent: { layout: { width: 280 } } });
+  expect(width()).toBe(238);
+  resize(1170);
+  fireEvent(screen.getByTestId('featured-guides-section'), 'layout', { nativeEvent: { layout: { width: 1170 } } });
+  expect(width()).toBe(360);
+  fireEvent(screen.getByRole('button', { name: 'View Local Guide guide profile' }), 'press');
+  expect(require('expo-router').router.push).toHaveBeenCalledWith('/companion/real-guide');
+  screen.unmount();
+  resize(original.width);
+});

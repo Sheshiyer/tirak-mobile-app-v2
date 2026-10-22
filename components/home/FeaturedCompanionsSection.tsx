@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   FlatList,
   Animated,
-  Dimensions,
+  useWindowDimensions,
   Platform
 } from 'react-native';
 import { router } from 'expo-router';
@@ -19,8 +19,6 @@ import { useTranslation } from 'react-i18next';
 import { useFavoritesStore } from '@/stores/favorites-store';
 import { GuideStartingPrice } from '@/components/ui/GuideStartingPrice';
 
-const { width: screenWidth } = Dimensions.get('window');
-const CARD_WIDTH = screenWidth * 0.75; // 75% of screen width
 const CARD_SPACING = designTokens.spacing.scale.md;
 
 interface FeaturedCompanionsSectionProps {
@@ -37,6 +35,7 @@ interface CompanionCardProps {
   onFavorite: () => void;
   onMessage: () => void;
   index: number;
+  cardWidth: number;
 }
 
 // Enhanced Companion Card Component
@@ -46,6 +45,7 @@ const EnhancedCompanionCard: React.FC<CompanionCardProps> = ({
   onFavorite,
   onMessage,
   index,
+  cardWidth,
 }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const scaleAnim = new Animated.Value(1);
@@ -75,13 +75,16 @@ const EnhancedCompanionCard: React.FC<CompanionCardProps> = ({
 
   return (
     <Animated.View
+      testID={`featured-guide-card-${companion.id}`}
       style={[
         styles.cardContainer,
-        { transform: [{ scale: scaleAnim }] }
+        { width: cardWidth, transform: [{ scale: scaleAnim }] }
       ]}
     >
       <TouchableOpacity
         style={styles.card}
+        accessibilityRole="button"
+        accessibilityLabel={`View ${companion.name} guide profile`}
         onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
@@ -221,7 +224,14 @@ export const FeaturedCompanionsSection: React.FC<FeaturedCompanionsSectionProps>
   onRetry,
 }) => {
   const { t } = useTranslation();
-
+  const { width: viewportWidth } = useWindowDimensions();
+  const [sectionWidth, setSectionWidth] = useState<number | null>(null);
+  const availableWidth = Math.min(viewportWidth, sectionWidth || viewportWidth);
+  const cardWidth = Math.max(1, Math.min(360, availableWidth * 0.85, availableWidth - 2 * designTokens.spacing.scale.md));
+  const measureSection = (event: { nativeEvent: { layout: { width: number } } }) => {
+    const next = event.nativeEvent.layout.width;
+    if (next > 0) setSectionWidth(next);
+  };
 
   const handleCompanionPress = (companionId: string) => {
     router.push(`/companion/${companionId}`);
@@ -259,13 +269,14 @@ export const FeaturedCompanionsSection: React.FC<FeaturedCompanionsSectionProps>
       onFavorite={() => handleFavorite(item)}
       onMessage={() => handleMessage(item.id)}
       index={index}
+      cardWidth={cardWidth}
     />
   );
 
   // Handle error state
   if (error) {
     return (
-      <View style={styles.sectionContainer}>
+      <View testID="featured-guides-section" style={styles.sectionContainer} onLayout={measureSection}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>{t('userHome.featuredCompanions')}</Text>
         </View>
@@ -284,13 +295,13 @@ export const FeaturedCompanionsSection: React.FC<FeaturedCompanionsSectionProps>
 
   if (loading) {
     return (
-      <View style={styles.sectionContainer}>
+      <View testID="featured-guides-section" style={styles.sectionContainer} onLayout={measureSection}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>{t('userHome.featuredCompanions')}</Text>
         </View>
         <View style={styles.loadingContainer}>
           {[1, 2, 3].map((_, index) => (
-            <View key={index} style={styles.skeletonCard} />
+            <View key={index} style={[styles.skeletonCard, { width: cardWidth }]} />
           ))}
         </View>
       </View>
@@ -301,7 +312,7 @@ export const FeaturedCompanionsSection: React.FC<FeaturedCompanionsSectionProps>
   if (!companions || companions.length === 0) {
     // logger.warn('FeaturedCompanionsSection: No companions data provided');
     return (
-      <View style={styles.sectionContainer}>
+      <View testID="featured-guides-section" style={styles.sectionContainer} onLayout={measureSection}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>{t('userHome.featuredCompanions')}</Text>
         </View>
@@ -313,7 +324,7 @@ export const FeaturedCompanionsSection: React.FC<FeaturedCompanionsSectionProps>
   }
 
   return (
-    <View style={styles.sectionContainer}>
+    <View testID="featured-guides-section" style={styles.sectionContainer} onLayout={measureSection}>
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>{t('userHome.featuredCompanions')}</Text>
         <TouchableOpacity onPress={onSeeAll} activeOpacity={0.7} style={styles.seeAllButton}>
@@ -322,6 +333,8 @@ export const FeaturedCompanionsSection: React.FC<FeaturedCompanionsSectionProps>
       </View>
 
       <FlatList
+        key={`featured-${Math.round(cardWidth)}`}
+        extraData={cardWidth}
         data={companions}
         renderItem={renderCompanionCard}
         horizontal
@@ -334,12 +347,12 @@ export const FeaturedCompanionsSection: React.FC<FeaturedCompanionsSectionProps>
         initialNumToRender={4}
         maxToRenderPerBatch={4}
         windowSize={10}
-        snapToInterval={CARD_WIDTH + CARD_SPACING}
+        snapToInterval={cardWidth + CARD_SPACING}
         decelerationRate="fast"
         snapToAlignment="start"
         getItemLayout={(data, index) => ({
-          length: CARD_WIDTH + CARD_SPACING,
-          offset: (CARD_WIDTH + CARD_SPACING) * index,
+          length: cardWidth + CARD_SPACING,
+          offset: (cardWidth + CARD_SPACING) * index,
           index,
         })}
       />
@@ -350,6 +363,8 @@ export const FeaturedCompanionsSection: React.FC<FeaturedCompanionsSectionProps>
 const styles = StyleSheet.create({
   // Section Container
   sectionContainer: {
+    width: '100%',
+    minWidth: 0,
     marginBottom: designTokens.spacing.scale.lg,
   },
 
@@ -390,7 +405,7 @@ const styles = StyleSheet.create({
 
   // Card Container
   cardContainer: {
-    width: CARD_WIDTH,
+    minWidth: 0,
     minHeight: 330,
   },
   card: {
@@ -489,6 +504,8 @@ const styles = StyleSheet.create({
     marginBottom: designTokens.spacing.scale.sm,
   },
   companionName: {
+    minWidth: 0,
+    flexShrink: 1,
     ...designTokens.typography.styles.body,
     fontWeight: designTokens.typography.weights.semibold,
     color: designTokens.colors.semantic.text,
@@ -603,7 +620,6 @@ const styles = StyleSheet.create({
     gap: CARD_SPACING,
   },
   skeletonCard: {
-    width: CARD_WIDTH,
     height: 300,
     backgroundColor: designTokens.colors.semantic.border,
     borderRadius: designTokens.borderRadius.components.card,
