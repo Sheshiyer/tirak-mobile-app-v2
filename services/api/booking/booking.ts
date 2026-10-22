@@ -1079,15 +1079,35 @@ export const useUpdateBookingStatus = () => {
   return useMutation({
     mutationFn: ({ id, statusData }: { id: string; statusData: UpdateBookingStatusRequest }) =>
       updateBookingStatus(id, statusData),
-    onSuccess: (data, variables) => {
-      // Invalidate and refetch bookings list
-      queryClient.invalidateQueries({ queryKey: ['bookings'] });
-      // Invalidate and refetch specific booking details
-      queryClient.invalidateQueries({ queryKey: ['booking', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      queryClient.invalidateQueries({ queryKey: ['supplierStats'] });
-      queryClient.invalidateQueries({ queryKey: ['companionAvailability'] });
-      logger.log("Booking status updated successfully:", data.data.booking.status);
+    onSuccess: async (data, variables) => {
+      const confirmed = data?.data?.booking;
+      if (data.success !== true || confirmed?.id !== variables.id || !['confirmed', 'cancelled', 'completed'].includes(confirmed.status)) {
+        throw new Error('The server did not confirm the booking status update.');
+      }
+      // A list read started before approval must not restore the old pending row.
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: ['bookings'] }),
+        queryClient.cancelQueries({ queryKey: ['booking', variables.id] }),
+      ]);
+      queryClient.setQueriesData<BookingsListResponse>({ queryKey: ['bookings'] }, current => {
+        if (!current?.data) return current;
+        const update = (booking: BookingListItem) => booking.id === variables.id ? { ...booking, status: confirmed.status } : booking;
+        return { ...current, data: { ...current.data,
+          ...(current.data.items ? { items: current.data.items.map(update) } : {}),
+          ...(current.data.bookings ? { bookings: current.data.bookings.map(update) } : {}),
+        } };
+      });
+      queryClient.setQueryData<BookingDetailsResponse>(['booking', variables.id], current => current?.data?.booking
+        ? { ...current, data: { ...current.data, booking: { ...current.data.booking, status: confirmed.status } } }
+        : current);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['bookings'] }),
+        queryClient.invalidateQueries({ queryKey: ['booking', variables.id] }),
+        queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+        queryClient.invalidateQueries({ queryKey: ['supplierStats'] }),
+        queryClient.invalidateQueries({ queryKey: ['companionAvailability'] }),
+      ]);
+      logger.log("Booking status updated successfully:", confirmed.status);
     },
     onError: (error: Error) => {
       logger.warn("Failed to update booking status:", error.message);

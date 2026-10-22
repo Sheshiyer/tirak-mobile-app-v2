@@ -174,6 +174,8 @@ export default function BookingsScreen() {
   const [statusFilter, setStatusFilter] = useState<'all' | BookingListItem['status']>('all');
   const [search, setSearch] = useState('');
   const toast = useToast();
+  const pendingStatusUpdates = useRef(new Set<string>());
+  const [updatingBookingIds, setUpdatingBookingIds] = useState(new Set<string>());
   const showStatusFeedback = (title: string, message: string, failed = false) => {
     if (Platform.OS === 'web') {
       if (failed) toast.error(`${title}: ${message}`);
@@ -298,6 +300,9 @@ export default function BookingsScreen() {
   };
 
   const handleCompanionStatusUpdate = async (booking: BookingListItem, status: 'confirmed' | 'cancelled') => {
+    if (pendingStatusUpdates.current.has(booking.id)) return;
+    pendingStatusUpdates.current.add(booking.id);
+    setUpdatingBookingIds(new Set(pendingStatusUpdates.current));
     try {
       if (booking.id === REVIEW_BOOKING_ID) {
         if (reviewAccountKey !== 'guide' || status !== 'confirmed') {
@@ -314,7 +319,6 @@ export default function BookingsScreen() {
           reason: status === 'cancelled' ? 'Guide declined the booking request.' : undefined,
         },
       });
-      await refetch();
       showStatusFeedback(
         status === 'confirmed' ? 'Booking approved' : 'Booking rejected',
         status === 'confirmed'
@@ -323,6 +327,9 @@ export default function BookingsScreen() {
       );
     } catch (error: any) {
       showStatusFeedback('Unable to update booking', error?.message || 'Please try again.', true);
+    } finally {
+      pendingStatusUpdates.current.delete(booking.id);
+      setUpdatingBookingIds(new Set(pendingStatusUpdates.current));
     }
   };
 
@@ -551,7 +558,7 @@ export default function BookingsScreen() {
                 <TouchableOpacity
                   style={[styles.approvalButton, styles.rejectApprovalButton]}
                   onPress={() => handleRejectBooking(booking)}
-                  disabled={updateBookingStatus.isPending}
+                  disabled={updateBookingStatus.isPending || updatingBookingIds.has(booking.id)}
                   accessibilityRole="button"
                   accessibilityLabel="Reject booking request"
                 >
@@ -562,7 +569,7 @@ export default function BookingsScreen() {
               <TouchableOpacity
                 style={[styles.approvalButton, styles.approveApprovalButton]}
                 onPress={() => handleCompanionStatusUpdate(booking, 'confirmed')}
-                disabled={updateBookingStatus.isPending}
+                disabled={updateBookingStatus.isPending || updatingBookingIds.has(booking.id)}
                 accessibilityRole="button"
                 accessibilityLabel="Approve booking request"
               >
