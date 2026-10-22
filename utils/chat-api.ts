@@ -125,6 +125,7 @@ export interface ChatMessage {
 
 export interface RoomDetail {
   id: string;
+  bookingId?: string;
   status: string;
   otherParty: OtherParty;
   messages: ChatMessage[];

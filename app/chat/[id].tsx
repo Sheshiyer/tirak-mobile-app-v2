@@ -44,6 +44,8 @@ import { EnhancedMessageInput } from '@/components/chat/EnhancedMessageInput';
 import { ChatAccessState } from '@/components/chat/ChatAccessState';
 import { ChatPeerHeader } from '@/components/chat/ChatPeerHeader';
 import { useTranslation } from 'react-i18next';
+import { fetchBookingById } from '@/services/api/booking/booking';
+import { loadChatBookingAccess, type ChatBookingAccess } from '@/utils/chat-booking-access';
 
 // TypeScript interfaces for type safety
 interface Message {
@@ -99,6 +101,9 @@ export default function ChatScreen() {
   const { id, starter } = useLocalSearchParams<{ id: string; starter?: string }>();
   const { user } = useAuthStore();
   const [roomId, setRoomId] = useState<string | null>(null);
+  const [linkedBookingId, setLinkedBookingId] = useState<string | undefined>();
+  const [bookingAccess, setBookingAccess] = useState<ChatBookingAccess | null>(null);
+  const [bookingAccessError, setBookingAccessError] = useState<string | null>(null);
   const [otherParty, setOtherParty] = useState<OtherParty | null>(null);
   const [message, setMessage] = useState(starter ? decodeURIComponent(starter) : '');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -193,6 +198,9 @@ export default function ChatScreen() {
     setSendError(null);
     setBookingRequired(false);
     setRoomId(null);
+    setLinkedBookingId(undefined);
+    setBookingAccess(null);
+    setBookingAccessError(null);
     setMessages([]);
     setOtherParty(null);
     const rawId = typeof id === 'string' ? id : Array.isArray(id) ? id[0] : '';
@@ -219,11 +227,19 @@ export default function ChatScreen() {
       setRoomId(rawId);
       setOtherParty(roomDetail.otherParty);
       setMessages(roomDetail.messages.map(backendMsgToLocal));
-      setIsLoading(false);
-
-      if (user?.id && !rawId.startsWith('demo_room_')) {
-        await connectWS(rawId, user.id, generation);
+      setLinkedBookingId(roomDetail.bookingId);
+      try {
+        const access = await loadChatBookingAccess(roomDetail.bookingId, fetchBookingById);
+        if (generation !== initGenerationRef.current) return;
+        setBookingAccess(access);
+        if (access.canSend && user?.id && !rawId.startsWith('demo_room_')) {
+          await connectWS(rawId, user.id, generation);
+        }
+      } catch {
+        if (generation !== initGenerationRef.current) return;
+        setBookingAccessError('We could not verify this booking’s chat status. Your earlier messages are available. Retry before sending.');
       }
+      setIsLoading(false);
     } else {
       const result = rawId.startsWith('demo_room_')
         ? { roomId: null, reason: 'unavailable' as const }
@@ -263,7 +279,7 @@ export default function ChatScreen() {
   };
 
   const handleSend = async () => {
-    if (!message.trim() || !roomId || sendingRef.current) return;
+    if (!message.trim() || !roomId || !bookingAccess?.canSend || sendingRef.current) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     sendingRef.current = true;
     setIsSending(true);
@@ -271,6 +287,15 @@ export default function ChatScreen() {
     const textToSend = message.trim();
     const generation = initGenerationRef.current;
     try {
+      const access = await loadChatBookingAccess(linkedBookingId, fetchBookingById);
+      if (generation !== initGenerationRef.current) return;
+      setBookingAccess(access);
+      if (!access.canSend) {
+        wsRef.current?.close();
+        setConnectionError(null);
+        setMessage('');
+        return;
+      }
       const sent = await sendChatMessage(roomId, textToSend);
       if (generation !== initGenerationRef.current) return;
       if (!sent) throw new Error('Message not sent');
@@ -278,7 +303,23 @@ export default function ChatScreen() {
       setMessage(current => current.trim() === textToSend ? '' : current);
     } catch {
       if (generation === initGenerationRef.current) {
-        setSendError('Your message was not sent. Check your connection and tap send to try again.');
+        try {
+          const access = await loadChatBookingAccess(linkedBookingId, fetchBookingById);
+          if (generation !== initGenerationRef.current) return;
+          setBookingAccess(access);
+          if (!access.canSend) {
+            wsRef.current?.close();
+            setConnectionError(null);
+            setMessage('');
+          } else {
+            setSendError('Your message was not sent. Please try again.');
+          }
+        } catch {
+          if (generation === initGenerationRef.current) {
+            setBookingAccess(null);
+            setBookingAccessError('We could not verify this booking’s chat status. Your earlier messages are available. Retry before sending.');
+          }
+        }
       }
     } finally {
       sendingRef.current = false;
@@ -410,19 +451,23 @@ export default function ChatScreen() {
           />
         )}
 
-        {connectionError && (
+        {connectionError && bookingAccess?.canSend && (
           <TouchableOpacity onPress={initChat} accessibilityRole="button" accessibilityLabel="Reconnect live chat">
             <Caption style={styles.errorMessage}>{connectionError}</Caption>
           </TouchableOpacity>
         )}
         {sendError && <Caption accessibilityRole="alert" style={styles.errorMessage}>{sendError}</Caption>}
         {roomId?.startsWith('demo_room_') && <Caption style={styles.errorMessage}>Demo conversation — messages stay on this device.</Caption>}
-        <EnhancedMessageInput
-          message={message}
-          onMessageChange={setMessage}
-          onSend={handleSend}
-          disabled={!roomId || isSending}
-        />
+        {bookingAccessError ? (
+          <View style={styles.accessNotice}>
+            <Caption accessibilityRole="alert" style={styles.accessNoticeText}>{bookingAccessError}</Caption>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Retry booking chat status" style={styles.secondaryErrorButton} onPress={initChat}><Caption style={styles.secondaryErrorText}>Retry booking status</Caption></TouchableOpacity>
+          </View>
+        ) : bookingAccess && !bookingAccess.canSend ? (
+          <View style={styles.accessNotice}><Body style={styles.accessNoticeText}>{bookingAccess.message}</Body></View>
+        ) : (
+          <EnhancedMessageInput message={message} onMessageChange={setMessage} onSend={handleSend} disabled={!roomId || !bookingAccess?.canSend || isSending} />
+        )}
 
         {/* Chat Settings Modal */}
         <ChatSettings
@@ -452,6 +497,8 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     backgroundColor: designTokens.colors.semantic.background,
   },
+  accessNotice: { margin: 16, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: designTokens.colors.semantic.border, backgroundColor: designTokens.colors.semantic.surface },
+  accessNoticeText: { color: designTokens.colors.semantic.textSecondary, lineHeight: 23, flexShrink: 1 },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
