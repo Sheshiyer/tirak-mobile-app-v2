@@ -63,6 +63,7 @@ function SupplierSettingsScreen() {
   const [emailNotificationsEnabled, setEmailNotificationsEnabled] = React.useState(true);
   const { data: notificationPreferences } = useNotificationPreferences();
   const updateNotificationPreferences = useUpdateNotificationPreferences();
+  const [preferenceError, setPreferenceError] = React.useState('');
   const { t } = useTranslation();
 
   React.useEffect(() => {
@@ -73,6 +74,7 @@ function SupplierSettingsScreen() {
   }, [notificationPreferences]);
 
   const updatePreference = (key: 'push' | 'email', value: boolean) => {
+    setPreferenceError('');
     if (key === 'push') setNotificationsEnabled(value);
     if (key === 'email') setEmailNotificationsEnabled(value);
     updateNotificationPreferences.mutate(
@@ -81,7 +83,7 @@ function SupplierSettingsScreen() {
         onError: () => {
           if (key === 'push') setNotificationsEnabled(!value);
           if (key === 'email') setEmailNotificationsEnabled(!value);
-          Alert.alert('Could not save preference', 'Please try again.');
+          setPreferenceError(t('settingsFlow.privacySaveError'));
         },
       }
     );
@@ -206,6 +208,7 @@ function SupplierSettingsScreen() {
         
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('settingsFlow.bookingAlerts')}</Text>
+          {preferenceError ? <Text accessibilityRole="alert">{preferenceError}</Text> : null}
           
           <View style={styles.card}>
             <View style={styles.settingItem}>
@@ -220,6 +223,7 @@ function SupplierSettingsScreen() {
               </View>
               <Switch
                 accessibilityLabel={t('settingsFlow.pushAlerts')}
+                disabled={updateNotificationPreferences.isPending}
                 value={notificationsEnabled}
                 onValueChange={(value) => updatePreference('push', value)}
                 trackColor={{ false: colors.lightGray, true: colors.primaryLight }}
@@ -241,6 +245,7 @@ function SupplierSettingsScreen() {
               </View>
               <Switch
                 accessibilityLabel={t('settingsFlow.emailAlerts')}
+                disabled={updateNotificationPreferences.isPending}
                 value={emailNotificationsEnabled}
                 onValueChange={(value) => updatePreference('email', value)}
                 trackColor={{ false: colors.lightGray, true: colors.primaryLight }}

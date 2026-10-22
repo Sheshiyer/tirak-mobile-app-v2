@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Platform } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { handleApiError } from '@/utils/api-errors';
 import { apiUrl } from '@/constants/api';
@@ -104,13 +105,17 @@ export const updateCustomerProfile = async (payload: any): Promise<CustomerProfi
     if (profileImage && !storedProfileImage) {
       if (!id) throw new Error('A signed-in user is required to upload a profile photo.');
       const formData = new FormData();
-      formData.append('file', {
-        uri: profileImage,
-        name: 'profile.jpg',
-        type: 'image/jpeg',
-      } as any);
+      if (Platform.OS === 'web') {
+        const imageResponse = await fetch(profileImage);
+        if (!imageResponse.ok) throw new Error('The selected photo could not be read. Please select it again.');
+        const blob = await imageResponse.blob();
+        if (!blob.type.startsWith('image/')) throw new Error('Please select an image file.');
+        formData.append('file', blob, blob.type === 'image/png' ? 'profile.png' : 'profile.jpg');
+      } else {
+        formData.append('file', { uri: profileImage, name: 'profile.jpg', type: 'image/jpeg' } as any);
+      }
       const upload = await axios.post(apiUrl(`/api/users/${id}/avatar`), formData, {
-        headers: { ...authHeaders, 'Content-Type': 'multipart/form-data' },
+        headers: Platform.OS === 'web' ? authHeaders : { ...authHeaders, 'Content-Type': 'multipart/form-data' },
       });
       storedProfileImage = upload.data?.data?.imageUrl;
       if (!isRemoteImageUrl(storedProfileImage)) {

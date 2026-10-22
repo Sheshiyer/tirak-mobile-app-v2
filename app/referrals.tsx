@@ -20,6 +20,7 @@ export default function ReferralsScreen() {
   const { data, isLoading, error } = useReferralAccount();
   const applyReferralCode = useApplyReferralCode();
   const [inviteCode, setInviteCode] = React.useState('');
+  const [feedback, setFeedback] = React.useState('');
   const referral = data?.data;
 
   const handleShare = async () => {
@@ -29,20 +30,21 @@ export default function ReferralsScreen() {
         message: `Join Tirak and find trusted local guides in Thailand. Use my code ${referral.referralCode}: ${referral.shareUrl}`,
       });
     } catch {
-      Alert.alert('Share unavailable', 'Please try again.');
+      setFeedback('Sharing is unavailable. Please try again.');
     }
   };
 
   const handleApplyCode = () => {
     const code = inviteCode.trim();
-    if (!code) return;
+    if (!code || applyReferralCode.isPending) return;
+    setFeedback('');
     applyReferralCode.mutate(code, {
       onSuccess: () => {
         setInviteCode('');
-        Alert.alert('Invite code applied', 'Your inviter has received Tirak Coins.');
+        setFeedback('Invite code applied successfully.');
       },
       onError: () => {
-        Alert.alert('Could not apply code', 'Check the code and try again.');
+        setFeedback('Could not apply this invite code. Check the code and try again.');
       },
     });
   };
@@ -53,6 +55,7 @@ export default function ReferralsScreen() {
       style={styles.container}
     >
       <SafeAreaView style={styles.safeArea}>
+        {feedback ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ paddingVertical: 12 }}>{feedback}</Text> : null}
         <View style={styles.header}>
           <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
             <ArrowLeft size={22} color={designTokens.colors.semantic.text} />
@@ -132,7 +135,7 @@ export default function ReferralsScreen() {
                   onPress={handleApplyCode}
                   disabled={!inviteCode.trim() || applyReferralCode.isPending}
                 >
-                  <Text style={styles.applyText}>Apply</Text>
+                  <Text style={styles.applyText}>{applyReferralCode.isPending ? 'Applying…' : 'Apply'}</Text>
                 </TouchableOpacity>
               </View>
             </View>

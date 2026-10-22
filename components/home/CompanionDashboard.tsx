@@ -1,3 +1,4 @@
+import { bookingLoadState } from '@/utils/booking-load-state';
 import { logger } from '@/utils/logger';
 import React, { useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ViewStyle, TextStyle, ScrollView, Alert, Platform } from 'react-native';
@@ -355,17 +356,12 @@ const CompanionDashboardContent: React.FC<CompanionDashboardProps> = ({ userName
     : emptyBookings;
   
   const showLoadingState = isAuthenticated && isLoading || isLoadingStats;
-  const showErrorState = isAuthenticated && error && !error.message.includes('401');
-  const showEmptyState = (
-    // Show empty state for authenticated users with no bookings
-    (isAuthenticated && bookingsData?.success && (bookingsData.data.bookings?.length === 0 && bookingsData.data.items?.length === 0)) ||
-    // Show empty state for authenticated users when API call failed with auth error (401)
-    (isAuthenticated && error && error.message.includes('401')) ||
-    // Show empty state for authenticated users when API hasn't loaded yet but no error
-    (isAuthenticated && !isLoading && !error && !bookingsData) ||
-    // Show empty state for unauthenticated users (demo mode)
-    (!isAuthenticated && emptyBookings.length === 0)
-  );
+  const loadState = bookingLoadState({
+    authenticated: isAuthenticated, loading: showLoadingState, error,
+    success: bookingsData?.success === true, count: displayBookings.length,
+  });
+  const showErrorState = loadState === 'error';
+  const showEmptyState = loadState === 'empty';
 
   // Debug logging
   // logger.log('CompanionDashboard Debug:');

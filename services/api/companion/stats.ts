@@ -283,10 +283,10 @@ export const fetchSupplierStats = async (): Promise<SupplierStatsResponse> => {
   }
 };
 
-export const useSupplierStats = () => {
+export const useSupplierStats = (options?: { enabled?: boolean }) => {
   const user = useAuthStore(state => state.user);
   return useQuery({
-    enabled: !!user?.id,
+    enabled: !!user?.id && options?.enabled !== false,
     queryKey: ['supplierStats', user?.id],
     queryFn: fetchSupplierStats,
   });

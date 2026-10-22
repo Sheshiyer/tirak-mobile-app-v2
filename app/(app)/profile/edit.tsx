@@ -35,7 +35,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/auth-store';
-import * as ExpoImagePicker from 'expo-image-picker';
+import { chooseProfileImage } from '@/utils/profile-image-picker';
 
 export default function ProfileEditScreen() {
   const { data, isLoading, error } = useCustomerProfile() as any;
@@ -55,6 +55,12 @@ export default function ProfileEditScreen() {
   const [profileImage, setProfileImage] = useState<string>(
     user?.profileImage || ''
   );
+  const [feedback, setFeedback] = useState('');
+  const notify: typeof Alert.alert = (title, message, buttons, options) => {
+    if (Platform.OS === 'web') setFeedback([title, message].filter(Boolean).join(': '));
+    else Alert.alert(title, message, buttons, options);
+  };
+  const goBack = () => router.canGoBack() ? router.back() : router.replace('/(app)');
   const hasLocalProfileImageChange = React.useRef(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [tempDate, setTempDate] = useState<Date | null>(null);
@@ -76,6 +82,8 @@ export default function ProfileEditScreen() {
   }, [data, user?.profileImage]);
 
   const handleSave = () => {
+    if (updateProfile.isPending) return;
+    setFeedback('');
     const nextProfile = {
       ...formData,
       id: user?.id,
@@ -103,7 +111,7 @@ export default function ProfileEditScreen() {
               profileImage: savedProfileImage,
             },
           });
-          Alert.alert(
+          notify(
             t('profile.customer.profileUpdated'),
             t('profile.customer.profileUpdatedDescription'),
             [
@@ -117,7 +125,7 @@ export default function ProfileEditScreen() {
           );
         },
         onError: (err: any) => {
-          Alert.alert(t('profile.customer.updateFailed'), err?.message || t('profile.customer.updateFailedDescription'));
+          notify(t('profile.customer.updateFailed'), err?.message || t('profile.customer.updateFailedDescription'));
         },
       }
     );
@@ -129,67 +137,12 @@ export default function ProfileEditScreen() {
     setProfileImage(uri);
   };
 
-  const pickFromGallery = async () => {
-    const permission = await ExpoImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert('Gallery access needed', 'Please allow photo library access to update your profile picture.');
-      return;
-    }
-
-    const result = await ExpoImagePicker.launchImageLibraryAsync({
-      mediaTypes: ExpoImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.85,
-    });
-
-    if (!result.canceled) {
-      applyPickedImage(result.assets?.[0]?.uri);
-    }
-  };
-
-  const takeProfilePhoto = async () => {
-    const permission = await ExpoImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert('Camera access needed', 'Please allow camera access to take a new profile picture.');
-      return;
-    }
-
-    try {
-      const result = await ExpoImagePicker.launchCameraAsync({
-        mediaTypes: ExpoImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.85,
-      });
-
-      if (!result.canceled) {
-        applyPickedImage(result.assets?.[0]?.uri);
-      }
-    } catch (err: any) {
-      Alert.alert('Camera unavailable', err?.message || 'The camera could not be opened on this device.');
-    }
-  };
-
   const handleImageEdit = () => {
-    Alert.alert(
-      t('profile.customer.changeProfilePicture'),
-      t('profile.customer.chooseOption'),
-      [
-        {
-          text: t('profile.customer.camera'),
-          onPress: takeProfilePhoto,
-        },
-        {
-          text: t('profile.customer.gallery'),
-          onPress: pickFromGallery,
-        },
-        {
-          text: t('profile.customer.cancel'),
-          style: 'cancel',
-        },
-      ]
-    );
+    setFeedback('');
+    chooseProfileImage('profile', uri => {
+      applyPickedImage(uri);
+      setFeedback(t('profile.customer.saveChanges'));
+    }, message => notify(t('profile.customer.updateFailed'), message));
   };
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
@@ -238,13 +191,16 @@ export default function ProfileEditScreen() {
       <View style={[styles.header, Platform.OS === 'web' && styles.webHeader]}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => router.back()}
+          onPress={goBack}
         >
           <ArrowLeft size={24} color={designTokens.colors.semantic.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('profile.customer.editProfile')}</Text>
         <TouchableOpacity
           style={styles.saveButton}
+          accessibilityRole="button"
+          accessibilityLabel={t('profile.customer.saveChanges')}
+          disabled={updateProfile.isPending}
           onPress={handleSave}
         >
           <Save size={24} color={designTokens.colors.semantic.primary} />
@@ -252,6 +208,7 @@ export default function ProfileEditScreen() {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {feedback ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ padding: 16 }}>{feedback}</Text> : null}
         <Card style={styles.profileCard}>
           <View style={styles.profileImageSection}>
             <ProfileImage
@@ -359,13 +316,15 @@ export default function ProfileEditScreen() {
           <Button
             title={t('profile.customer.saveChanges')}
             onPress={handleSave}
+            loading={updateProfile.isPending}
+            disabled={updateProfile.isPending}
             variant="primary"
             style={styles.saveButtonLarge}
           />
           
           <Button
             title={t('profile.customer.cancel')}
-            onPress={() => router.back()}
+            onPress={goBack}
             variant="outline"
             style={styles.cancelButton}
           />

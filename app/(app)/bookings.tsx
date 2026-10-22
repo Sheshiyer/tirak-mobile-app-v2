@@ -10,7 +10,9 @@ import {
   Dimensions,
   TextInput,
   Alert,
+  Platform,
 } from 'react-native';
+import { useToast } from '@/stores/toast-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { Card } from '@/components/ui/Card';
 import { ProfileImage } from '@/components/ui/ProfileImage';
@@ -171,6 +173,13 @@ export default function BookingsScreen() {
   const [showSortOptions, setShowSortOptions] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'all' | BookingListItem['status']>('all');
   const [search, setSearch] = useState('');
+  const toast = useToast();
+  const showStatusFeedback = (title: string, message: string, failed = false) => {
+    if (Platform.OS === 'web') {
+      if (failed) toast.error(`${title}: ${message}`);
+      else toast.success(`${title}: ${message}`);
+    } else Alert.alert(title, message);
+  };
   const updateBookingStatus = useUpdateBookingStatus();
 
   // Fetch bookings from API
@@ -295,7 +304,7 @@ export default function BookingsScreen() {
           throw new Error('The review fixture supports guide approval only.');
         }
         acceptReviewBooking();
-        Alert.alert('Booking approved', 'The traveler review account now sees this booking as confirmed.');
+        showStatusFeedback('Booking approved', 'The traveler review account now sees this booking as confirmed.');
         return;
       }
       await updateBookingStatus.mutateAsync({
@@ -306,18 +315,24 @@ export default function BookingsScreen() {
         },
       });
       await refetch();
-      Alert.alert(
+      showStatusFeedback(
         status === 'confirmed' ? 'Booking approved' : 'Booking rejected',
         status === 'confirmed'
           ? 'The traveler will see this booking as confirmed.'
           : 'The traveler will see that this booking request was rejected.'
       );
     } catch (error: any) {
-      Alert.alert('Unable to update booking', error?.message || 'Please try again.');
+      showStatusFeedback('Unable to update booking', error?.message || 'Please try again.', true);
     }
   };
 
   const handleRejectBooking = (booking: BookingListItem) => {
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined' && window.confirm('Reject this request? The traveler will be notified.')) {
+        void handleCompanionStatusUpdate(booking, 'cancelled');
+      }
+      return;
+    }
     Alert.alert(
       'Reject booking request',
       'Reject this request? The traveler will be notified.',
