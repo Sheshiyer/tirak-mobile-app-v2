@@ -465,7 +465,7 @@ export default function CompanionProfileScreen() {
         />
         
         <View style={styles.headerOverlay as ViewStyle}>
-          <TouchableOpacity style={styles.backButton as ViewStyle} onPress={handleBack}>
+          <TouchableOpacity style={styles.backButton as ViewStyle} onPress={handleBack} accessibilityRole="button" accessibilityLabel="Back">
             <ArrowLeft size={24} color={designTokens.colors.semantic.surface} />
           </TouchableOpacity>
 
@@ -473,6 +473,9 @@ export default function CompanionProfileScreen() {
             <TouchableOpacity
               style={styles.actionButton as ViewStyle}
               onPress={toggleFavorite}
+              accessibilityRole="button"
+              accessibilityLabel={isFavorite ? 'Remove guide from favorites' : 'Save guide to favorites'}
+              accessibilityState={{ selected: isFavorite }}
             >
               <Heart
                 size={24}
@@ -484,6 +487,8 @@ export default function CompanionProfileScreen() {
             <TouchableOpacity
               style={styles.actionButton as ViewStyle}
               onPress={handleShare}
+              accessibilityRole="button"
+              accessibilityLabel="Share guide"
             >
               <Share size={24} color={designTokens.colors.semantic.surface} />
             </TouchableOpacity>
@@ -491,6 +496,8 @@ export default function CompanionProfileScreen() {
             <TouchableOpacity
               style={styles.actionButton as ViewStyle}
               onPress={handleReport}
+              accessibilityRole="button"
+              accessibilityLabel="Report guide"
             >
               <Flag size={24} color={designTokens.colors.semantic.surface} />
             </TouchableOpacity>
