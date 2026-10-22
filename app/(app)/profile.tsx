@@ -98,7 +98,7 @@ export default function ProfileScreen() {
     {
       icon: <Bell size={20} color={designTokens.colors.semantic.text} />,
       title: 'Notification Preferences',
-      onPress: () => router.push('/settings'),
+      onPress: () => router.push('/profile/notificationSettings'),
     },
 
     {

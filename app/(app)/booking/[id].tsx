@@ -14,6 +14,7 @@ import { useCurrencyConversion } from '@/utils/currency';
 import { TEST_COMPANION_ID, isTestCompanion } from '@/utils/companion-display';
 import { ArrowLeft, CalendarPlus, CheckCircle, Clock, MessageCircle, XCircle } from 'lucide-react-native';
 import { toPaymentDisplay } from '@/utils/payment-display';
+import { bookingDateTimeToInstant, calendarUtcDate, CORE_BOOKING_TIME_ZONE } from '@/utils/booking-timezone';
 
 const BookingDetailsScreen = () => {
   const { user, isAuthenticated } = useAuthStore();
@@ -94,14 +95,19 @@ const BookingDetailsScreen = () => {
   const displayFallback = isCompanion ? companion : customer;
   const displayName = displayPerson?.name || displayFallback?.name || (isCompanion ? 'Traveler' : 'Local Guide');
   const displayImage = displayPerson?.profileImage || displayFallback?.profileImage || '';
-  const startAt = new Date(`${booking.date.split('T')[0]}T${booking.startTime}:00`);
-  const endAt = new Date(`${booking.date.split('T')[0]}T${booking.endTime}:00`);
-  const countdownMs = Math.max(0, startAt.getTime() - now.getTime());
+  const timeZone = (booking as any).timeZone || (booking as any).timezone || CORE_BOOKING_TIME_ZONE;
+  let startAt: Date | null = null;
+  let endAt: Date | null = null;
+  try {
+    startAt = bookingDateTimeToInstant(booking.date, booking.startTime, timeZone);
+    endAt = bookingDateTimeToInstant(booking.date, booking.endTime, timeZone);
+  } catch { /* Keep booking history readable when schedule metadata is invalid. */ }
+  const countdownMs = startAt ? Math.max(0, startAt.getTime() - now.getTime()) : 0;
   const isActiveBooking = ['pending', 'confirmed', 'in_progress'].includes(booking.status);
   const countdownDays = Math.floor(countdownMs / (1000 * 60 * 60 * 24));
   const countdownHours = Math.floor((countdownMs / (1000 * 60 * 60)) % 24);
   const countdownMinutes = Math.floor((countdownMs / (1000 * 60)) % 60);
-  const countdownText = countdownMs > 0
+  const countdownText = !startAt ? 'Schedule unavailable' : countdownMs > 0
     ? `${countdownDays}d ${countdownHours}h ${countdownMinutes}m`
     : 'Starting now';
   const isPendingCompanionRequest = isCompanion && booking.status === 'pending';
@@ -128,12 +134,12 @@ const BookingDetailsScreen = () => {
     status: booking.paymentStatus,
   });
 
-  const formatCalendarDate = (date: Date) => date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
   const handleAddToCalendar = async () => {
+    if (!startAt || !endAt) { showFeedback('Calendar unavailable', 'This booking schedule could not be verified.'); return; }
     const title = encodeURIComponent(`Tirak: ${service?.name || experience?.name || 'Local guide booking'}`);
     const details = encodeURIComponent(`Booking with ${displayName}. ${paymentDisplay.collectionNote}`);
     const location = encodeURIComponent([booking.meetingPoint, booking.location].filter(Boolean).join(', '));
-    const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${formatCalendarDate(startAt)}/${formatCalendarDate(endAt)}&details=${details}&location=${location}`;
+    const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${calendarUtcDate(startAt)}/${calendarUtcDate(endAt)}&ctz=${encodeURIComponent(timeZone)}&details=${details}&location=${location}`;
 
     try {
       await Linking.openURL(calendarUrl);
@@ -279,14 +285,14 @@ const BookingDetailsScreen = () => {
               </View>
               <Heading style={styles.countdownValue}>{countdownText}</Heading>
               <Caption style={styles.countdownDetail}>
-                {booking.date.split('T')[0]} at {booking.startTime}
+                {booking.date.split('T')[0]} at {booking.startTime} ({timeZone})
               </Caption>
               <View style={styles.detailActions}>
                 <TouchableOpacity style={styles.messageButton} onPress={handleMessage}>
                   <MessageCircle size={18} color={designTokens.colors.semantic.surface} />
                   <Text style={styles.messageButtonText}>Message</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.calendarButton} onPress={handleAddToCalendar}>
+                <TouchableOpacity accessibilityRole="button" accessibilityLabel="Add booking to calendar" accessibilityState={{ disabled: !startAt || !endAt }} disabled={!startAt || !endAt} style={styles.calendarButton} onPress={handleAddToCalendar}>
                   <CalendarPlus size={18} color={designTokens.colors.semantic.primary} />
                   <Text style={styles.calendarButtonText}>Add to Calendar</Text>
                 </TouchableOpacity>

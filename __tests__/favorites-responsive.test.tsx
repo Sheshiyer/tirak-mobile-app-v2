@@ -44,3 +44,37 @@ it('list view keeps the same labeled removal action and bounded width on a300px 
   expect(mockRemove).toHaveBeenCalledWith('actual-guide'); expect(mockToggle).not.toHaveBeenCalled();
   screen.unmount(); resize(original.width);
 });
+
+it('applies validated starting price bounds together with search, and resets without changing saved data', () => {
+  const screen = render(<FavoritesScreen />);
+  fireEvent.press(screen.getByRole('button', { name: 'Filter saved guides' }));
+  fireEvent.changeText(screen.getByLabelText('Minimum saved guide price'), '2');
+  fireEvent.changeText(screen.getByLabelText('Maximum saved guide price'), '1');
+  expect(screen.getByRole('alert').props.children).toContain('Maximum price');
+  expect(screen.getByRole('button', { name: 'Apply favorite price filters' }).props.accessibilityState.disabled).toBe(true);
+  fireEvent.press(screen.getByRole('button', { name: 'Apply favorite price filters' }));
+  expect(screen.getByTestId('favorite-card-actual-guide')).toBeTruthy();
+  fireEvent.changeText(screen.getByLabelText('Maximum saved guide price'), '');
+  fireEvent.press(screen.getByRole('button', { name: 'Apply favorite price filters' }));
+  expect(screen.queryByTestId('favorite-card-actual-guide')).toBeNull();
+  expect(screen.getByText('No saved guides match these prices')).toBeTruthy();
+  expect(screen.queryByText('favorites.noFavorites')).toBeNull();
+  fireEvent.press(screen.getByRole('button', { name: 'Clear filters' }));
+  expect(screen.getByTestId('favorite-card-actual-guide')).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: 'Filter saved guides' }));
+  fireEvent.changeText(screen.getByLabelText('Maximum saved guide price'), '1');
+  fireEvent.press(screen.getByRole('button', { name: 'Apply favorite price filters' }));
+  fireEvent.changeText(screen.getByPlaceholderText('favorites.searchFavorites'), 'unmatched');
+  expect(screen.queryByTestId('favorite-card-actual-guide')).toBeNull();
+  fireEvent.press(screen.getByRole('button', { name: 'Clear filters' }));
+  expect(screen.getByTestId('favorite-card-actual-guide')).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: 'Filter saved guides' }));
+  expect(screen.getByLabelText('Maximum saved guide price').props.value).toBe('');
+  fireEvent.changeText(screen.getByLabelText('Minimum saved guide price'), '-1');
+  expect(screen.getByRole('alert').props.children).toContain('valid price');
+  fireEvent.press(screen.getByRole('button', { name: 'Reset favorite price filters' }));
+  expect(screen.getByLabelText('Minimum saved guide price').props.value).toBe('');
+  expect(screen.queryByRole('alert')).toBeNull();
+  expect(mockRemove).not.toHaveBeenCalled(); expect(mockToggle).not.toHaveBeenCalled();
+  expect(mockState.favorites).toEqual(['actual-guide']); screen.unmount();
+});

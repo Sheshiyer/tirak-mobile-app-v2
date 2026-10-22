@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/auth-store';
 import { isDemoModeEnabled } from '@/utils/demo-mode';
 import { isDemoCompanion } from '@/utils/companion-display';
+import { validateDiscoveryPrice } from '@/utils/discovery-search';
 
 export default function FavoritesScreen() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -26,6 +27,14 @@ export default function FavoritesScreen() {
     if (measured > 0) setParentWidth(measured);
   };
   const [searchQuery, setSearchQuery] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [priceFilter, setPriceFilter] = useState({ min: '', max: '' });
+  const [draftMin, setDraftMin] = useState('');
+  const [draftMax, setDraftMax] = useState('');
+  const priceError = validateDiscoveryPrice(draftMin, draftMax);
+  const hasPriceFilter = !!priceFilter.min.trim() || !!priceFilter.max.trim();
+  const resetPrices = () => { setDraftMin(''); setDraftMax(''); setPriceFilter({ min: '', max: '' }); };
+  const clearSearchAndFilters = () => { setSearchQuery(''); resetPrices(); };
   const favoriteIds = useFavoritesStore((s) => s.favorites);
   const favoriteCompanions = useFavoritesStore((s) => s.favoriteCompanions);
   const { t } = useTranslation();
@@ -82,6 +91,11 @@ export default function FavoritesScreen() {
     .filter(companion => demoEnabled || !isDemoCompanion(companion));
   const favorites = savedFavorites.filter((companion) => {
       const query = searchQuery.trim().toLowerCase();
+      if (hasPriceFilter) {
+        if (!Number.isFinite(companion.price) || companion.price <= 0) return false;
+        if (priceFilter.min.trim() && companion.price < Number(priceFilter.min)) return false;
+        if (priceFilter.max.trim() && companion.price > Number(priceFilter.max)) return false;
+      }
       if (!query) return true;
       return [companion.name, companion.location, companion.category, ...companion.services]
         .filter(Boolean)
@@ -100,24 +114,25 @@ export default function FavoritesScreen() {
     router.push(`/chat/${id}`);
   };
   
-  const hasSearchNoMatch = savedFavorites.length > 0 && searchQuery.trim() !== '' && favorites.length === 0;
+  const hasSearchNoMatch = savedFavorites.length > 0 && (searchQuery.trim() !== '' || hasPriceFilter) && favorites.length === 0;
+  const clearLabel = hasPriceFilter ? 'Clear filters' : t('search.clearSearch');
 
   const renderEmptyState = () => (
     <Card style={styles.emptyStateCard} padding={40}>
       <View style={styles.emptyStateIcon}>
         <Heart size={40} color={designTokens.colors.semantic.accent} />
       </View>
-      <Text style={styles.emptyStateTitle}>{hasSearchNoMatch ? `${t('search.noResultsFor')} “${searchQuery.trim()}”` : t('favorites.noFavorites')}</Text>
+      <Text style={styles.emptyStateTitle}>{hasSearchNoMatch ? searchQuery.trim() ? `${t('search.noResultsFor')} “${searchQuery.trim()}”` : 'No saved guides match these prices' : t('favorites.noFavorites')}</Text>
       <Text style={styles.emptyStateText}>
         {hasSearchNoMatch ? t('search.noCompanionsFound') : t('favorites.noFavoritesDescription')}
       </Text>
       <TouchableOpacity 
         style={styles.exploreButton}
         accessibilityRole="button"
-        accessibilityLabel={hasSearchNoMatch ? t('search.clearSearch') : t('favorites.exploreCompanions')}
-        onPress={() => hasSearchNoMatch ? setSearchQuery('') : router.push('/search')}
+        accessibilityLabel={hasSearchNoMatch ? clearLabel : t('favorites.exploreCompanions')}
+        onPress={() => hasSearchNoMatch ? clearSearchAndFilters() : router.push('/search')}
       >
-        <Text style={styles.exploreButtonText}>{hasSearchNoMatch ? t('search.clearSearch') : t('favorites.exploreCompanions')}</Text>
+        <Text style={styles.exploreButtonText}>{hasSearchNoMatch ? clearLabel : t('favorites.exploreCompanions')}</Text>
       </TouchableOpacity>
     </Card>
   );
@@ -155,11 +170,26 @@ export default function FavoritesScreen() {
                 onChangeText={setSearchQuery}
               />
             </View>
-            <TouchableOpacity style={styles.filterButton}>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Filter saved guides" accessibilityState={{ expanded: showFilters, selected: hasPriceFilter }} style={styles.filterButton} onPress={() => { if (!showFilters) { setDraftMin(priceFilter.min); setDraftMax(priceFilter.max); } setShowFilters(!showFilters); }}>
               <Filter size={20} color={designTokens.colors.semantic.primary} />
             </TouchableOpacity>
           </View>
         </Card>
+        {showFilters && (
+          <Card style={styles.filterPanel} padding={16}>
+            <Text accessibilityRole="header" style={styles.resultsCount}>Starting experience price (THB)</Text>
+            <Text style={styles.filterDescription}>Filter saved starting prices. Guides without a price are excluded when a price bound is set.</Text>
+            <View style={styles.priceFields}>
+              <View style={styles.priceField}><Text>Minimum (฿)</Text><TextInput accessibilityLabel="Minimum saved guide price" keyboardType="numeric" value={draftMin} onChangeText={setDraftMin} placeholder="No minimum" style={styles.priceInput} /></View>
+              <View style={styles.priceField}><Text>Maximum (฿)</Text><TextInput accessibilityLabel="Maximum saved guide price" keyboardType="numeric" value={draftMax} onChangeText={setDraftMax} placeholder="No maximum" style={styles.priceInput} /></View>
+            </View>
+            {priceError && <Text accessibilityRole="alert" style={styles.filterError}>{priceError}</Text>}
+            <View style={styles.priceFields}>
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel="Reset favorite price filters" style={styles.filterAction} onPress={resetPrices}><Text style={styles.filterActionText}>Reset</Text></TouchableOpacity>
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel="Apply favorite price filters" accessibilityState={{ disabled: !!priceError }} disabled={!!priceError} style={[styles.filterAction, priceError && { opacity: 0.5 }]} onPress={() => { if (!priceError) { setPriceFilter({ min: draftMin.trim(), max: draftMax.trim() }); setShowFilters(false); } }}><Text style={styles.filterActionText}>Apply filters</Text></TouchableOpacity>
+            </View>
+          </Card>
+        )}
       </View>
       
       {favorites.length > 0 ? (
@@ -219,6 +249,14 @@ export default function FavoritesScreen() {
 }
 
 const styles = StyleSheet.create({
+  filterPanel: { width: '100%', maxWidth: 600, alignSelf: 'center', gap: 12 },
+  filterDescription: { color: designTokens.colors.semantic.textSecondary, lineHeight: 22 },
+  priceFields: { flexDirection: 'row', gap: 12 },
+  priceField: { flex: 1, minWidth: 0, gap: 8 },
+  priceInput: { minHeight: 48, borderWidth: 1, borderColor: designTokens.colors.semantic.border, borderRadius: 12, paddingHorizontal: 10, width: '100%', minWidth: 0, color: designTokens.colors.semantic.text },
+  filterError: { color: designTokens.colors.semantic.error },
+  filterAction: { flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: designTokens.colors.semantic.primary },
+  filterActionText: { color: designTokens.colors.semantic.primaryContrast, fontWeight: '600' },
   container: {
     flex: 1,
     width: '100%',
