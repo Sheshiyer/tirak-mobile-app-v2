@@ -538,7 +538,7 @@ export default function BookingsScreen() {
                 <MessageCircle size={18} color={designTokens.colors.semantic.primary} />
               </TouchableOpacity> */}
               {booking.id !== REVIEW_BOOKING_ID && (
-                <TouchableOpacity style={styles.actionButton} onPress={() => router.push(`/(app)/booking/${booking.id}` as any)}>
+                <TouchableOpacity accessibilityRole="button" accessibilityLabel="View booking details" style={styles.actionButton} onPress={() => router.push(`/(app)/booking/${booking.id}` as any)}>
                   <Eye size={18} color={designTokens.colors.semantic.primary} />
                 </TouchableOpacity>
               )}
