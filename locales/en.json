@@ -375,7 +375,14 @@
     "cancel": "Cancel",
     "clearFilters": "Clear filters",
     "tryAgain": "Try Again",
-    "activeFilters": "Selected filters"
+    "activeFilters": "Selected filters",
+    "minimumPrice": "Minimum (฿)",
+    "maximumPrice": "Maximum (฿)",
+    "minimumPriceLabel": "Minimum experience price in baht",
+    "maximumPriceLabel": "Maximum experience price in baht",
+    "noMinimum": "No minimum",
+    "noMaximum": "No maximum",
+    "availabilityExplanation": "Choose a guide to check dates and time slots when booking."
   },
   "bookings": {
     "searchBookings": "Search bookings",
@@ -1176,5 +1183,16 @@
     "coinsDescription": "Invite travelers or guides and earn future benefits",
     "trustSafety": "Trust & Safety",
     "accountAccess": "Account Access"
+  },
+  "notificationSettings": {
+    "loading": "Loading your notification preferences…",
+    "loadError": "Notification preferences could not be loaded. Please retry.",
+    "retry": "Retry loading preferences",
+    "saveError": "Your change could not be saved. The previous setting has been restored.",
+    "saved": "Notification preference saved.",
+    "saving": "Saving your change…",
+    "sms": "SMS reminders",
+    "smsDescription": "Choose whether to receive booking reminders by text message.",
+    "note": "These are delivery preferences. Saving a preference does not confirm that a push, email, or SMS has been delivered."
   }
 }

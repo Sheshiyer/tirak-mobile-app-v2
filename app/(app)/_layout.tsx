@@ -159,15 +159,15 @@ export default function AppLayout() {
       return [
         { name: "index", label: t('customHeader.dashboard'), icon: { name: "Home" } },
         { name: "bookings", label: t('customHeader.bookings'), icon: { name: "Calendar" } },
-        { name: "messages", label: t('customHeader.clients'), icon: { name: "MessageCircle" } },
+        { name: "messages", label: t('customHeader.messages'), icon: { name: "MessageCircle" } },
       ];
     } else {
       return [
         { name: "index", label: t('customHeader.discover'), icon: { name: "Home" } },
         { name: "search", label: t('customHeader.explore'), icon: { name: "Search" } },
         { name: "bookings", label: t('customHeader.myTrips'), icon: { name: "Calendar" } },
-        { name: "messages", label: t('customHeader.guides'), icon: { name: "MessageCircle" } },
-        { name: "favorites", label: t('customHeader.wishlist'), icon: { name: "Heart" } },
+        { name: "messages", label: t('customHeader.messages'), icon: { name: "MessageCircle" } },
+        { name: "favorites", label: t('customHeader.favorites'), icon: { name: "Heart" } },
       ];
     }
   };

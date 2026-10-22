@@ -599,7 +599,7 @@ export default function ProfileEditScreen() {
           </View>
 
           <TouchableOpacity accessibilityRole="button" accessibilityLabel="Save profile" style={styles.saveButton} onPress={handleSave}>
-            <Save size={20} color={designTokens.colors.semantic.surface} />
+            <Save size={18} color={designTokens.colors.semantic.primary} /><Text style={{ color: designTokens.colors.semantic.primary, fontWeight: '600' }}>{t('common.save')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -882,6 +882,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    width: '100%', maxWidth: 720, alignSelf: 'center',
     backgroundColor: 'transparent',
     paddingHorizontal: designTokens.spacing.scale.md,
   },
@@ -912,10 +913,10 @@ const styles = StyleSheet.create({
     color: designTokens.colors.semantic.textSecondary,
   },
   saveButton: {
-    width: 44,
+    minWidth: 88, paddingHorizontal: 12, flexDirection: 'row', gap: 8,
     height: 44,
     borderRadius: 22,
-    backgroundColor: designTokens.colors.semantic.primary,
+    backgroundColor: designTokens.colors.semantic.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -923,6 +924,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
+    width: '100%', maxWidth: 720, alignSelf: 'center',
     padding: designTokens.spacing.scale.md,
     paddingBottom: designTokens.spacing.scale.xl,
   },
@@ -949,8 +951,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     right: 8,
-    width: 32,
-    height: 32,
+    width: 44,
+    height: 44,
     borderRadius: 16,
     backgroundColor: designTokens.colors.semantic.primary,
     justifyContent: 'center',
@@ -972,8 +974,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 20,
     right: '35%',
-    width: 24,
-    height: 24,
+    width: 44,
+    height: 44,
     borderRadius: 12,
     backgroundColor: designTokens.colors.semantic.primary,
     justifyContent: 'center',

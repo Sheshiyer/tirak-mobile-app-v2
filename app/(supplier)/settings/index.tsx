@@ -123,12 +123,12 @@ function SupplierSettingsScreen() {
 
     // Web-compatible confirmation
     if (Platform.OS === 'web') {
-      const confirmed = window.confirm(`${t('settings.deleteAccount')}\n\n${t('settings.deleteAccountDescription')}`);
+      const confirmed = window.confirm(`${t('settings.deleteAccount')}\n\n${'Close your account and disable sign-in. Booking and message history may be retained for records and safety.'}`);
       if (confirmed) {
         await performDelete();
       }
     } else {
-      Alert.alert(t('settings.deleteAccount'), t('settings.deleteAccountDescription'), [
+      Alert.alert(t('settings.deleteAccount'), 'Close your account and disable sign-in. Booking and message history may be retained for records and safety.', [
         { text: t('settings.cancel'), style: "cancel" },
         { text: t('settings.deleteAccount'), onPress: performDelete },
       ]);
@@ -381,8 +381,8 @@ const styles = StyleSheet.create({
     backgroundColor: designTokens.colors.semantic.background,
   },
   scrollContent: {
-    flexGrow: 1,
-    padding: 16,
+    flexGrow: 1, width: '100%', maxWidth: 720, alignSelf: 'center',
+    padding: 24, paddingBottom: 40,
   },
   header: {
     marginBottom: 24,
@@ -418,6 +418,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   settingItem: {
+    minHeight: 72,
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,

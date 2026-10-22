@@ -120,7 +120,7 @@ export default function SettingsScreen() {
     const confirmDelete = () => {
       Alert.alert(
         'Delete Account',
-        'This is permanent. Your profile, bookings, messages, and saved guides will be removed.',
+        'Close your account and disable sign-in. Booking and message history may be retained for records and safety.',
         [
           { text: 'Cancel', style: 'cancel' },
           {
@@ -159,7 +159,7 @@ export default function SettingsScreen() {
     };
 
     if (Platform.OS === 'web') {
-      const confirmed = window.confirm('Delete Account\n\nThis permanently removes your Tirak account, profile, bookings, and messages.');
+      const confirmed = window.confirm('Delete Account\n\nClose your account and disable sign-in. Booking and message history may be retained for records and safety.');
       if (confirmed) performDeleteAccount();
     } else {
       confirmDelete();
@@ -168,7 +168,7 @@ export default function SettingsScreen() {
 
   return (
     <RadialGradient variant="appBackground" style={styles.container}>
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Profile Section */}
         <Card style={styles.profileCard}>
           <View style={styles.profileHeader}>
@@ -281,7 +281,7 @@ export default function SettingsScreen() {
                 : <Trash2 size={22} color={designTokens.colors.semantic.error} />
             }
             title="Delete Account"
-            subtitle="Permanently remove your profile, bookings, and messages"
+            subtitle="Close your account. Booking history may be retained."
             onPress={handleDeleteAccount}
             danger={true}
           />
@@ -312,11 +312,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-  },
+  content: { flex: 1 },
+  scrollContent: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 24, paddingBottom: 40 },
   profileCard: {
     marginBottom: 20,
     padding: 20,
@@ -340,6 +337,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    minHeight: 64,
     paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: designTokens.colors.semantic.border,

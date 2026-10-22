@@ -191,23 +191,16 @@ export default function ProfileEditScreen() {
       <View style={[styles.header, Platform.OS === 'web' && styles.webHeader]}>
         <TouchableOpacity
           style={styles.backButton}
+          accessibilityRole="button" accessibilityLabel="Back to profile"
           onPress={goBack}
         >
           <ArrowLeft size={24} color={designTokens.colors.semantic.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('profile.customer.editProfile')}</Text>
-        <TouchableOpacity
-          style={styles.saveButton}
-          accessibilityRole="button"
-          accessibilityLabel={t('profile.customer.saveChanges')}
-          disabled={updateProfile.isPending}
-          onPress={handleSave}
-        >
-          <Save size={24} color={designTokens.colors.semantic.primary} />
-        </TouchableOpacity>
+        <View style={{ width: 44 }} />
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.content} contentContainerStyle={styles.formContent} showsVerticalScrollIndicator={false}>
         {feedback ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ padding: 16 }}>{feedback}</Text> : null}
         <Card style={styles.profileCard}>
           <View style={styles.profileImageSection}>
@@ -248,6 +241,12 @@ export default function ProfileEditScreen() {
             keyboardType="phone-pad"
           />
 
+          {Platform.OS === 'web' ? (
+            <View style={{ gap: 8, marginBottom: 16 }}>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: designTokens.colors.semantic.text }}>{t('profile.customer.dateOfBirth')}</Text>
+              <input aria-label={t('profile.customer.dateOfBirth')} type="date" max={[new Date().getFullYear(), String(new Date().getMonth() + 1).padStart(2, '0'), String(new Date().getDate()).padStart(2, '0')].join('-')} value={formData.dateOfBirth?.split('T')[0] || ''} onChange={event => setFormData({ ...formData, dateOfBirth: event.target.value })} style={{ boxSizing: 'border-box', width: '100%', minHeight: 48, padding: '12px 16px', fontSize: 16, fontFamily: 'inherit', borderRadius: 12, border: `1px solid ${designTokens.colors.semantic.border}`, color: designTokens.colors.semantic.text, backgroundColor: designTokens.colors.semantic.surface }} />
+            </View>
+          ) : <>
           <SimpleInput
             label={t('profile.customer.dateOfBirth')}
             value={formData.dateOfBirth}
@@ -301,6 +300,8 @@ export default function ProfileEditScreen() {
             )
           )}
 
+          </>}
+
           <SimpleInput
             label={t('profile.customer.bio')}
             value={formData.bio}
@@ -342,16 +343,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 60,
+    width: '100%',
+    maxWidth: 720,
+    alignSelf: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 24,
     paddingBottom: 20,
   },
   webHeader: {
     paddingTop: 20,
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: 20,
     backgroundColor: designTokens.colors.semantic.surface,
     justifyContent: 'center',
@@ -368,8 +372,8 @@ const styles = StyleSheet.create({
     color: designTokens.colors.semantic.text,
   },
   saveButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: 20,
     backgroundColor: designTokens.colors.semantic.surface,
     justifyContent: 'center',
@@ -380,10 +384,8 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
+  content: { flex: 1 },
+  formContent: { width: '100%', maxWidth: 720, alignSelf: 'center', paddingHorizontal: 24, paddingBottom: 40 },
   profileCard: {
     marginBottom: 20,
     paddingVertical: 30,

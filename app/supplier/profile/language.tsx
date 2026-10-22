@@ -113,6 +113,7 @@ const styles = StyleSheet.create({
         flex: 1,
       },
       header: {
+        width: '100%', maxWidth: 720, alignSelf: 'center',
         backgroundColor: 'transparent',
         paddingHorizontal: designTokens.spacing.scale.md,
       },
@@ -154,7 +155,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
       },
       content: {
-        flex: 1,
+        flex: 1, width: '100%', maxWidth: 720, alignSelf: 'center',
         paddingHorizontal: designTokens.spacing.scale.md,
         paddingTop: designTokens.spacing.scale.lg,
       },
@@ -172,6 +173,7 @@ const styles = StyleSheet.create({
         borderWidth: 3,
       },
       languageContent: {
+        minHeight: 88,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
