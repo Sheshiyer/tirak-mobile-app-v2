@@ -466,6 +466,7 @@
     "deviceOnly": "Saved on this device for this account. Favorites do not sync across devices."
   },
   "companionDetails": {
+    "fromPrice": "From {{price}}",
     "errorLoadingCompanion": "Error loading guide",
     "failedToLoadCompanion": "Failed to load guide",
     "retry": "Retry",

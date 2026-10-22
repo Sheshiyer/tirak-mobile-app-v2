@@ -456,6 +456,7 @@
     "deviceOnly": "บันทึกไว้บนอุปกรณ์นี้สำหรับบัญชีนี้ รายการโปรดจะไม่ซิงค์ข้ามอุปกรณ์"
   },
   "companionDetails": {
+    "fromPrice": "เริ่มต้น {{price}}",
     "errorLoadingCompanion": "เกิดข้อผิดพลาดในการโหลดข้อมูลคู่หู",
     "failedToLoadCompanion": "ไม่สามารถโหลดข้อมูลคู่หูได้",
     "retry": "ลองใหม่",

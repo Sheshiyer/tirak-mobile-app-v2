@@ -6,6 +6,7 @@ import { Image } from 'expo-image';
 import { useLocalSearchParams, router, Link } from 'expo-router';
 import { formatOriginalCurrencyContext, formatTravelerCurrency, useCurrencyConversion } from '@/utils/currency';
 import { Card } from '@/components/ui/Card';
+import { GuideStartingPrice } from '@/components/ui/GuideStartingPrice';
 import { CategoryChip } from '@/components/ui/CategoryChip';
 import { RadialGradient } from '@/components/ui/RadialGradient';
 import { Button } from '@/components/ui/Button';
@@ -553,8 +554,7 @@ export default function CompanionProfileScreen() {
           
           {companion.price && companion.price > 0 ? (
             <View style={styles.priceContainer as ViewStyle}>
-              <Text style={styles.price as TextStyle}>{convertedPrice || formatTravelerCurrency(companion.price, companion.currency)}</Text>
-              <Text style={styles.priceUnit as TextStyle}>/{t('companionDetails.day')}</Text>
+              <GuideStartingPrice style={styles.price as TextStyle} amount={convertedPrice || formatTravelerCurrency(companion.price, companion.currency)} />
               {sourcePriceContext ? (
                 <Text style={styles.priceSecondary as TextStyle}> ({sourcePriceContext})</Text>
               ) : null}

@@ -6,6 +6,7 @@ import { designTokens } from '@/constants/design-tokens';
 import { MapPin, Star, Heart, MessageCircle, Camera } from 'lucide-react-native';
 import { useFavoritesStore } from '@/stores/favorites-store';
 import { useTranslation } from 'react-i18next';
+import { GuideStartingPrice } from './GuideStartingPrice';
 interface Companion {
   id: string;
   name: string;
@@ -116,8 +117,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
             <View style={styles.priceContainer}>
               {formatPrice(companion.price) ? (
                 <>
-                  <Text style={styles.price}>{formatPrice(companion.price)}</Text>
-                  <Text style={styles.priceUnit}>/{t('companionDetails.day')}</Text>
+                  <GuideStartingPrice style={styles.price} amount={formatPrice(companion.price)!} />
                 </>
               ) : (
                 <Text style={styles.priceContact}>Request guide rate</Text>
@@ -217,8 +217,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
         <View style={styles.priceContainer}>
           {formatPrice(companion.price) ? (
             <>
-              <Text style={styles.price}>{formatPrice(companion.price)}</Text>
-              <Text style={styles.priceUnit}>/{t('companionDetails.day')}</Text>
+              <GuideStartingPrice style={styles.price} amount={formatPrice(companion.price)!} />
             </>
           ) : (
             <Text style={styles.priceContact}>Request guide rate</Text>
