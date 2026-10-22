@@ -20,7 +20,7 @@ it('shows real completed state and keeps guide completion routed to guide profil
  mockUser={id:'guide-1',userType:'companion',email:'synthetic@example.com',verified:true};
  await act(async()=>{tree=Renderer.create(<Screen/>);});
  expect(JSON.stringify(tree.toJSON())).toContain('Email verified');
- const button=tree.root.findAllByType('Button').find((x:any)=>x.props.title==='Continue to your profile');
+ const button=tree.root.findAllByType('Button').find((x:any)=>x.props.title==='Continue to profile');
  expect(button).toBeDefined();await act(async()=>button.props.onPress());
  expect(router.replace).toHaveBeenCalledWith('/supplier/profile/edit');
  expect(requestEmailVerification).not.toHaveBeenCalled();expect(verifyEmail).not.toHaveBeenCalled();
@@ -31,6 +31,6 @@ it('unverified state cannot confirm before a six digit code and traveler complet
  const button=tree.root.findAllByType('Button').find((x:any)=>x.props.title==='Verify email');
  expect(button.props.disabled).toBe(true);await act(async()=>button.props.onPress());
  expect(verifyEmail).not.toHaveBeenCalled();
- const later=tree.root.findAllByType('Button').find((x:any)=>x.props.title==='Continue to your profile — verify later');
+ const later=tree.root.findAllByType('Button').find((x:any)=>x.props.title==='Continue — verify later');
  await act(async()=>later.props.onPress());expect(router.replace).toHaveBeenCalledWith('/(app)/profile/edit');
 });

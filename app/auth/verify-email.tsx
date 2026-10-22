@@ -77,7 +77,7 @@ export default function VerifyEmailScreen() {
           {!user ? (
             <><Text style={styles.body}>Sign in to verify the email address on your account.</Text><Button title="Sign in" onPress={() => router.replace('/auth/login')} /></>
           ) : user.verified ? (
-            <><Text style={styles.body}>Your email address has been confirmed. You’re ready to continue.</Text><Text style={styles.email}>{user.email}</Text><Button title="Continue to your profile" onPress={continueToProfile} /></>
+            <><Text style={styles.body}>Your email address has been confirmed. You’re ready to continue.</Text><Text style={styles.email}>{user.email}</Text><Button title="Continue to profile" onPress={continueToProfile} /></>
           ) : (
             <>
               <Text style={styles.body}>{user.email}</Text>
@@ -93,11 +93,10 @@ export default function VerifyEmailScreen() {
               {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
               <Button title="Verify email" loading={busy === 'verify'} disabled={!!busy || !isVerificationCode(code)} onPress={confirmCode} />
               <Button title={remaining > 0 ? `Resend code in ${remaining}s` : 'Send verification code'} variant="outline" loading={busy === 'send'} disabled={!!busy || remaining > 0} onPress={sendCode} />
-              <Button title="Continue to your profile — verify later" variant="text" disabled={!!busy} onPress={continueToProfile} />
+              <Button title="Continue — verify later" variant="text" disabled={!!busy} onPress={continueToProfile} />
             </>
           )}
           </View>
-          <Text style={styles.footer}>Your next experience starts with a secure account.</Text>
         </ScrollView>
       </KeyboardAvoidingView>
       </SafeAreaView>
@@ -107,13 +106,13 @@ export default function VerifyEmailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { flexGrow: 1, padding: 24, paddingTop: 24, paddingBottom: 40, gap: 24, maxWidth: 560, alignSelf: 'center', width: '100%', justifyContent: 'center' },
+  content: { flexGrow: 1, padding: 16, paddingTop: 24, paddingBottom: 32, gap: 24, maxWidth: 560, alignSelf: 'center', width: '100%', justifyContent: 'center' },
   navigation: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16 },
   backButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: designTokens.colors.semantic.surface },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   brandIcon: { width: 44, height: 44, borderRadius: 12 },
   brandName: { color: designTokens.colors.semantic.primary, fontSize: 24, fontWeight: '700' },
-  card: { backgroundColor: designTokens.colors.semantic.surface, borderRadius: 24, padding: 24, gap: 16, borderWidth: 1, borderColor: designTokens.colors.semantic.border },
+  card: { backgroundColor: designTokens.colors.semantic.surface, borderRadius: 24, padding: 20, gap: 16, borderWidth: 1, borderColor: designTokens.colors.semantic.border },
   stateIcon: { width: 72, height: 72, borderRadius: 24, justifyContent: 'center', alignItems: 'center', backgroundColor: designTokens.colors.semantic.primary + '10', marginBottom: 8 },
   verifiedIcon: { backgroundColor: designTokens.colors.semantic.secondary + '18' },
   title: { fontSize: 28, lineHeight: 36, fontWeight: '700', color: designTokens.colors.semantic.text },
