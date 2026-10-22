@@ -41,6 +41,8 @@ import { VoiceMessage } from '@/components/chat/VoiceMessage';
 import { TranslationToggle } from '@/components/chat/TranslationToggle';
 import { ChatSettings } from '@/components/chat/ChatSettings';
 import { EnhancedMessageInput } from '@/components/chat/EnhancedMessageInput';
+import { ChatAccessState } from '@/components/chat/ChatAccessState';
+import { ChatPeerHeader } from '@/components/chat/ChatPeerHeader';
 import { useTranslation } from 'react-i18next';
 
 // TypeScript interfaces for type safety
@@ -337,63 +339,6 @@ export default function ChatScreen() {
     }
   };
   
-  // Component: Chat Header with design tokens - Consistent with Home Page
-  const ChatHeader: React.FC<ChatHeaderProps> = ({ companion, onBack, onMore }) => (
-    <View style={styles.header}>
-      <View style={styles.headerContent}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={onBack}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <ArrowLeft size={24} color={designTokens.colors.semantic.text} />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.profileButton}
-          accessibilityRole="button"
-          accessibilityLabel={`View ${companion.name} profile`}
-        >
-          <ProfileImage
-            uri={companion.image}
-            size="small"
-          />
-          <View style={styles.profileInfo}>
-            <Body style={styles.profileName}>{companion.name}</Body>
-          </View>
-        </TouchableOpacity>
-
-        <View style={styles.headerActions}>
-          {/* <TouchableOpacity
-            style={[
-              styles.headerActionButton,
-              showTranslation && styles.headerActionButtonActive,
-            ]}
-            onPress={() => setShowTranslation(!showTranslation)}
-            accessibilityRole="button"
-            accessibilityLabel={t('chat.toggleTranslation')}
-          >
-            <Languages size={20} color={
-              showTranslation
-                ? designTokens.colors.semantic.primaryContrast
-                : designTokens.colors.semantic.text
-            } />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.headerActionButton}
-            onPress={() => setShowChatSettings(true)}
-            accessibilityRole="button"
-            accessibilityLabel={t('chat.chatSettings')}
-          >
-            <MoreVertical size={20} color={designTokens.colors.semantic.text} />
-          </TouchableOpacity> */}
-        </View>
-      </View>
-    </View>
-  );
-
   // Derive a companion-compatible object from the real otherParty for header/settings
   const companionForHeader = {
     id: otherParty?.id ?? '',
@@ -417,16 +362,12 @@ export default function ChatScreen() {
   if (chatError) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-        <View style={styles.errorContainer}>
-          <Body style={styles.errorTitle}>Chat unavailable</Body>
-          <Caption style={styles.errorMessage}>{chatError}</Caption>
-          <TouchableOpacity style={styles.errorButton} onPress={bookingRequired ? () => router.push('/bookings') : initChat}>
-            <Body style={styles.errorButtonText}>{bookingRequired ? 'View bookings' : 'Try again'}</Body>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.secondaryErrorButton} onPress={() => router.replace('/messages')}>
-            <Caption style={styles.secondaryErrorText}>Back to messages</Caption>
-          </TouchableOpacity>
-        </View>
+        <ChatAccessState
+          bookingRequired={bookingRequired}
+          message={chatError}
+          onPrimary={bookingRequired ? () => router.push('/bookings') : initChat}
+          onBack={() => router.replace('/messages')}
+        />
       </SafeAreaView>
     );
   }
@@ -438,11 +379,7 @@ export default function ChatScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
-        <ChatHeader
-          companion={companionForHeader}
-          onBack={handleBack}
-          onMore={() => {}}
-        />
+        <ChatPeerHeader name={companionForHeader.name} image={companionForHeader.image} onBack={handleBack} />
 
         <View style={styles.chatContainer}>
           <FlatList
@@ -501,6 +438,10 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    width: '100%',
+    maxWidth: 1170,
+    minWidth: 0,
+    alignSelf: 'center',
     backgroundColor: designTokens.colors.semantic.background,
   },
   loadingContainer: {
@@ -510,6 +451,8 @@ const styles = StyleSheet.create({
   },
   keyboardContainer: {
     flex: 1,
+    minWidth: 0,
+    width: '100%',
   },
   header: {
     paddingTop: designTokens.spacing.scale.lg,
@@ -565,6 +508,8 @@ const styles = StyleSheet.create({
   },
   chatContainer: {
     flex: 1,
+    minWidth: 0,
+    width: '100%',
     backgroundColor: designTokens.colors.semantic.background,
   },
   messagesList: {
@@ -574,6 +519,8 @@ const styles = StyleSheet.create({
   },
   messageContainer: {
     maxWidth: '80%',
+    minWidth: 0,
+    flexShrink: 1,
     gap: designTokens.spacing.scale.xs,
   },
   userMessageContainer: {
@@ -583,6 +530,8 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   messageBubble: {
+    minWidth: 0,
+    flexShrink: 1,
     borderRadius: designTokens.borderRadius.components.card,
     paddingHorizontal: designTokens.spacing.scale.md,
     paddingVertical: designTokens.spacing.scale.sm,
@@ -598,6 +547,9 @@ const styles = StyleSheet.create({
     ...designTokens.shadows.md,
   },
   messageText: {
+    minWidth: 0,
+    flexShrink: 1,
+    ...(Platform.OS === 'web' ? { overflowWrap: 'anywhere' } as any : {}),
     ...componentTokens.text.body,
   },
   userMessageText: {
