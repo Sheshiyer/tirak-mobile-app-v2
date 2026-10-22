@@ -18,7 +18,7 @@ import { useBookingStore } from '@/stores/booking-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { useFavoritesStore } from '@/stores/favorites-store';
 import { useNavigation } from '@react-navigation/native';
-import { BookingService } from '@/types/booking';
+import { normalizePublicGuideExperiences, publicExperienceToBookingService } from '@/utils/public-guide-experiences';
 import { useToastStore } from '@/stores/toast-store';
 import { useTranslation } from 'react-i18next';
 import {
@@ -79,6 +79,7 @@ function mapCompanionDetails(data: any, allowDemoData = false) {
     {
       id: 'test-market-temple-walk',
       title: 'Old Town Market & Temple Walk',
+      name: 'Old Town Market & Temple Walk',
       description: 'A relaxed half-day walk through Bangkok food stalls, flower markets, river lanes, and a quiet temple stop with local context.',
       durationMinutes: 180,
       price: 1800,
@@ -88,6 +89,7 @@ function mapCompanionDetails(data: any, allowDemoData = false) {
     {
       id: 'test-evening-food-trail',
       title: 'Evening Food Trail',
+      name: 'Evening Food Trail',
       description: 'Taste street snacks, learn ordering etiquette, and visit a neighborhood night market at an easy traveler pace.',
       durationMinutes: 150,
       price: 1500,
@@ -110,6 +112,8 @@ function mapCompanionDetails(data: any, allowDemoData = false) {
     },
   ];
 
+  const realExperiences = normalizePublicGuideExperiences(data);
+
   return {
     id: data.id,
     email: data.email,
@@ -121,8 +125,8 @@ function mapCompanionDetails(data: any, allowDemoData = false) {
     rating: data.rating?.average ?? data.rating ?? (isTestProfile ? 5 : 0),
     reviewCount: data.rating?.count ?? data.reviewCount ?? (isTestProfile ? demoReviews.length : 0),
     price: data.price ?? (isTestProfile ? 1800 : 0),
-    currency: data.currency || data.experiences?.[0]?.currency || 'THB',
-    experiences: Array.isArray(data.experiences) && data.experiences.length > 0 ? data.experiences : isTestProfile ? demoExperiences : [],
+    currency: data.currency || realExperiences[0]?.currency || 'THB',
+    experiences: realExperiences.length > 0 ? realExperiences : isTestProfile ? demoExperiences : [],
     languages: Array.isArray(data.languages) && data.languages.length > 0 ? data.languages : isTestProfile ? ['English', 'Thai'] : [],
     verified: data.verified ?? data.phoneVerified ?? isTestProfile,
     online: data.online ?? isTestProfile,
@@ -312,7 +316,7 @@ export default function CompanionProfileScreen() {
 
     if (companion && companion.experiences && companion.experiences.length > 0) {
       const defaultService = companion.experiences[0];
-      const defaultDuration = defaultService.durationMinutes || 60;
+      const defaultDuration = defaultService.durationMinutes;
 
       // Set companion data in the store
       setCompanionData({
@@ -323,27 +327,19 @@ export default function CompanionProfileScreen() {
         rating: companion.rating,
         languages: companion.languages || [],
         about: companion.bio,
-        specialties: companion.experiences.map((exp: BookingService & { title?: string }) => exp.name || exp.title || 'Local experience'),
+        specialties: companion.experiences.map((exp) => exp.name || exp.title || 'Local experience'),
       });
 
       // Update service in the store
-      useBookingStore.getState().updateService({
-        id: defaultService.id,
-        name: defaultService.title,
-        description: defaultService.description,
-        price: defaultService.price,
-        currency: defaultService.currency || companion.currency || 'THB',
-        duration: defaultDuration / 60, // Convert to hours
-        category: defaultService.category || 'Experience',
-      });
+      useBookingStore.getState().updateService(publicExperienceToBookingService(defaultService));
 
       // Update date/time in the store
       useBookingStore.getState().updateDateTime({
         date: selectedDate,
-        time: '10:00', // Default to 10 AM
+        time: '', // A date is selected; the traveler must choose a real available time.
         duration: defaultDuration / 60, // Convert minutes to hours
-        endTime: '11:00', // Will be calculated properly in the datetime step
-        isAvailable: true
+        endTime: '',
+        isAvailable: false
       });
 
       // Reset to first step and navigate
