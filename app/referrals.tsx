@@ -17,7 +17,7 @@ import { designTokens } from '@/constants/design-tokens';
 import { useApplyReferralCode, useReferralAccount } from '@/services/api/referrals/referrals';
 
 export default function ReferralsScreen() {
-  const { data, isLoading, error } = useReferralAccount();
+  const { data, isLoading, error, refetch } = useReferralAccount();
   const applyReferralCode = useApplyReferralCode();
   const [inviteCode, setInviteCode] = React.useState('');
   const [feedback, setFeedback] = React.useState('');
@@ -57,7 +57,7 @@ export default function ReferralsScreen() {
       <SafeAreaView style={styles.safeArea}>
         {feedback ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ paddingVertical: 12 }}>{feedback}</Text> : null}
         <View style={styles.header}>
-          <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
+          <TouchableOpacity style={styles.iconButton} accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.canGoBack?.() ? router.back() : router.replace('/(app)')}>
             <ArrowLeft size={22} color={designTokens.colors.semantic.text} />
           </TouchableOpacity>
           <Text style={styles.title}>Tirak Coins</Text>
@@ -72,6 +72,7 @@ export default function ReferralsScreen() {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Rewards unavailable</Text>
             <Text style={styles.body}>Connect again to see your invite code and Tirak Coins.</Text>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Retry rewards" onPress={()=>{void refetch();}} style={styles.shareButton}><Text style={styles.shareText}>Retry</Text></TouchableOpacity>
           </View>
         ) : (
           <View style={styles.content}>

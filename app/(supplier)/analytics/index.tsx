@@ -37,7 +37,7 @@ type SupplierRoute = '/(supplier)/settings';
 
 export default function SupplierDashboard() {
   const router = useRouter();
-  const { data: statsData, isLoading, error } = useSupplierStats();
+  const { data: statsData, isLoading, error, refetch } = useSupplierStats();
   const { t } = useTranslation();
   const handleSettings = () => {
     try {
@@ -45,6 +45,11 @@ export default function SupplierDashboard() {
     } catch (error) {
       console.error('Navigation error:', error);
     }
+  };
+
+  const handleBack = () => {
+    if (router.canGoBack?.()) router.back();
+    else router.replace('/(app)');
   };
 
   if (isLoading) {
@@ -62,7 +67,9 @@ export default function SupplierDashboard() {
         <Text style={styles.errorText}>{t('analytics.failedToLoadAnalytics')}</Text>
         <TouchableOpacity
           style={styles.retryButton}
-          onPress={() => router.replace('/(supplier)/analytics')}
+          onPress={() => { void refetch(); }}
+          accessibilityRole="button"
+          accessibilityLabel="Retry analytics"
         >
           <Text style={styles.retryText}>{t('analytics.retry')}</Text>
         </TouchableOpacity>
@@ -83,9 +90,7 @@ export default function SupplierDashboard() {
     router.push('/supplier/settings');
   };
 
-  const handleBack = () => {
-    router.back();
-  };
+
 
 
   const formatCurrency = (amount: number | null) => amount === null ? t('analytics.unavailable') : `฿${amount.toLocaleString('en-US')}`;
@@ -97,7 +102,7 @@ export default function SupplierDashboard() {
         <View style={styles.headerContent}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => router.back()}
+            onPress={handleBack}
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >

@@ -60,9 +60,11 @@ function SupplierSettingsScreen() {
 
   const { user } = useAuthStoreHydrated();
   const isCompanion = user?.userType === 'companion' || user?.userType === 'supplier';
-  const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
-  const [emailNotificationsEnabled, setEmailNotificationsEnabled] = React.useState(true);
-  const { data: notificationPreferences } = useNotificationPreferences();
+  const [notificationsEnabled, setNotificationsEnabled] = React.useState<boolean | null>(null);
+  const [emailNotificationsEnabled, setEmailNotificationsEnabled] = React.useState<boolean | null>(null);
+  const { data: notificationPreferences, isLoading: loadingPreferences, error: preferencesError, refetch: refetchPreferences } = useNotificationPreferences();
+  const preferences = notificationPreferences?.success === true ? notificationPreferences.data?.preferences : undefined;
+  const preferencesReady = !loadingPreferences && !preferencesError && typeof preferences?.push === 'boolean' && typeof preferences?.email === 'boolean';
   const updateNotificationPreferences = useUpdateNotificationPreferences();
   const [preferenceError, setPreferenceError] = React.useState('');
   const { t } = useTranslation();
@@ -75,6 +77,7 @@ function SupplierSettingsScreen() {
   }, [notificationPreferences]);
 
   const updatePreference = (key: 'push' | 'email', value: boolean) => {
+    if (!preferencesReady || updateNotificationPreferences.isPending) return;
     setPreferenceError('');
     if (key === 'push') setNotificationsEnabled(value);
     if (key === 'email') setEmailNotificationsEnabled(value);
@@ -90,11 +93,14 @@ function SupplierSettingsScreen() {
     );
   };
 
+  const [supportError, setSupportError] = React.useState('');
   const openExternalLink = async (url: string, fallbackMessage: string) => {
+    setSupportError('');
     try {
       await Linking.openURL(url);
     } catch {
-      Alert.alert('Unable to open link', fallbackMessage);
+      if (Platform.OS === 'web') setSupportError(`Unable to open your email app. ${fallbackMessage}`);
+      else Alert.alert('Unable to open link', fallbackMessage);
     }
   };
 
@@ -199,9 +205,10 @@ function SupplierSettingsScreen() {
         
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('settingsFlow.bookingAlerts')}</Text>
+          {loadingPreferences ? <ActivityIndicator accessibilityLabel="Loading notification preferences" /> : !preferencesReady ? <View><Text accessibilityRole="alert">Unable to load notification preferences.</Text><TouchableOpacity accessibilityRole="button" accessibilityLabel="Retry notification preferences" onPress={()=>{void refetchPreferences();}}><Text style={{paddingVertical:12}}>Retry</Text></TouchableOpacity></View> : null}
           {preferenceError ? <Text accessibilityRole="alert">{preferenceError}</Text> : null}
           
-          <View style={styles.card}>
+          {preferencesReady && <View style={styles.card}>
             <View style={styles.settingItem}>
               <View style={styles.settingIcon}>
                 <Smartphone size={20} color={designTokens.colors.semantic.surface} />
@@ -214,11 +221,11 @@ function SupplierSettingsScreen() {
               </View>
               <Switch
                 accessibilityLabel={t('settingsFlow.pushAlerts')}
-                disabled={updateNotificationPreferences.isPending}
-                value={notificationsEnabled}
+                disabled={!preferencesReady || updateNotificationPreferences.isPending}
+                value={notificationsEnabled ?? preferences?.push ?? false}
                 onValueChange={(value) => updatePreference('push', value)}
                 trackColor={{ false: colors.lightGray, true: colors.primaryLight }}
-                thumbColor={notificationsEnabled ? colors.primary : 'white'}
+                thumbColor={(notificationsEnabled ?? preferences?.push) ? colors.primary : 'white'}
               />
             </View>
             
@@ -236,14 +243,14 @@ function SupplierSettingsScreen() {
               </View>
               <Switch
                 accessibilityLabel={t('settingsFlow.emailAlerts')}
-                disabled={updateNotificationPreferences.isPending}
-                value={emailNotificationsEnabled}
+                disabled={!preferencesReady || updateNotificationPreferences.isPending}
+                value={emailNotificationsEnabled ?? preferences?.email ?? false}
                 onValueChange={(value) => updatePreference('email', value)}
                 trackColor={{ false: colors.lightGray, true: colors.primaryLight }}
-                thumbColor={emailNotificationsEnabled ? colors.primary : 'white'}
+                thumbColor={(emailNotificationsEnabled ?? preferences?.email) ? colors.primary : 'white'}
               />
             </View>
-          </View>
+          </View>}
         </View>
 
         <View style={styles.section}>
@@ -314,6 +321,7 @@ function SupplierSettingsScreen() {
         
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('settings.support')}</Text>
+          {supportError ? <Text selectable accessibilityRole="alert" style={{paddingVertical:12}}>{supportError}</Text> : null}
           
           <View style={styles.card}>
             <TouchableOpacity
@@ -325,7 +333,7 @@ function SupplierSettingsScreen() {
               </View>
               <View style={styles.settingContent}>
                 <Text style={styles.settingTitle}>{t('settings.helpCenter')}</Text>
-                <Text style={styles.settingDescription}>
+                <Text selectable style={styles.settingDescription}>
                   {HELP_CENTER_EMAIL}
                 </Text>
               </View>
@@ -343,7 +351,7 @@ function SupplierSettingsScreen() {
               </View>
               <View style={styles.settingContent}>
                 <Text style={styles.settingTitle}>{t('settings.contactSupport')}</Text>
-                <Text style={styles.settingDescription}>
+                <Text selectable style={styles.settingDescription}>
                   {SUPPORT_EMAIL}
                 </Text>
               </View>

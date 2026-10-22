@@ -73,7 +73,7 @@ const SettingsItem: React.FC<SettingsItemProps> = ({
           {title}
         </Text>
         {subtitle && (
-          <Text style={styles.settingsSubtitle}>{subtitle}</Text>
+          <Text selectable style={styles.settingsSubtitle}>{subtitle}</Text>
         )}
       </View>
     </View>
@@ -90,11 +90,14 @@ export default function SettingsScreen() {
   const [showClosure, setShowClosure] = useState(false);
   const deletingRef = useRef(false);
 
+  const [supportError, setSupportError] = useState('');
   const openExternalLink = async (url: string, fallbackMessage: string) => {
+    setSupportError('');
     try {
       await Linking.openURL(url);
     } catch {
-      Alert.alert('Unable to open link', fallbackMessage);
+      if (Platform.OS === 'web') setSupportError(`Unable to open your email app. ${fallbackMessage}`);
+      else Alert.alert('Unable to open link', fallbackMessage);
     }
   };
 
@@ -227,6 +230,7 @@ export default function SettingsScreen() {
         <Card style={styles.settingsCard}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Support</Text>
+            {supportError ? <Text selectable accessibilityRole="alert" style={{paddingVertical:12}}>{supportError}</Text> : null}
           </View>
           
           <SettingsItem
@@ -245,11 +249,9 @@ export default function SettingsScreen() {
           
           <SettingsItem
             icon={<Star size={22} color={designTokens.colors.semantic.primary} />}
-            title="Rate App"
-            subtitle="Share feedback after your next Tirak day"
-            onPress={() => {
-              Alert.alert('Thank you', 'Your feedback helps shape Tirak for travelers and guides.');
-            }}
+            title="Send app feedback"
+            subtitle={`Compose an email to ${SUPPORT_EMAIL}`}
+            onPress={() => openExternalLink(`${SUPPORT_MAILTO}?subject=${encodeURIComponent('Tirak app feedback')}`, `Email ${SUPPORT_EMAIL}`)}
           />
         </Card>
 
