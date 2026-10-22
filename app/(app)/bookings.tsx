@@ -25,7 +25,7 @@ import { designTokens, componentTokens } from '@/constants/design-tokens';
 import { useTranslation } from 'react-i18next';
 // Import booking API
 import { 
-  useBookingsQuery, 
+  useBookingHistoryQuery,
   useUpdateBookingStatus,
   BookingListItem,
 } from '@/services/api/booking/booking';
@@ -187,7 +187,7 @@ export default function BookingsScreen() {
   const updateBookingStatus = useUpdateBookingStatus();
 
   // Fetch bookings from API
-  const { data: bookingsData, isLoading, error, refetch } = useBookingsQuery({}, {
+  const { data: bookingsData, isLoading, error, refetch } = useBookingHistoryQuery({
     enabled: isAuthenticated && reviewAccountKey === null
   });
 

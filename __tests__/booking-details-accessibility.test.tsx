@@ -8,7 +8,7 @@ jest.mock('../stores/auth-store',()=>({useAuthStore:()=>({user:{id:'traveler-1',
 jest.mock('../stores/toast-store',()=>({useToast:()=>({success:jest.fn(),error:jest.fn()})}));
 jest.mock('../constants/review-mode',()=>({isReviewModeEnabled:()=>false,REVIEW_ACCOUNTS:{customer:{user:{id:'review-customer'}},guide:{user:{id:'review-guide'}}}}));
 jest.mock('../stores/review-booking-fixture-store',()=>({REVIEW_BOOKING_ID:'review-booking-fixture',reviewBookingToListItem:jest.fn(),useReviewBookingFixtureStore:(selector:any)=>selector({booking:null,acceptAsGuide:jest.fn()})}));
-jest.mock('../services/api/booking/booking',()=>({useBookingsQuery:()=>({data:{success:true,data:{items:[{id:mockBookingId,status:'pending',date:'2099-01-02',startTime:'09:00',duration:30,totalAmount:300,paymentMethod:'cash',location:'Bangkok',service:{name:'Canal walk'},companion:{name:'Local Guide'}}]}},isLoading:false,error:null,refetch:jest.fn()}),useUpdateBookingStatus:()=>({isPending:false,mutateAsync:mockMutateStatus})}));
+jest.mock('../services/api/booking/booking',()=>({useBookingHistoryQuery:()=>({data:{success:true,data:{items:[{id:mockBookingId,status:'pending',date:'2099-01-02',startTime:'09:00',duration:30,totalAmount:300,paymentMethod:'cash',location:'Bangkok',service:{name:'Canal walk'},companion:{name:'Local Guide'}}]}},isLoading:false,error:null,refetch:jest.fn()}),useUpdateBookingStatus:()=>({isPending:false,mutateAsync:mockMutateStatus})}));
 jest.mock('react-i18next',()=>({useTranslation:()=>({t:(key:string)=>key})}));
 jest.mock('../components/ui/Card',()=>({Card:require('react-native').View}));
 jest.mock('../components/ui/ProfileImage',()=>({ProfileImage:require('react-native').View}));
