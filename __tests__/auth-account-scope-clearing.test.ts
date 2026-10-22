@@ -205,3 +205,21 @@ describe('account-scoped state clearing on auth transitions', () => {
     expect(queryClient.getQueryData(['notifications'])).toBeUndefined();
   });
 });
+
+test('favorites follow actual auth identity changes and invalidateAuth clears visible account data', async () => {
+  const { useFavoritesStore } = require('../stores/favorites-store');
+  const storage = jest.requireMock('@/utils/secure-storage').secureStorage;
+  storage.getItemAsync.mockResolvedValue(null);
+  useAuthStore.setState({user: {id:'favorite-owner-A', userType:'customer'} as any, isAuthenticated:true});
+  await Promise.resolve(); await Promise.resolve();
+  useFavoritesStore.getState().addFavorite('guide-A',{id:'guide-A',name:'Guide A'});
+  expect(useFavoritesStore.getState().favorites).toEqual(['guide-A']);
+  await useAuthStore.getState().invalidateAuth();
+  expect(useFavoritesStore.getState().ownerId).toBeNull();
+  expect(useFavoritesStore.getState().favorites).toEqual([]);
+  useAuthStore.setState({user:{id:'favorite-owner-B',userType:'customer'} as any,isAuthenticated:true});
+  await Promise.resolve(); await Promise.resolve();
+  expect(useFavoritesStore.getState().ownerId).toBe('favorite-owner-B');
+  expect(useFavoritesStore.getState().favorites).toEqual([]);
+  await useAuthStore.getState().invalidateAuth();
+});

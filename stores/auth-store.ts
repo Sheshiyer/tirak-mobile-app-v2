@@ -1,3 +1,4 @@
+import { useFavoritesStore } from '@/stores/favorites-store';
 import { unregisterBookingPushNotifications } from '@/utils/push-registration';
 import { logger } from '@/utils/logger';
 import { create } from 'zustand';
@@ -538,3 +539,14 @@ if (Platform.OS !== 'web') {
     await useAuthStore.getState().invalidateAuth();
   });
 }
+
+// Clear the visible favorites synchronously when identity changes. Loading uses
+// an owner generation fence so an old account's late storage read cannot leak.
+useAuthStore.subscribe((state, previous) => {
+  if (state.user?.id !== previous.user?.id) {
+    void useFavoritesStore.getState().bindOwner(state.user?.id || null);
+  }
+});
+
+// A cached store may already have its identity when this module is attached.
+void useFavoritesStore.getState().bindOwner(useAuthStore.getState().user?.id || null);

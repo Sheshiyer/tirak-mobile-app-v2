@@ -445,7 +445,8 @@
     "loading": "กำลังโหลด...",
     "favorites": "รายการโปรด",
     "searchFavorites": "ค้นหารายการโปรด...",
-    "searchPlaceholder": "ค้นหารายการโปรด..."
+    "searchPlaceholder": "ค้นหารายการโปรด...",
+    "deviceOnly": "บันทึกไว้บนอุปกรณ์นี้สำหรับบัญชีนี้ รายการโปรดจะไม่ซิงค์ข้ามอุปกรณ์"
   },
   "companionDetails": {
     "errorLoadingCompanion": "เกิดข้อผิดพลาดในการโหลดข้อมูลคู่หู",

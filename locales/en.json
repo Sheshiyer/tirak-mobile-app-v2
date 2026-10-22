@@ -455,7 +455,8 @@
     "loading": "Loading...",
     "favorites": "Favorites",
     "searchFavorites": "Search saved guides...",
-    "searchPlaceholder": "Search saved guides..."
+    "searchPlaceholder": "Search saved guides...",
+    "deviceOnly": "Saved on this device for this account. Favorites do not sync across devices."
   },
   "companionDetails": {
     "errorLoadingCompanion": "Error loading guide",

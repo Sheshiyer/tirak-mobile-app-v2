@@ -114,6 +114,7 @@ export default function FavoritesScreen() {
       <RadialGradient variant="appBackground" style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>{t('favorites.favorites')}</Text>
+        <Text style={{ color: designTokens.colors.semantic.textSecondary, marginTop: 8 }}>{t('favorites.deviceOnly')}</Text>
         </View>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color={designTokens.colors.semantic.primary} />
@@ -127,6 +128,7 @@ export default function FavoritesScreen() {
     <RadialGradient variant="appBackground" style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>{t('favorites.favorites')}</Text>
+        <Text style={{ color: designTokens.colors.semantic.textSecondary, marginTop: 8 }}>{t('favorites.deviceOnly')}</Text>
         
         <Card style={styles.searchCard} padding={0}>
           <View style={styles.searchContainer}>
