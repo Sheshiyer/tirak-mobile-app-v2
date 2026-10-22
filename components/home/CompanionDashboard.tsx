@@ -1,7 +1,7 @@
 import { bookingLoadState } from '@/utils/booking-load-state';
 import { logger } from '@/utils/logger';
-import React, { useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ViewStyle, TextStyle, ScrollView, Alert, Platform } from 'react-native';
+import React, { useMemo, useCallback, useRef, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ViewStyle, TextStyle, ScrollView, Alert, Platform, Modal } from 'react-native';
 import { router } from 'expo-router';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -160,18 +160,26 @@ const SafeTouchableOpacity = ({ children, onPress, style, activeOpacity = 0.8, d
 };
 
 // Individual booking item component
-const BookingItem: React.FC<{ booking: BookingListItem; onStatusUpdate: (id: string, status: BookingStatus) => void; isDemo?: boolean; t: (key: string) => string }> = ({
+export const BookingItem: React.FC<{ booking: BookingListItem; onStatusUpdate: (id: string, status: BookingStatus) => void; isDemo?: boolean; t: (key: string) => string }> = ({
   booking,
   onStatusUpdate,
   isDemo = false,
   t
 }) => {
   const updateStatusMutation = useUpdateBookingStatus();
+  const pending = useRef(false);
+  const [busy, setBusy] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [failure, setFailure] = useState('');
+  const [failedStatus, setFailedStatus] = useState<'confirmed' | 'cancelled'>('confirmed');
 
   const handleStatusUpdate = async (newStatus: 'confirmed' | 'cancelled') => {
+    if (pending.current || updateStatusMutation.isPending) return;
+    pending.current = true; setBusy(true); setFailure(''); setFailedStatus(newStatus);
     if (isDemo) {
       // For demo bookings, just update locally
       onStatusUpdate(booking.id, newStatus);
+      pending.current = false; setBusy(false); setRejectOpen(false);
       return;
     }
 
@@ -181,14 +189,17 @@ const BookingItem: React.FC<{ booking: BookingListItem; onStatusUpdate: (id: str
         statusData: { status: newStatus }
       });
       onStatusUpdate(booking.id, newStatus);
+      setRejectOpen(false);
     } catch (error) {
       logger.warn('Failed to update booking status:', error);
-    }
+      setFailure('Unable to update this request. Please try again.');
+    } finally { pending.current = false; setBusy(false); }
   };
 
   const canConfirm = booking.status === 'pending';
 
   return (
+    <View>
     <View style={styles.bookingItem as ViewStyle}>
       <SafeTouchableOpacity
         style={styles.bookingInfo as ViewStyle}
@@ -221,21 +232,38 @@ const BookingItem: React.FC<{ booking: BookingListItem; onStatusUpdate: (id: str
           <View style={styles.quickActions as ViewStyle}>
             <SafeTouchableOpacity
               style={[styles.actionButton as ViewStyle, styles.confirmButton as ViewStyle]}
+              accessibilityRole="button" accessibilityLabel="Approve request"
+              accessibilityState={{disabled:busy || updateStatusMutation.isPending, busy}}
               onPress={() => handleStatusUpdate('confirmed')}
-              disabled={updateStatusMutation.isPending}
+              disabled={busy || updateStatusMutation.isPending}
             >
               <SafeCheckCircleIcon />
             </SafeTouchableOpacity>
             <SafeTouchableOpacity
               style={[styles.actionButton as ViewStyle, styles.cancelButton as ViewStyle]}
-              onPress={() => handleStatusUpdate('cancelled')}
-              disabled={updateStatusMutation.isPending}
+              accessibilityRole="button" accessibilityLabel="Reject request"
+              accessibilityState={{disabled:busy || updateStatusMutation.isPending, busy}}
+              onPress={() => { if (!pending.current) { setFailure(''); setRejectOpen(true); } }}
+              disabled={busy || updateStatusMutation.isPending}
             >
               <SafeXCircleIcon />
             </SafeTouchableOpacity>
           </View>
         )}
       </View>
+    </View>
+    {failure && !rejectOpen ? <View><Text accessibilityRole="alert">{failure}</Text><SafeTouchableOpacity accessibilityRole="button" accessibilityLabel="Retry request update" disabled={busy} onPress={() => handleStatusUpdate(failedStatus)}><Text>Try again</Text></SafeTouchableOpacity></View> : null}
+    <Modal visible={rejectOpen} transparent animationType="fade" onRequestClose={() => { if (!pending.current) setRejectOpen(false); }}>
+      <View style={{flex:1,backgroundColor:'rgba(0,0,0,0.45)',alignItems:'center',justifyContent:'center',padding:16}}>
+        <View accessibilityViewIsModal style={{width:'100%',maxWidth:440,padding:24,gap:16,borderRadius:20,backgroundColor:SAFE_COLORS.surface}}>
+          <Text accessibilityRole="header" style={{fontSize:22,fontWeight:'700',color:SAFE_COLORS.text}}>Reject this request?</Text>
+          <Text style={{fontSize:16,lineHeight:24,color:SAFE_COLORS.textSecondary}}>The traveler will see this booking as cancelled. This action cannot be undone.</Text>
+          {failure ? <Text accessibilityRole="alert" accessibilityLiveRegion="assertive" style={{color:SAFE_COLORS.error}}>{failure}</Text> : null}
+          <SafeTouchableOpacity accessibilityRole="button" accessibilityLabel="Keep request" disabled={busy} accessibilityState={{disabled:busy}} onPress={() => { setRejectOpen(false); setFailure(''); }} style={{padding:12,minHeight:48}}><Text>Keep request</Text></SafeTouchableOpacity>
+          <SafeTouchableOpacity accessibilityRole="button" accessibilityLabel={failure ? 'Retry rejection' : 'Confirm rejection'} disabled={busy} accessibilityState={{disabled:busy,busy}} onPress={() => handleStatusUpdate('cancelled')} style={{padding:12,minHeight:48,borderRadius:12,backgroundColor:SAFE_COLORS.error}}><Text style={{color:'#fff',textAlign:'center'}}>{busy ? 'Rejecting…' : failure ? 'Try again' : 'Confirm rejection'}</Text></SafeTouchableOpacity>
+        </View>
+      </View>
+    </Modal>
     </View>
   );
 };
@@ -333,6 +361,9 @@ const CompanionDashboardContent: React.FC<CompanionDashboardProps> = ({ userName
     const { isAuthenticated } = useAuthStore();
     const { data: statsData, isLoading: isLoadingStats } = useSupplierStats();
     const stats = statsData?.data?.data;
+    const accountStatus = statsData?.data?.user?.status;
+    const statusLabels: Record<string, string> = {active: t('userHome.companion.active'), suspended: 'Suspended', inactive: 'Inactive', pending: 'Pending'};
+    const accountStatusLabel = accountStatus && statusLabels[accountStatus] || t('analytics.unavailable');
 
 
   // Only fetch bookings if user is authenticated
@@ -424,8 +455,8 @@ const CompanionDashboardContent: React.FC<CompanionDashboardProps> = ({ userName
       <Card style={styles.statsCard as ViewStyle} padding="lg" shadow="lg">
         <View style={styles.statsHeader as ViewStyle}>
           <Text style={styles.statsTitle as TextStyle}>{t('userHome.companion.overview')}</Text>
-          <Badge variant="success" size="sm">
-            {t('userHome.companion.active')}
+          <Badge variant={accountStatus === 'active' ? 'success' : accountStatus === 'suspended' ? 'error' : 'info'} size="sm">
+            {accountStatusLabel}
           </Badge>
         </View>
         
