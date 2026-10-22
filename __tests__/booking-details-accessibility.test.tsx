@@ -18,6 +18,7 @@ jest.mock('../components/ui/Typography',()=>({Heading:require('react-native').Te
 jest.mock('../components/ui/LoadingState',()=>({LoadingState:require('react-native').View}));
 import Screen from '../app/(app)/bookings';
 import {router} from 'expo-router';
+import {Platform} from 'react-native';
 beforeEach(()=>{jest.clearAllMocks();mockBookingId='booking-real-1';mockRole='customer';});
 it('pending booking exposes a named detail button that opens the existing booking route',()=>{
  const ui=render(<Screen/>);const button=ui.getByRole('button',{name:'View booking details'});fireEvent.press(button);
@@ -36,4 +37,17 @@ it('blocks duplicate guide approval clicks until the acknowledged mutation compl
  expect(mockMutateStatus).toHaveBeenCalledTimes(1);
  expect(mockMutateStatus).toHaveBeenCalledWith({id:'booking-real-1',statusData:{status:'confirmed',reason:undefined}});
  await act(async()=>{finish();});ui.unmount();
+});
+
+it('web list rejection requires in-app confirmation, and Keep does not mutate',async()=>{
+ const old=Platform.OS;Object.defineProperty(Platform,'OS',{value:'web',configurable:true});mockRole='companion';mockMutateStatus.mockResolvedValue({success:true});
+ const ui=render(<Screen/>);fireEvent.press(ui.getByRole('button',{name:'Reject booking request'}));
+ expect(ui.getByText('Reject this request?')).toBeTruthy();expect(mockMutateStatus).not.toHaveBeenCalled();
+ const keep=ui.UNSAFE_getAllByType(require('../components/ui/Button').Button).find((node:any)=>node.props.title==='Keep request');fireEvent.press(keep!);
+ expect(ui.queryByText('Reject this request?')).toBeNull();expect(mockMutateStatus).not.toHaveBeenCalled();
+ fireEvent.press(ui.getByRole('button',{name:'Reject booking request'}));
+ const confirm=ui.UNSAFE_getAllByType(require('../components/ui/Button').Button).find((node:any)=>node.props.title==='Confirm rejection');
+ await act(async()=>fireEvent.press(confirm!));
+ expect(mockMutateStatus).toHaveBeenCalledTimes(1);expect(mockMutateStatus).toHaveBeenCalledWith({id:'booking-real-1',statusData:{status:'cancelled',reason:'Guide declined the booking request.'}});
+ ui.unmount();Object.defineProperty(Platform,'OS',{value:old,configurable:true});
 });

@@ -11,6 +11,7 @@ import {
   TextInput,
   Alert,
   Platform,
+  Modal,
 } from 'react-native';
 import { useToast } from '@/stores/toast-store';
 import { useAuthStore } from '@/stores/auth-store';
@@ -173,6 +174,7 @@ export default function BookingsScreen() {
   const [showSortOptions, setShowSortOptions] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'all' | BookingListItem['status']>('all');
   const [search, setSearch] = useState('');
+  const [rejectionTarget, setRejectionTarget] = useState<BookingListItem | null>(null);
   const toast = useToast();
   const pendingStatusUpdates = useRef(new Set<string>());
   const [updatingBookingIds, setUpdatingBookingIds] = useState(new Set<string>());
@@ -335,9 +337,7 @@ export default function BookingsScreen() {
 
   const handleRejectBooking = (booking: BookingListItem) => {
     if (Platform.OS === 'web') {
-      if (typeof window !== 'undefined' && window.confirm('Reject this request? The traveler will be notified.')) {
-        void handleCompanionStatusUpdate(booking, 'cancelled');
-      }
+      setRejectionTarget(booking);
       return;
     }
     Alert.alert(
@@ -854,12 +854,33 @@ export default function BookingsScreen() {
           <EmptyState />
         )}
       </ScrollView>
+      {Platform.OS === 'web' && (
+        <Modal visible={rejectionTarget !== null} transparent animationType="fade" onRequestClose={() => { if (!updateBookingStatus.isPending) setRejectionTarget(null); }}>
+          <View style={styles.rejectionOverlay}>
+            <View accessibilityViewIsModal accessibilityLabel="Reject booking request" style={styles.rejectionCard}>
+              <Text accessibilityRole="header" style={styles.rejectionTitle}>Reject this request?</Text>
+              <Text style={styles.rejectionBody}>{rejectionTarget?.service?.name}</Text>
+              <Text style={styles.rejectionBody}>The traveler will see that this booking request was rejected.</Text>
+              <Button title="Keep request" variant="outline" disabled={updateBookingStatus.isPending} onPress={() => setRejectionTarget(null)} />
+              <Button title={updateBookingStatus.isPending ? 'Updating…' : 'Confirm rejection'} disabled={updateBookingStatus.isPending} onPress={async () => {
+                if (!rejectionTarget) return;
+                await handleCompanionStatusUpdate(rejectionTarget, 'cancelled');
+                setRejectionTarget(null);
+              }} />
+            </View>
+          </View>
+        </Modal>
+      )}
     </RadialGradient>
   );
 }
 
 // Enhanced styles using comprehensive design token system
 const styles = StyleSheet.create({
+  rejectionOverlay: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: 'rgba(30,20,40,0.45)' },
+  rejectionCard: { width: '100%', maxWidth: 480, padding: 24, borderRadius: 20, gap: 16, backgroundColor: designTokens.colors.semantic.surface },
+  rejectionTitle: { fontSize: 24, lineHeight: 32, fontWeight: '700', color: designTokens.colors.semantic.text },
+  rejectionBody: { fontSize: 15, lineHeight: 23, color: designTokens.colors.semantic.textSecondary },
   container: {
     flex: 1,
   },
