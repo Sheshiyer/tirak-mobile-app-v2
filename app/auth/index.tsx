@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Image, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { router } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { Button } from '@/components/ui/Button';
 import { RadialGradient } from '@/components/ui/RadialGradient';
 import { designTokens } from '@/constants/design-tokens';
@@ -109,7 +109,7 @@ function RoleChoice({ title, description, icon: Icon, accent, delay, onPress }: 
 }
 
 export default function AuthScreen() {
-  const { isAuthenticated } = useAuthStoreHydrated();
+  const { isHydrated, isAuthenticated, user } = useAuthStoreHydrated();
   const { t } = useTranslation();
   const [currentLanguage, setCurrentLanguage] = useState(getCurrentLanguage());
 
@@ -133,6 +133,11 @@ export default function AuthScreen() {
       params: { role: 'companion' },
     });
   };
+
+  if (isHydrated && isAuthenticated && user) {
+    // The shared app home renders the existing guide or traveler dashboard.
+    return <Redirect href="/(app)" />;
+  }
 
   return (
     <RadialGradient variant="primary" style={styles.container}>

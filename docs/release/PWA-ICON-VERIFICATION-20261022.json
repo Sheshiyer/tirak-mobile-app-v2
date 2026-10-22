@@ -1,0 +1,17 @@
+{
+  "export": "passed 91 routes",
+  "typescript": "passed",
+  "all_html_metadata": "91/91",
+  "maskable": "approved native essential mark fits radius 0.3466 of width within 0.4 safe circle; full bleed RGB gradient",
+  "static_vercel_config": "restored",
+  "manifest_id": "/",
+  "assets": {
+    "public/favicon.ico": "f2df29c468c24b1a2b32ac4b920a1bb3b9fae137eb7e56fdfd63d22292e6ed38",
+    "public/apple-touch-icon.png": "5812662f0dab299e0cbe2691e02d5125e4fd2c5c32ff9c1f7a2edd14603d0230",
+    "public/icon-192.png": "4d8f066d1fcf8e082e5b4413d74f9750207db38c792cb5e76f8a035d352c1b26",
+    "public/icon-512.png": "886cdeef7d19b3f097fc35fa70f718422d702f3ad5254cee218318a16558e234",
+    "public/icon-maskable-192.png": "4d8f066d1fcf8e082e5b4413d74f9750207db38c792cb5e76f8a035d352c1b26",
+    "public/icon-maskable-512.png": "886cdeef7d19b3f097fc35fa70f718422d702f3ad5254cee218318a16558e234",
+    "public/icon-96.png": "4ffa7e837ae2dde51c66f8843a274ec8f8d5bbf170b2e003ada6136fea6dbf10"
+  }
+}
