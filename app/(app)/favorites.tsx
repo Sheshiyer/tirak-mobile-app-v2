@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
 import { RadialGradient } from '@/components/ui/RadialGradient';
 import { Card } from '@/components/ui/Card';
@@ -16,6 +16,15 @@ import { isDemoCompanion } from '@/utils/companion-display';
 
 export default function FavoritesScreen() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const { width: viewportWidth } = useWindowDimensions();
+  const [parentWidth, setParentWidth] = useState<number | null>(null);
+  const availableWidth = Math.min(viewportWidth, parentWidth || viewportWidth, 1170);
+  const columns = viewMode === 'list' ? 1 : availableWidth >= 900 ? 3 : availableWidth >= 600 ? 2 : 1;
+  const cardWidth = Math.max(1, Math.min(viewMode === 'grid' ? 360 : 720, (availableWidth - 40 - (columns - 1) * 12) / columns));
+  const measureParent = (event: { nativeEvent: { layout: { width: number } } }) => {
+    const measured = event.nativeEvent.layout.width;
+    if (measured > 0) setParentWidth(measured);
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const favoriteIds = useFavoritesStore((s) => s.favorites);
   const favoriteCompanions = useFavoritesStore((s) => s.favoriteCompanions);
@@ -116,7 +125,7 @@ export default function FavoritesScreen() {
   if (isLoading) {
     return (
       <RadialGradient variant="appBackground" style={styles.container}>
-        <View style={styles.header}>
+        <View style={styles.header} onLayout={measureParent}>
           <Text style={styles.headerTitle}>{t('favorites.favorites')}</Text>
         <Text style={{ color: designTokens.colors.semantic.textSecondary, marginTop: 8 }}>{t('favorites.deviceOnly')}</Text>
         </View>
@@ -130,7 +139,7 @@ export default function FavoritesScreen() {
   
   return (
     <RadialGradient variant="appBackground" style={styles.container}>
-      <View style={styles.header}>
+      <View style={styles.header} onLayout={measureParent}>
         <Text style={styles.headerTitle}>{t('favorites.favorites')}</Text>
         <Text style={{ color: designTokens.colors.semantic.textSecondary, marginTop: 8 }}>{t('favorites.deviceOnly')}</Text>
         
@@ -163,13 +172,13 @@ export default function FavoritesScreen() {
               <View style={styles.viewToggle}>
                 <TouchableOpacity
                   style={[styles.viewButton, viewMode === 'grid' && styles.viewButtonActive]}
-                  onPress={() => setViewMode('grid')}
+                  accessibilityRole="button" accessibilityLabel="Grid view" accessibilityState={{ selected: viewMode === 'grid' }} onPress={() => setViewMode('grid')}
                 >
                   <Grid3X3 size={18} color={viewMode === 'grid' ? designTokens.colors.semantic.surface : designTokens.colors.semantic.textSecondary} />
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.viewButton, viewMode === 'list' && styles.viewButtonActive]}
-                  onPress={() => setViewMode('list')}
+                  accessibilityRole="button" accessibilityLabel="List view" accessibilityState={{ selected: viewMode === 'list' }} onPress={() => setViewMode('list')}
                 >
                   <List size={18} color={viewMode === 'list' ? designTokens.colors.semantic.surface : designTokens.colors.semantic.textSecondary} />
                 </TouchableOpacity>
@@ -178,9 +187,12 @@ export default function FavoritesScreen() {
           </Card>
           
           <FlatList
+            style={{ width: '100%', minWidth: 0 }}
+            extraData={{ availableWidth, cardWidth }}
             data={favorites}
             renderItem={({ item }) =>
               item ? (
+              <View testID={`favorite-card-${item.id}`} style={{ width: cardWidth, maxWidth: cardWidth, minWidth: 0 }}>
               <CompanionCard
                 companion={item}
                 viewMode={viewMode}
@@ -188,11 +200,13 @@ export default function FavoritesScreen() {
                 onFavorite={() => handleFavorite(item.id)}
                 onMessage={() => handleMessage(item.id)}
               />
+              </View>
               ) : null
             }
             keyExtractor={(item) => item?.id}
-            numColumns={viewMode === 'grid' ? 2 : 1}
-            key={viewMode} // Force re-render when view mode changes
+            columnWrapperStyle={columns > 1 ? { gap: 12 } : undefined}
+            numColumns={columns}
+            key={`${viewMode}-${columns}-${Math.round(availableWidth)}`} // Invalidate web list geometry after a resize.
             contentContainerStyle={styles.listContainer}
             showsVerticalScrollIndicator={false}
           />
@@ -207,6 +221,10 @@ export default function FavoritesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    width: '100%',
+    maxWidth: 1170,
+    minWidth: 0,
+    alignSelf: 'center',
   },
   header: {
     paddingHorizontal: 20,
@@ -231,6 +249,7 @@ const styles = StyleSheet.create({
   },
   searchBar: {
     flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -268,6 +287,10 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   viewButton: {
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 18,
