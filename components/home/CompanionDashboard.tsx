@@ -431,20 +431,21 @@ const CompanionDashboardContent: React.FC<CompanionDashboardProps> = ({ userName
         
         <View style={styles.statsRow as ViewStyle}>
           <View style={styles.statItem as ViewStyle}>
-            <Text style={styles.statValue as TextStyle}>{stats?.totalBookings ?? t('analytics.unavailable')}</Text>
+            <Text accessible accessibilityLabel={`${t('userHome.companion.bookings')}: ${stats?.totalBookings ?? t('analytics.unavailable')}`} numberOfLines={1} style={styles.statValue as TextStyle}>{stats?.totalBookings ?? '—'}</Text>
             <Text style={styles.statLabel as TextStyle}>{t('userHome.companion.bookings')}</Text>
           </View>
           <Divider orientation="vertical" margin="sm" />
           <View style={styles.statItem as ViewStyle}>
-            <Text style={styles.statValue as TextStyle}>{stats?.averageRating ?? t('analytics.unavailable')}</Text>
+            <Text accessible accessibilityLabel={`${t('userHome.companion.rating')}: ${stats?.averageRating ?? t('analytics.unavailable')}`} numberOfLines={1} style={styles.statValue as TextStyle}>{stats?.averageRating ?? '—'}</Text>
             <Text style={styles.statLabel as TextStyle}>{t('userHome.companion.rating')}</Text>
           </View>
           <Divider orientation="vertical" margin="sm" />
           <View style={styles.statItem as ViewStyle}>
-            <Text style={styles.statValue as TextStyle}>{stats?.thisMonthEarnings ?? t('analytics.unavailable')}</Text>
-            <Text style={styles.statLabel as TextStyle}>{t('userHome.companion.thisWeek')}</Text>
+            <Text accessible accessibilityLabel={`${t('analytics.thisMonthEarnings')}: ${stats?.thisMonthEarnings ?? t('analytics.unavailable')}`} numberOfLines={1} style={styles.statValue as TextStyle}>{stats?.thisMonthEarnings ?? '—'}</Text>
+            <Text style={styles.statLabel as TextStyle}>{t('analytics.thisMonthEarnings')}</Text>
           </View>
         </View>
+        {(stats?.totalBookings == null || stats?.averageRating == null || stats?.thisMonthEarnings == null) && <Text style={styles.statNote as TextStyle}>— {t('analytics.unavailable')}</Text>}
       </Card>
 
       <Card style={styles.actionCard as ViewStyle} padding="lg" shadow="md">
@@ -598,14 +599,17 @@ const styles = StyleSheet.create({
   },
   statItem: {
     alignItems: 'center',
-    flex: 1,
+    flex: 1, minWidth: 0, flexShrink: 1,
   },
   statValue: {
+    maxWidth: '100%', textAlign: 'center', flexShrink: 1,
     color: designTokens.colors.semantic.primary,
     marginBottom: designTokens.spacing.scale.xs,
     ...designTokens.typography.styles.subheading,
   },
+  statNote: { ...designTokens.typography.styles.caption, color: designTokens.colors.semantic.textSecondary, marginTop: 12, textAlign: 'center' },
   statLabel: {
+    maxWidth: '100%', textAlign: 'center', flexShrink: 1,
     ...designTokens.typography.styles.caption,
     color: designTokens.colors.semantic.textSecondary,
   },
