@@ -581,10 +581,11 @@ export default function BookingsScreen() {
           )}
 
           {/* Review Section for Completed Bookings */}
-          {booking.status === 'completed' && (
+          {user?.userType === 'customer' && booking.customer?.id === user.id && booking.status === 'completed' && (
             <View style={styles.reviewSection}>
               <Button
                 title={t('bookings.writeReview')}
+                onPress={() => router.push(`/(app)/booking/${booking.id}/review` as any)}
                 variant="outline"
                 size="small"
                 style={styles.reviewButton}

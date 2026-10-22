@@ -1,0 +1,11 @@
+jest.mock('axios',()=>({post:jest.fn()}));
+jest.mock('../services/api/companion/companion',()=>({getAuthToken:jest.fn().mockResolvedValue('test-token')}));
+jest.mock('../constants/api',()=>({apiUrl:(path:string)=>`https://example.test${path}`}));
+import axios from 'axios';
+import {createReview} from '../services/api/reviews/reviews';
+const input={bookingId:'booking',companionId:'guide',rating:5,comment:'Nice'};
+beforeEach(()=>jest.clearAllMocks());
+it('sends the backend review contract with bearer authentication',async()=>{(axios.post as jest.Mock).mockResolvedValue({data:{success:true}});await createReview(input);expect(axios.post).toHaveBeenCalledWith('https://example.test/api/reviews',input,{headers:{'Content-Type':'application/json',Authorization:'Bearer test-token'}});});
+it.each([0,6,1.5])('rejects invalid rating %s before transport',async(rating)=>{await expect(createReview({...input,rating})).rejects.toThrow();expect(axios.post).not.toHaveBeenCalled();});
+it('rejects oversized comments before transport',async()=>{await expect(createReview({...input,comment:'x'.repeat(1001)})).rejects.toThrow();expect(axios.post).not.toHaveBeenCalled();});
+it('does not treat an unsuccessful response as submission',async()=>{(axios.post as jest.Mock).mockResolvedValue({data:{success:false}});await expect(createReview(input)).rejects.toThrow('Unable to submit');});
