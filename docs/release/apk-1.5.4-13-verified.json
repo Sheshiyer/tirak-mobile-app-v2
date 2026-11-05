@@ -1,0 +1,21 @@
+{
+  "file": "artifacts/store-release-20261013/Tirak-1.5.4-13.apk",
+  "sha256": "3776ca88e7005b91dd0eab10fc46560d67e2b0c3434029b292395d0d44dfcbec",
+  "signatureValid": true,
+  "contentDigestValid": true,
+  "certificateSha256": "d6f5ba8805191d0d26d7b826cb1d3b38b666c1a6c2b65c34f564b4c6464b2f9f",
+  "manifest": {
+    "versionCode": 13,
+    "versionName": "1.5.4",
+    "package": "com.tirak.pineapple",
+    "minSdkVersion": 24,
+    "targetSdkVersion": 36,
+    "debuggable": false
+  },
+  "nativeLibraryCount": 40,
+  "incompatible16kLibraries": [],
+  "productionApiPresent": true,
+  "qaApiPresent": false,
+  "qaBadgePresent": false,
+  "existingChargeWarningPresent": true
+}

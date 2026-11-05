@@ -1,0 +1,65 @@
+{
+  "database": "tirak-development",
+  "knownReviewAccounts": 2,
+  "totalUsers": 34,
+  "totalBookings": 5,
+  "nonzeroDirectUserDependencies": [
+    {
+      "relation": "bookings.supplier_id",
+      "rows": 5
+    },
+    {
+      "relation": "bookings.customer_id",
+      "rows": 2
+    },
+    {
+      "relation": "customer_profiles.user_id",
+      "rows": 1
+    },
+    {
+      "relation": "in_app_notifications.user_id",
+      "rows": 17
+    },
+    {
+      "relation": "legacy_pair_chat_messages.sender_id",
+      "rows": 2
+    },
+    {
+      "relation": "legacy_pair_chat_rooms.supplier_id",
+      "rows": 3
+    },
+    {
+      "relation": "legacy_pair_chat_rooms.customer_id",
+      "rows": 1
+    },
+    {
+      "relation": "notifications.user_id",
+      "rows": 23
+    },
+    {
+      "relation": "referral_accounts.user_id",
+      "rows": 1
+    },
+    {
+      "relation": "supplier_availability.supplier_id",
+      "rows": 6
+    },
+    {
+      "relation": "supplier_profiles.user_id",
+      "rows": 1
+    },
+    {
+      "relation": "supplier_services.supplier_id",
+      "rows": 2
+    },
+    {
+      "relation": "user_activity_summary.user_id",
+      "rows": 2
+    }
+  ],
+  "rowsWritten": 0,
+  "liveWritesPerformed": false,
+  "fixtureLinkedBookings": 5,
+  "bookingsWithOtherCustomerAccounts": 3,
+  "recommendation": "Suspend two explicit review accounts, preserve all existing history; deletion not approved"
+}

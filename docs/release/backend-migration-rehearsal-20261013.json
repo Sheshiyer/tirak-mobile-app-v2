@@ -1,0 +1,183 @@
+{
+  "source": "ea58fcb",
+  "target": "tirak-development",
+  "mode": "local empty SQLite created from live schema metadata; no remote writes",
+  "appliedStatementCount": 28,
+  "skipped": [
+    {
+      "migration": "023_core_customer_registration_fields.sql",
+      "table": "customer_profiles",
+      "column": "date_of_birth",
+      "reason": "already present on live schema; blind replay would fail"
+    },
+    {
+      "migration": "023_core_customer_registration_fields.sql",
+      "table": "customer_profiles",
+      "column": "gender",
+      "reason": "already present on live schema; blind replay would fail"
+    },
+    {
+      "migration": "025_core_booking_mobile_fields.sql",
+      "table": "bookings",
+      "column": "customer_preferences",
+      "reason": "already present on live schema; blind replay would fail"
+    },
+    {
+      "migration": "025_core_booking_mobile_fields.sql",
+      "table": "bookings",
+      "column": "special_requests",
+      "reason": "already present on live schema; blind replay would fail"
+    },
+    {
+      "migration": "025_core_booking_mobile_fields.sql",
+      "table": "bookings",
+      "column": "preferred_language",
+      "reason": "already present on live schema; blind replay would fail"
+    },
+    {
+      "migration": "025_core_booking_mobile_fields.sql",
+      "table": "bookings",
+      "column": "group_composition",
+      "reason": "already present on live schema; blind replay would fail"
+    },
+    {
+      "migration": "025_core_booking_mobile_fields.sql",
+      "table": "bookings",
+      "column": "dietary_requirements",
+      "reason": "already present on live schema; blind replay would fail"
+    },
+    {
+      "migration": "025_core_booking_mobile_fields.sql",
+      "table": "bookings",
+      "column": "experience_id",
+      "reason": "already present on live schema; blind replay would fail"
+    },
+    {
+      "migration": "026_core_notification_prerequisites.sql",
+      "table": "users",
+      "column": "notification_preferences",
+      "reason": "already present on live schema; blind replay would fail"
+    }
+  ],
+  "steps": [
+    {
+      "migration": "020_core_onboarding_lifecycle.sql",
+      "sql": "ALTER TABLE supplier_onboarding_applications ADD COLUMN idempotency_key_hash TEXT;"
+    },
+    {
+      "migration": "020_core_onboarding_lifecycle.sql",
+      "sql": "ALTER TABLE supplier_onboarding_applications ADD COLUMN payload_digest TEXT;"
+    },
+    {
+      "migration": "020_core_onboarding_lifecycle.sql",
+      "sql": "ALTER TABLE supplier_onboarding_applications ADD COLUMN status_token_hash TEXT;"
+    },
+    {
+      "migration": "020_core_onboarding_lifecycle.sql",
+      "sql": "ALTER TABLE supplier_onboarding_applications ADD COLUMN application_data TEXT;"
+    },
+    {
+      "migration": "020_core_onboarding_lifecycle.sql",
+      "sql": "ALTER TABLE supplier_onboarding_applications ADD COLUMN email_normalized TEXT;"
+    },
+    {
+      "migration": "020_core_onboarding_lifecycle.sql",
+      "sql": "CREATE UNIQUE INDEX IF NOT EXISTS idx_supplier_onboarding_idempotency\n  ON supplier_onboarding_applications (idempotency_key_hash)\n  WHERE idempotency_key_hash IS NOT NULL;"
+    },
+    {
+      "migration": "020_core_onboarding_lifecycle.sql",
+      "sql": "CREATE INDEX IF NOT EXISTS idx_supplier_onboarding_email_norm\n  ON supplier_onboarding_applications (email_normalized);"
+    },
+    {
+      "migration": "020_core_onboarding_lifecycle.sql",
+      "sql": "CREATE INDEX IF NOT EXISTS idx_supplier_onboarding_status_token\n  ON supplier_onboarding_applications (status_token_hash)\n  WHERE status_token_hash IS NOT NULL;"
+    },
+    {
+      "migration": "021_evidence_interest_cohort.sql",
+      "sql": "CREATE TABLE IF NOT EXISTS supplier_onboarding_evidence (\n  id TEXT PRIMARY KEY,\n  application_id TEXT NOT NULL REFERENCES supplier_onboarding_applications(id) ON DELETE CASCADE,\n  kind TEXT NOT NULL CHECK (kind IN ('id_front', 'id_back', 'selfie', 'portfolio')),\n  r2_key TEXT NOT NULL,\n  file_size INTEGER NOT NULL,\n  mime_type TEXT NOT NULL,\n  created_at TEXT NOT NULL DEFAULT (datetime('now')),\n  UNIQUE(application_id, kind)\n);"
+    },
+    {
+      "migration": "021_evidence_interest_cohort.sql",
+      "sql": "CREATE INDEX IF NOT EXISTS idx_evidence_application\n  ON supplier_onboarding_evidence (application_id);"
+    },
+    {
+      "migration": "021_evidence_interest_cohort.sql",
+      "sql": "CREATE TABLE IF NOT EXISTS interest_entries (\n  id TEXT PRIMARY KEY,\n  email_normalized TEXT NOT NULL,\n  name TEXT,\n  source TEXT,\n  idempotency_key_hash TEXT,\n  payload_digest TEXT,\n  created_at TEXT NOT NULL DEFAULT (datetime('now'))\n);"
+    },
+    {
+      "migration": "021_evidence_interest_cohort.sql",
+      "sql": "CREATE UNIQUE INDEX IF NOT EXISTS idx_interest_idempotency\n  ON interest_entries (idempotency_key_hash)\n  WHERE idempotency_key_hash IS NOT NULL;"
+    },
+    {
+      "migration": "021_evidence_interest_cohort.sql",
+      "sql": "CREATE INDEX IF NOT EXISTS idx_interest_email\n  ON interest_entries (email_normalized);"
+    },
+    {
+      "migration": "021_evidence_interest_cohort.sql",
+      "sql": "CREATE TABLE IF NOT EXISTS core_qa_accounts (\n  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n  role TEXT NOT NULL CHECK (role IN ('admin', 'traveler', 'guide')),\n  source_application_id TEXT REFERENCES supplier_onboarding_applications(id) ON DELETE CASCADE,\n  enrolled_by TEXT REFERENCES users(id) ON DELETE RESTRICT,\n  enrolled_at TEXT NOT NULL DEFAULT (datetime('now')),\n  revoked_at TEXT,\n  CHECK (\n    (role = 'guide' AND source_application_id IS NOT NULL AND enrolled_by IS NOT NULL)\n    OR (role IN ('admin', 'traveler') AND source_application_id IS NULL AND enrolled_by IS NULL)\n  ),\n  PRIMARY KEY (user_id, role)\n);"
+    },
+    {
+      "migration": "021_evidence_interest_cohort.sql",
+      "sql": "CREATE INDEX IF NOT EXISTS idx_qa_accounts_active\n  ON core_qa_accounts (user_id)\n  WHERE revoked_at IS NULL;"
+    },
+    {
+      "migration": "021_evidence_interest_cohort.sql",
+      "sql": "CREATE INDEX IF NOT EXISTS idx_qa_source_application\n  ON core_qa_accounts (source_application_id)\n  WHERE source_application_id IS NOT NULL;"
+    },
+    {
+      "migration": "021_evidence_interest_cohort.sql",
+      "sql": "CREATE INDEX IF NOT EXISTS idx_qa_enrolled_by\n  ON core_qa_accounts (enrolled_by)\n  WHERE enrolled_by IS NOT NULL;"
+    },
+    {
+      "migration": "021_evidence_interest_cohort.sql",
+      "sql": "CREATE UNIQUE INDEX IF NOT EXISTS idx_qa_unique_application_guide\n  ON core_qa_accounts (source_application_id, role)\n  WHERE source_application_id IS NOT NULL AND role = 'guide' AND revoked_at IS NULL;"
+    },
+    {
+      "migration": "021_evidence_interest_cohort.sql",
+      "sql": "ALTER TABLE supplier_onboarding_applications ADD COLUMN invitation_delivery_status TEXT DEFAULT 'unknown';"
+    },
+    {
+      "migration": "022_core_booking_idempotency.sql",
+      "sql": "CREATE TABLE IF NOT EXISTS booking_idempotency (\n  user_id     TEXT NOT NULL REFERENCES users(id),\n  key_hash    TEXT NOT NULL,              \n  booking_id  TEXT NOT NULL REFERENCES bookings(id),\n  payload     TEXT NOT NULL,              \n  payload_digest TEXT NOT NULL,           \n  status      TEXT NOT NULL DEFAULT 'committed' CHECK (status IN ('committed', 'pending')),\n  created_at  TEXT NOT NULL DEFAULT (datetime('now')),\n  expires_at  TEXT NOT NULL,              \n  PRIMARY KEY (user_id, key_hash)\n);"
+    },
+    {
+      "migration": "022_core_booking_idempotency.sql",
+      "sql": "CREATE INDEX IF NOT EXISTS idx_booking_idempotency_user\n  ON booking_idempotency(user_id, created_at);"
+    },
+    {
+      "migration": "022_core_booking_idempotency.sql",
+      "sql": "CREATE INDEX IF NOT EXISTS idx_booking_idempotency_booking\n  ON booking_idempotency(booking_id);"
+    },
+    {
+      "migration": "022_core_booking_idempotency.sql",
+      "sql": "CREATE INDEX IF NOT EXISTS idx_booking_idempotency_expires\n  ON booking_idempotency(expires_at);"
+    },
+    {
+      "migration": "024_core_api_repairs.sql",
+      "sql": "ALTER TABLE supplier_profiles ADD COLUMN interests TEXT;"
+    },
+    {
+      "migration": "025_core_booking_mobile_fields.sql",
+      "sql": "ALTER TABLE bookings ADD COLUMN payment_status TEXT NOT NULL DEFAULT 'pending'\n  CHECK (payment_status IN ('pending', 'processing', 'completed', 'failed', 'refunded'));"
+    },
+    {
+      "migration": "025_core_booking_mobile_fields.sql",
+      "sql": "ALTER TABLE bookings ADD COLUMN location TEXT;"
+    },
+    {
+      "migration": "026_core_notification_prerequisites.sql",
+      "sql": "CREATE TABLE IF NOT EXISTS notifications (\n  id TEXT PRIMARY KEY,\n  user_id TEXT NOT NULL REFERENCES users(id),\n  type TEXT NOT NULL,\n  title TEXT NOT NULL,\n  message TEXT NOT NULL,\n  data TEXT,\n  read BOOLEAN NOT NULL DEFAULT FALSE CHECK (read IN (0, 1)),\n  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP\n);"
+    },
+    {
+      "migration": "026_core_notification_prerequisites.sql",
+      "sql": "CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);"
+    }
+  ],
+  "ledgerRehearsal": {
+    "entriesBefore": 17,
+    "after": 24,
+    "added": 7,
+    "replayAdded": 0,
+    "guardBeforeSchemaAdded": 0
+  }
+}

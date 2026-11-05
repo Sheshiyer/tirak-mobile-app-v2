@@ -1,0 +1,77 @@
+{
+  "checkedAt": "2026-10-13T13:56:18.325Z",
+  "baseCommit": "d2469a62203b245e85722c0fee3837e7b0da8dc2",
+  "branch": "codex/store-release-20261013",
+  "workingDiffSha256": "94eeab3e67dbd8dd1bdf05f77a642347365c8d5696ecac290e95752a1bfecc3f",
+  "testSuites": 41,
+  "testsPassed": 438,
+  "typecheck": "passed",
+  "backendSourceTests": {
+    "files": 57,
+    "passed": 722,
+    "source": "ea58fcb + test-only UTC clock repair",
+    "typecheck": "passed",
+    "productionDryRun": "passed",
+    "scope": "local source proof; production schema incompatible until approved reconciliation"
+  },
+  "builds": [
+    {
+      "kind": "ipa",
+      "id": "63e45b9a-1ac9-470c-814d-b1abb2eb56df",
+      "status": "FINISHED",
+      "version": "1.5.4",
+      "buildNumber": "21",
+      "artifactUrl": "https://expo.dev/artifacts/eas/XzbpgG_SRY0ni_t9M8VH_DmPmXpWJEt-0SXukTmoDQE.ipa",
+      "url": "https://expo.dev/accounts/thoughtseedlabs-2/projects/tirak-companion-marketplace/builds/63e45b9a-1ac9-470c-814d-b1abb2eb56df",
+      "sha256": "68963537e5d5e3a029520892517515f5c2ae50d3466e6e9cce2fe00d6af539c5",
+      "localFile": "artifacts/store-release-20261013/Tirak-1.5.4-21.ipa"
+    },
+    {
+      "kind": "apk",
+      "id": "84bd71b5-5ec2-49cd-bd20-b366c40e009c",
+      "status": "FINISHED",
+      "version": "1.5.4",
+      "buildNumber": "13",
+      "artifactUrl": "https://expo.dev/artifacts/eas/6vWnDL_AW6TQcummfJtr0rs9hV-D5BPru52_J5x4FYY.apk",
+      "url": "https://expo.dev/accounts/thoughtseedlabs-2/projects/tirak-companion-marketplace/builds/84bd71b5-5ec2-49cd-bd20-b366c40e009c",
+      "sha256": "3776ca88e7005b91dd0eab10fc46560d67e2b0c3434029b292395d0d44dfcbec",
+      "localFile": "artifacts/store-release-20261013/Tirak-1.5.4-13.apk"
+    },
+    {
+      "kind": "aab",
+      "id": "6444a65d-32fe-43cd-a858-233754dbfcc4",
+      "status": "FINISHED",
+      "version": "1.5.4",
+      "buildNumber": "14",
+      "artifactUrl": "https://expo.dev/artifacts/eas/BqGVaq_p2qOoZwpTP2p-BPzR8tBvCuMBBjuYJxkBNf0.aab",
+      "url": "https://expo.dev/accounts/thoughtseedlabs-2/projects/tirak-companion-marketplace/builds/6444a65d-32fe-43cd-a858-233754dbfcc4",
+      "sha256": "854bf5aeafbca2e5d9b849fd8b3392e379470b928eeefdbac51a732c788d6f32",
+      "localFile": "artifacts/store-release-20261013/Tirak-1.5.4-14.aab"
+    }
+  ],
+  "blocked": [
+    "Live Core schema reconciliation and guarded ledger apply",
+    "Core Worker promotion",
+    "Review account suspension preserving history",
+    "Two-real-account persisted chat",
+    "Interceptor visual acceptance",
+    "Installed device/push acceptance",
+    "Store submission"
+  ],
+  "supersededBuildIds": [
+    "bcdd645f-0f73-4bc8-ace5-272179c017c2",
+    "38abff77-93eb-402c-b3c1-4b5fc22ea85d",
+    "098d4de4-c8d8-4b5b-80ca-e9e745799ca7",
+    "49535caf-3ef9-4757-9381-b665e6836185"
+  ],
+  "apkVerifier": {
+    "script": "scripts/inspect-apk.ts",
+    "baselineSha256": "38cb989ce5520374bb07a034e16ca2335a86f9634cfe0d81e3278c61f5825086",
+    "baselineCertificateSha256": "d6f5ba8805191d0d26d7b826cb1d3b38b666c1a6c2b65c34f564b4c6464b2f9f",
+    "positive": "APK v2 signature/content digest verified",
+    "negative": "Tampered content rejected",
+    "baseline64BitLibraries": 40,
+    "baselineIncompatible16kLibraries": 0
+  },
+  "scopedCloudflareLogin": "tirak: successful; live inventory queries rows_written=0"
+}
