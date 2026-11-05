@@ -12,7 +12,8 @@
     "post_planning_gaps": true,
     "tdd_mode": false,
     "nyquist_validation": false,
-    "ai_integration_phase": false
+    "ai_integration_phase": false,
+    "_auto_chain_active": false
   },
   "parallelization": {
     "enabled": true,

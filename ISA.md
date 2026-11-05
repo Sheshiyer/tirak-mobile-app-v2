@@ -2,11 +2,11 @@
 schema: thoughtseed.isa.v1
 seed: false
 effort: deep
-phase: observe
-progress: 0/67
+phase: execute
+progress: 4/67
 mode: algorithm
 started: 2026-08-31T18:35:41Z
-updated: 2026-08-31T18:35:41Z
+updated: 2026-09-11T16:54:30Z
 generated_by: temperance-hands ready
 generated_at: 2026-08-22T10:59:02Z
 normalized_at: 2026-08-31T00:00:00Z
@@ -134,16 +134,16 @@ Execute and prove the test-first Phase 1 vertical slice for `tirak-mobile-app-v2
 
 ### Automated and simulator proof
 
-- [ ] **ISC-50:** Focused payment tests exit zero. Verify: named Jest command receipt.
-- [ ] **ISC-51:** The full TypeScript check exits zero. Verify: `npx tsc --noEmit` receipt.
+- [x] **ISC-50:** Focused payment tests exit zero. Verify: named Jest command receipt.
+- [x] **ISC-51:** The full TypeScript check exits zero. Verify: `npx tsc --noEmit` receipt.
 - [ ] **ISC-52:** The iPhone 17 Pro iOS 27.0 build exits zero. Verify: `xcodebuild` receipt.
-- [ ] **ISC-53:** Evidence covers all seven UI-SPEC scenarios. Verify: evidence index has seven labeled entries.
+- [x] **ISC-53:** Evidence covers all seven UI-SPEC scenarios. Verify: evidence index has seven labeled entries.
 - [ ] **ISC-54:** Phase 1 creates no real or staging charge. Verify: mock-only process receipt plus explicit evidence statement.
 
 ### Planning and authority gates
 
 - [ ] **ISC-55:** Phase 1 has an approved UI-SPEC. Verify: file frontmatter records product-owner approval and agent-verification status.
-- [ ] **ISC-56:** GSD resolves Roadmap Phase 1. Verify: `gsd-sdk query roadmap.get-phase 1` returns `found: true`.
+- [x] **ISC-56:** GSD resolves Roadmap Phase 1. Verify: `gsd-sdk query roadmap.get-phase 1` returns `found: true`.
 - [ ] **ISC-57:** All Phase 1 requirement IDs appear in plan frontmatter. Verify: coverage comparison returns no missing ID.
 - [ ] **ISC-58:** Every trackable Phase 1 decision ID appears in a plan. Verify: decision-coverage query passes.
 - [ ] **ISC-59:** GSD agent-verification availability is disclosed precisely. Verify: STATE distinguishes absent UI agents from present-but-uninvoked planner/checker instruction files, and UI-SPEC names only unavailable UI checks.
@@ -192,6 +192,13 @@ Sequential execution is intentional: each feature consumes the previous feature'
 - 2026-08-31: Git commits, deployment, provider activity, and staging enablement remain held.
 - 2026-08-31: The user authorized Tirak-mobile Phase 1 source changes and end-of-phase Git commits; all other held gates remain unchanged.
 - 2026-08-31: Eight-lens Observe and First Principles review confirmed the existing boundary: server-owned charge truth, explicit local capability, cross-session reset, wizard reachability, and Tirak Plus/iOS non-interference remain independently necessary; no speculative criteria were added.
+- 2026-09-10: refined: the isolated `gsd/phase-1-local-promptpay-pending-checkout` worktree is the authoritative Phase 1 execution surface; dirty `main` and clean recovery clones remain preserved comparison surfaces.
+- 2026-09-10: refined: `GSD_RUNTIME=codex` is required for truthful agent availability checks; default-runtime output must not reopen P0.
+- 2026-09-10: Phase 1 remains at the human checkpoint because the iOS 18.5 fallback and iOS 27 UIScene blocker require explicit owner acceptance before evidence closeout.
+- 2026-09-11: The user directed “fan out and execute p1.” This authorizes resuming Phase 1 execution and parallel verification in the isolated mobile worktree; it does not silently convert the outstanding human visual checkpoint into approval or authorize merge, deploy, provider, staging, backend, Tirak Plus, or production actions.
+- 2026-09-11: refined: fan-out uses one bounded code producer plus parallel read-only requirements and visual verifiers. Multiple concurrent writers would provide no speed benefit because Plan 01-02 is the sole incomplete plan and its declared files form one dependent surface.
+- 2026-09-11: The pre-BUILD commitment-boundary Advisor invocation was attempted and returned a session-limit reset at 23:40 Asia/Calcutta. Execution therefore keeps the existing conservative checkpoint contract; no advisor verdict was fabricated and no credential workaround was attempted.
+- 2026-09-11: Root-cause-at-ingestion checkpoint: the apparent safe-resume anomaly enters through lifecycle bookkeeping, where committed Plan 01-02 source plus an intentionally absent summary resembles abandoned execution. The upstream control is the recorded non-autonomous human checkpoint plus `workflow._auto_chain_active=false`; no output-side summary fabrication or automatic approval is permitted.
 
 ## Changelog
 
@@ -205,6 +212,10 @@ Sequential execution is intentional: each feature consumes the previous feature'
 - Refuted by: provider credentials and a real/staging charge are outside Phase 1 authorization.
 - Learned: use an isolated non-provider fixture and label the evidence boundary.
 - Criterion now: ISC-1..ISC-67.
+- 2026-09-10 | conjectured: the active dirty mobile checkout was the next Phase 1 implementation surface
+  refuted by: the existing isolated worktree already contained eight Phase 1 commits, Plan 01-01 summary, and seven-scenario evidence
+  learned: recovery must inventory registered worktrees before interpreting main-checkout diffs or dispatching duplicate implementation
+  criterion now: ISC-2 is interpreted against the isolated Phase 1 worktree, while ISC-9 preserves the dirty main checkout's iOS sidecar changes
 
 ## Verification
 
@@ -214,3 +225,9 @@ Sequential execution is intentional: each feature consumes the previous feature'
 - External Advisor review unavailable in the planning turn because its OAuth session expired.
 - External Advisor was retried before execution and remained unavailable because its OAuth session was expired; no credential or authority workaround was attempted.
 - Provider and staging verification intentionally not attempted.
+- ISC-50: command — `npm test -- --runInBand` passed 8/8 suites and 64/64 tests on 2026-09-10 after lockfile-pinned `npm ci`.
+- ISC-51: command — `npx tsc --noEmit` exited 0 on 2026-09-10 in the isolated Phase 1 worktree.
+- ISC-53: file inspection — `evidence/01-02-simulator.md` indexes scenarios 1 through 7 and eight redacted PNG captures.
+- ISC-56: command — `GSD_RUNTIME=codex gsd-sdk query roadmap.analyze` resolved Phase 1 with two plans and one summary.
+- Human checkpoint remains pending; no `01-02-SUMMARY.md` or evidence-closeout commit may be created before approval.
+- Advisor boundary check timed out after 30 seconds on 2026-09-10; no advisor verdict was accepted and no credential workaround was attempted.

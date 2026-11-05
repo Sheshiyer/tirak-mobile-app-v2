@@ -1,3 +1,19 @@
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+status: awaiting_human_verification
+stopped_at: Plan 01-02 human visual approval checkpoint
+last_updated: "2026-09-10T12:20:00Z"
+last_activity: 2026-09-10 -- automated proof refreshed; simulator evidence awaiting owner review
+progress:
+  total_phases: 3
+  completed_phases: 0
+  total_plans: 2
+  completed_plans: 1
+  percent: 50
+---
+
 # Project State
 
 ## Project Reference
@@ -5,21 +21,22 @@
 See: `.planning/PROJECT.md` (updated 2026-08-31)
 
 **Core value:** Travelers can see a truthful PromptPay checkout state without giving the mobile app payment authority.
-**Current focus:** Phase 1 - Local PromptPay pending checkout
+**Current focus:** Phase 01 — local-promptpay-pending-checkout
 
 ## Current Position
 
-Phase: 1 of 3 (Local PromptPay pending checkout)
-Plan: 0 of 2 in current phase
-Status: Ready for isolated execution - Phase 1 source changes and commits authorized
-Last activity: 2026-08-31 - Product owner authorized Tirak-mobile Phase 1 source changes and Git commits; external gates remain held.
+Phase: 01 (local-promptpay-pending-checkout) — AWAITING HUMAN VERIFICATION
+Plan: 2 of 2
+Status: Plan 01-02 source and simulator evidence complete; human visual approval pending
+Last activity: 2026-09-10 -- 8/8 Jest suites and TypeScript passed in the isolated worktree
 
-Progress: [..........] 0%
+Progress: [#####.....] 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
+
+- Total plans completed: 1
 - Average duration: n/a
 - Total execution time: 0 hours
 
@@ -27,7 +44,7 @@ Progress: [..........] 0%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 1. Local PromptPay pending checkout | 0 | 2 | n/a |
+| 1. Local PromptPay pending checkout | 1 | 2 | n/a |
 
 **Recent Trend:** No execution data yet.
 
@@ -48,10 +65,11 @@ None yet.
 
 ### Blockers/Concerns
 
-- Bundled GSD agent instruction files exist, but the UI researcher/checker are not registered in this Codex runtime. Planner/checker were not invoked through a registered GSD agent runner; an independent read-only plan audit ran instead.
+- `GSD_RUNTIME=codex` reports all required GSD agents installed; omitting the runtime selector yields a misleading missing-agent result.
 - Staging and production have PromptPay creation disabled and are not Phase 1 targets.
 - Preserve pre-existing user changes in `ios/Podfile` and `ios/Podfile.lock`.
-- External Advisor review remains unavailable because its OAuth session is expired; do not change credentials or broaden authority to bypass it.
+- iOS 27 launches remain blocked on UIScene lifecycle adoption; the visual checkpoint uses the explicitly disclosed iOS 18.5 simulator fallback.
+- The dependency install audit reports 54 vulnerabilities; dependency remediation is outside the Phase 1 closeout and must not be auto-fixed here.
 
 ## Deferred Items
 
@@ -62,6 +80,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-31
-Stopped at: Phase 1 execution authorized; create isolated worktree and begin 01-01-PLAN.md.
-Resume file: `.planning/phases/01-local-promptpay-pending-checkout/01-01-PLAN.md`
+Last session: 2026-09-10
+Stopped at: Plan 01-02 human visual approval checkpoint.
+Resume file: `.planning/phases/01-local-promptpay-pending-checkout/evidence/01-02-simulator.md`
