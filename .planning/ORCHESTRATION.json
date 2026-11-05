@@ -1,7 +1,7 @@
 {
   "schema": "temperance.orchestration.v1",
-  "plan_id": "plan_9f56b730cb5621f54001",
-  "state": "awaiting_approval",
+  "plan_id": "plan_df84fae599d122f73a2a",
+  "state": "draft",
   "mapping": {
     "policy_hash": "f41f6873f99821c46610410fd977e0b454cbc60fd898ef6e8d06c4333bc32605",
     "phase_combo_map": "temperance.phase-combo-map.v2",
@@ -9,8 +9,28 @@
   },
   "source_fingerprints": [
     {
+      "path": "ISA.md",
+      "fingerprint": "c7f65e6399cb469e1556bebc26af258a1a25e447dd3059e28eec43979db2d0f0"
+    },
+    {
       "path": ".planning/STATE.md",
-      "fingerprint": "ca8553a323891192f79e0fbc0a9e85b87621916b4ca3986bc7a6c745b5051691"
+      "fingerprint": "5cb49f985b82f3f868962a61398b507d13d5f7c5259db0326d865b2dae871a1c"
+    },
+    {
+      "path": ".planning/phases/01-local-promptpay-pending-checkout/01-01-PLAN.md",
+      "fingerprint": "e55ce81f6bc0b344ab20a96880977e8b218a325de1ca36870d155a80a426fcec"
+    },
+    {
+      "path": ".planning/phases/01-local-promptpay-pending-checkout/01-02-PLAN.md",
+      "fingerprint": "dfa56dcc6ba9b2eb0e693a763ccafb4bbbdd3c78479df3fe62b1ab4280b9e6ee"
+    },
+    {
+      "path": ".planning/phases/01-local-promptpay-pending-checkout/01-CONTEXT.md",
+      "fingerprint": "543eb930300dbe9c2f3af1546f98dfc62eaa8318b3fa52f7cdd472bda20be8a4"
+    },
+    {
+      "path": ".planning/phases/01-local-promptpay-pending-checkout/01-UI-SPEC.md",
+      "fingerprint": "1b1906446cf77b7c7d2efe1fc9e3a7de805af8cc1023b53469ded285e4695eb9"
     },
     {
       "path": "tasks/lessons.md",
@@ -22,47 +42,25 @@
     },
     {
       "path": ".planning/ROADMAP.md",
-      "fingerprint": "c80341d7a1904e8ba3b122a3abe401df6a9ab994e2bdc9806d7e24bbbbfa4dba"
+      "fingerprint": "84b372d3644aa6d3a137538b5b1af00d173ef937df34e4f5fb6cce05d8d9d892"
     },
     {
       "path": ".planning/PROJECT.md",
-      "fingerprint": "41b9709b8f9f888a8cc519b5c4139e88f238f4f643664f7c0ac8568c5bfb2071"
+      "fingerprint": "770e65ec24d15e72ab8f991818b072cba6ffb4026215d4383588722db0cdcc88"
+    },
+    {
+      "path": ".planning/REQUIREMENTS.md",
+      "fingerprint": "7898aa6de010876a7bd5481d6aca09d2ed903a16abbddf9990d05bb5bea98e76"
     }
   ],
   "research": [],
-  "options": [
-    {
-      "option_id": "opt_807ef789848edcf76659",
-      "label": "Execute the proposed next task",
-      "recommendation": true,
-      "rationale": "phase \"Product Readiness Standard\" has 59 open tasks; take next batch",
-      "tasks": [
-        {
-          "id": "L1",
-          "parallel": false,
-          "desc": "Confirm every visible button, icon, chip, menu item, card action, and CTA in logged-out, traveler, and companion flows is wired to a real action or an honest disabled/empty state.",
-          "phase": "Product Readiness Standard",
-          "source": "tasks/todo.md"
-        },
-        {
-          "id": "L2",
-          "parallel": false,
-          "desc": "Confirm no screen presents hardcoded mock data as live product data unless it is scoped to the explicit Apple review/demo accounts and follows the same backend contract.",
-          "phase": "Product Readiness Standard",
-          "source": "tasks/todo.md"
-        }
-      ],
-      "combo": "noesis-build",
-      "concurrency": 2,
-      "worktree_required": false
-    }
-  ],
-  "approval": {
-    "approval_id": "apr_74635a4ac5803f6ecc45",
-    "status": "required",
-    "expires_at": "2026-08-22T01:25:57.412Z",
-    "selected_option_id": null
+  "option_admission": {
+    "status": "absent",
+    "source": null,
+    "issues": []
   },
+  "options": [],
+  "approval": null,
   "readiness": {
     "status": "blocked",
     "checks": [
@@ -74,7 +72,7 @@
   },
   "execution": {
     "status": "blocked",
-    "reason": "human approval is required before any swarm dispatch"
+    "reason": "no executable proposal"
   },
   "reporting": {
     "status": "pending",
@@ -83,5 +81,40 @@
       "task",
       "verification"
     ]
+  },
+  "cockpit_handoff": {
+    "schema": "temperance.cockpit-handoff.source.v1",
+    "status": "incomplete",
+    "reason": "command_invalid",
+    "command": null,
+    "gsd_phase": "1 of 3 (Local PromptPay pending checkout)",
+    "gsd_phase_label": "ISA Features",
+    "canonical_combo": null,
+    "execution_plane": null,
+    "policy_hash": "f41f6873f99821c46610410fd977e0b454cbc60fd898ef6e8d06c4333bc32605",
+    "source_fingerprint": "637a6f8979b1a8d96fac3fb0cf64dff24be08e63f35af687221bcfb899b7213b",
+    "task_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "git_head": "b428b005d66ddae21bf4839de0298c288a9db414",
+    "approval_id": "apr_a54987f1cda3eb16f5d7",
+    "option_id": null,
+    "observed_at": "2026-11-01T07:15:06.169Z",
+    "evidence": {
+      "quota": {
+        "label": "quota_snapshot",
+        "path": ".planning/quota-snapshot.json",
+        "observed_at": null,
+        "freshness": "unavailable"
+      },
+      "sources": [
+        {
+          "label": "orchestration",
+          "path": ".planning/ORCHESTRATION.json"
+        },
+        {
+          "label": "quota_snapshot",
+          "path": ".planning/quota-snapshot.json"
+        }
+      ]
+    }
   }
 }
