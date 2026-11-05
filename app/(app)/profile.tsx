@@ -92,7 +92,7 @@ export default function ProfileScreen() {
     {
       icon: <Bell size={20} color={designTokens.colors.semantic.text} />,
       title: 'Notification Preferences',
-      onPress: () => router.push('/settings'),
+      onPress: () => router.push('/(app)/settings'),
     },
 
     {
@@ -109,18 +109,18 @@ export default function ProfileScreen() {
     {
       icon: <Award size={20} color={designTokens.colors.semantic.text} />,
       title: 'Traveler Reviews',
-      onPress: () => router.push('/settings'),
+      onPress: () => router.push('/(app)/settings'),
       hideForCustomer: true,
     },
     {
       icon: <HelpCircle size={20} color={designTokens.colors.semantic.text} />,
       title: 'Help & Support',
-      onPress: () => router.push('/settings'),
+      onPress: () => router.push('/(app)/settings'),
     },
     {
       icon: <Settings size={20} color={designTokens.colors.semantic.text} />,
       title: 'Settings',
-      onPress: () => router.push('/settings'),
+      onPress: () => router.push('/(app)/settings'),
     },
   ];
 

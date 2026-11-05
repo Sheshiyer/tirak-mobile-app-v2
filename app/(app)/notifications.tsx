@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { RadialGradient } from '@/components/ui/RadialGradient';
 import { Card } from '@/components/ui/Card';
 import { ProfileImage } from '@/components/ui/ProfileImage';
@@ -22,11 +22,14 @@ export const options = { headerShown: false };
 
 export default function NotificationsScreen() {
   const { t } = useTranslation();
-  const { data, isLoading, error, refetch } = useNotifications();
+  const { data, isLoading, isRefetching, error, refetch } = useNotifications();
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
   const notifications = data?.data?.notifications || [];
   const unreadCount = data?.data?.unreadCount || 0;
+  useFocusEffect(React.useCallback(() => {
+    void refetch();
+  }, [refetch]));
   
   const handleBack = () => {
     router.back();
@@ -169,7 +172,7 @@ export default function NotificationsScreen() {
   return (
     <RadialGradient variant="appBackground" style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+        <TouchableOpacity style={styles.backButton} onPress={handleBack} accessibilityRole="button" accessibilityLabel={t('common.back')}>
           <ArrowLeft size={24} color={designTokens.colors.semantic.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('notifications.notifications')}</Text>
@@ -201,6 +204,8 @@ export default function NotificationsScreen() {
           keyExtractor={item => item.id}
           contentContainerStyle={styles.notificationsList}
           showsVerticalScrollIndicator={false}
+          refreshing={isRefetching}
+          onRefresh={() => void refetch()}
         />
       ) : (
         renderEmptyState()

@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react-native';
+import { usePathname } from 'expo-router';
 import SupplierLayout from '@/app/(supplier)/_layout';
 import { useAuthStoreHydrated } from '@/hooks/useAuthStoreHydrated';
 
@@ -7,6 +8,7 @@ jest.mock('expo-router', () => {
   const { createElement } = require('react');
   const { Text } = require('react-native');
   return {
+    usePathname: jest.fn(() => '/'),
     Redirect: ({ href }: { href: string }) => createElement(Text, null, href),
     Stack: Object.assign(() => createElement(Text, null, 'Guide stack'), { Screen: () => null }),
   };
@@ -32,6 +34,13 @@ test('redirects a traveler who opens the guide route to traveler home', () => {
   render(<SupplierLayout />);
   expect(screen.getByText('/(app)')).toBeOnTheScreen();
   expect(screen.queryByText('Guide stack')).toBeNull();
+});
+
+test('sends the shared settings link to traveler settings for a traveler', () => {
+  session(true, 'customer');
+  jest.mocked(usePathname).mockReturnValueOnce('/settings');
+  render(<SupplierLayout />);
+  expect(screen.getByText('/(app)/settings')).toBeOnTheScreen();
 });
 
 test('redirects signed-out visitors through the existing startup flow', () => {

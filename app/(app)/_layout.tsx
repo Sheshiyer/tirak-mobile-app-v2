@@ -390,7 +390,7 @@ export default function AppLayout() {
 
               <TouchableOpacity
                 style={styles.menuItem}
-                onPress={() => navigateTo("/settings")}
+                onPress={() => navigateTo("/(app)/settings")}
               >
                 <Icons.Settings
                   size={22}
