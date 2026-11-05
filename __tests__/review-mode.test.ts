@@ -12,8 +12,8 @@ describe('app review mode contract', () => {
     ['false', false],
     ['TRUE', false],
     ['1', false],
-    ['true', true],
-  ])('requires the exact build flag %p', (flag, expected) => {
+    ['true', false],
+  ])('stays disabled for build flag %p', (flag, expected) => {
     expect(isReviewModeEnabled(flag)).toBe(expected);
   });
 

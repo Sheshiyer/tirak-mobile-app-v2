@@ -16,11 +16,7 @@ import { useBookingStore, BookingDateTime } from '@/stores/booking-store';
 import { designTokens } from '@/constants/design-tokens';
 import { useCompanionWeeklyAvailability } from '@/services/api/companion/companion';
 import { useTranslation } from 'react-i18next';
-import { isTestCompanionId } from '@/utils/companion-display';
-import { useAuthStore } from '@/stores/auth-store';
-import { isDemoModeEnabled } from '@/utils/demo-mode';
 import { buildBookableTimeSlots } from '@/utils/booking-schedule';
-import { getDemoGuideAvailability } from '@/utils/preview-availability';
 
 interface TimeSlot {
   start: string;
@@ -53,7 +49,6 @@ export const DateTimePickerStep: React.FC<DateTimePickerStepProps> = ({
 }) => {
   const { bookingData, updateDateTime } = useBookingStore();
   const { t } = useTranslation();
-  const user = useAuthStore(state => state.user);
   const [selectedDate, setSelectedDate] = useState<string | null>(
     bookingData.dateTime?.date || null
   );
@@ -74,12 +69,8 @@ export const DateTimePickerStep: React.FC<DateTimePickerStepProps> = ({
   logger.log('companionId:', companionId);
   logger.log('Raw Availability Data:', availabilityData);
 
-  const demoAvailabilityDates = isDemoModeEnabled(user) && isTestCompanionId(companionId) ? getDemoGuideAvailability() : [];
-
   // Get available dates and time slots from API response
-  const availableDates = demoAvailabilityDates.length > 0
-    ? demoAvailabilityDates
-    : availabilityData?.success && availabilityData.data.availability
+  const availableDates = availabilityData?.success && availabilityData.data.availability
       ? availabilityData.data.availability.filter(day => day.available)
       : [];
 

@@ -50,38 +50,17 @@ describe('booking financial response contract', () => {
     jest.clearAllMocks();
   });
 
-  test('review checkout creates the shared cross-role booking without a network call', async () => {
+  test('an enabled legacy review flag cannot fabricate checkout success after a backend failure', async () => {
     process.env.EXPO_PUBLIC_REVIEW_MODE = 'true';
     mockAuthState.user = { id: 'demo_customer_001' };
-
-    const response = await createBooking({
-      companionId: 'demo_companion_001',
-      serviceId: 'review_experience_bangkok_001',
-      date: '2099-11-20',
-      startTime: '10:00',
-      endTime: '13:00',
-      duration: 180,
+    (axios.post as jest.Mock).mockRejectedValueOnce(new Error('Backend unavailable'));
+    await expect(createBooking({
+      companionId: 'demo_companion_001', serviceId: 'review_experience_bangkok_001',
+      date: '2099-11-20', startTime: '10:00', endTime: '13:00', duration: 180,
       location: 'Bangkok Old Town',
-    });
-
-    expect(response).toMatchObject({
-      success: true,
-      data: {
-        booking: {
-          id: 'review_booking_bangkok_001',
-          status: 'pending',
-          paymentStatus: 'pending',
-          paymentMethod: { type: 'cash' },
-        },
-      },
-    });
-    expect(useReviewBookingFixtureStore.getState().booking).toMatchObject({
-      id: 'review_booking_bangkok_001',
-      customerId: 'demo_customer_001',
-      guideId: 'demo_companion_001',
-      payment: { status: 'not_charged', authority: 'review_fixture' },
-    });
-    expect(axios.post).not.toHaveBeenCalled();
+    })).rejects.toThrow();
+    expect(axios.post).toHaveBeenCalledTimes(1);
+    expect(useReviewBookingFixtureStore.getState().booking).toBeNull();
   });
 
   test.each([

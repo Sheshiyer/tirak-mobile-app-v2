@@ -57,7 +57,7 @@ describe('release delivery boundaries', () => {
   });
 
   test('the native repair release has a new aligned app and iOS runtime version', () => {
-    expect(config.version).toBe('1.5.2');
+    expect(config.version).toBe('1.5.4');
     expect(JSON.parse(read('package.json')).version).toBe(config.version);
     expect(read('ios/Tirak/Info.plist')).toMatch(new RegExp(`<key>CFBundleShortVersionString<\\/key>\\s*<string>${config.version}<\\/string>`));
     expect(read('ios/Tirak.xcodeproj/project.pbxproj')).toContain(`MARKETING_VERSION = ${config.version};`);
@@ -73,11 +73,19 @@ describe('release delivery boundaries', () => {
     });
   });
 
-  test('review is isolated and cannot enable payment', () => {
-    expect(eas.build.review).toMatchObject({
-      channel: 'review', extends: 'production',
-      env: { EXPO_PUBLIC_REVIEW_MODE: 'true', EXPO_PUBLIC_PROMPTPAY_ENABLED: 'false' },
-    });
+  test('review profile is retired and release APK uses production configuration', () => {
+    expect(eas.build.review).toBeUndefined();
+    expect(eas.build.production.distribution).toBe('store');
+    expect(eas.build.production.android.buildType).toBe('app-bundle');
+    expect(eas.build['release-apk']).toMatchObject({ extends: 'production', environment: 'production', channel: 'production', android: { buildType: 'apk' } });
+  });
+
+  test('production gate rejects a QA backend or preview flags', () => {
+    expect(() => withEnv({ EXPO_PUBLIC_ENV_NAME: 'production', EXPO_PUBLIC_API_URL: 'https://tirak-core-qa-20261005.tirak-court.workers.dev/api' }, () => resolveConfig({ config }))).toThrow('Release requires');
+    expect(() => withEnv({ EXPO_PUBLIC_ENV_NAME: 'production', EXPO_PUBLIC_API_URL: eas.build.production.env.EXPO_PUBLIC_API_URL, EXPO_PUBLIC_REVIEW_MODE: 'true' }, () => resolveConfig({ config }))).toThrow('Cash-only');
+    const resolved = withEnv(eas.build.production.env, () => resolveConfig({ config }));
+    expect(resolved.version).toBe('1.5.4');
+    expect(resolved.extra.reviewMode).toBe(false);
   });
 
   test('core-qa build profile isolates API URL and disables demo/review/payment gates', () => {

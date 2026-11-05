@@ -203,14 +203,14 @@ export default function ReviewSubmitScreen() {
           )}
         </View>
 
-        {/* Payment unavailable notice */}
+        {/* Application review notice */}
         <View style={styles.noticeCard}>
           <Shield
             size={20}
             color={designTokens.colors.semantic.textSecondary}
           />
           <Text style={styles.noticeText}>
-            Supplier application payment status is currently unavailable. If approved,
+            There is no subscription payment for your guide application. If approved,
             provisioning happens first, then account activation and profile verification
             complete before your profile can be listed publicly.
           </Text>

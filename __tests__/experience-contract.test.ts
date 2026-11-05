@@ -54,24 +54,26 @@ test('archive uses the authenticated canonical service route and invalidates all
   for (const key of [['experiences','owner-1'], ['supplierStats','owner-1'], ['companions'], ['companion','owner-1'], ['companionProfile','owner-1']]) expect(client.invalidateQueries).toHaveBeenCalledWith({ queryKey: key });
 });
 
-test('explicit guide review archive is persistent, idempotent, and cannot resurrect seeded fixtures', async () => {
+test('an old preview flag cannot make failed experience changes appear saved', async () => {
   mockDemo = true; mockUser = { id: 'demo_companion_001' };
-  const initial = await fetchExperiences(mockUser.id);
-  expect(initial.data.items).toHaveLength(1);
-  const id = initial.data.items[0].id;
-  await archiveExperience(mockUser.id, id);
-  await archiveExperience(mockUser.id, id);
-  expect((await fetchExperiences(mockUser.id)).data.items).toEqual([]);
-  expect(mockAxios.delete).not.toHaveBeenCalled();
-  expect(mockStorage.get('tirak-local-experiences')).toContain('[]');
+  const unavailable = new Error('Backend unavailable');
+  mockAxios.get.mockRejectedValueOnce(unavailable);
+  mockAxios.post.mockRejectedValueOnce(unavailable);
+  mockAxios.put.mockRejectedValueOnce(unavailable);
+  mockAxios.delete.mockRejectedValueOnce(unavailable);
+  await expect(fetchExperiences(mockUser.id)).rejects.toBe(unavailable);
+  await expect(createExperience(mockUser.id, payload)).rejects.toBe(unavailable);
+  await expect(updateExperience(mockUser.id, 'service-1', payload)).rejects.toBe(unavailable);
+  await expect(archiveExperience(mockUser.id, 'service-1')).rejects.toBe(unavailable);
+  expect(mockWrite).not.toHaveBeenCalled();
 });
 
-test('a review traveler cannot change guide fixtures and storage failure cannot appear saved', async () => {
-  mockDemo = true; mockUser = { id: 'demo_customer_001' };
-  await expect(createExperience('demo_companion_001', payload)).rejects.toThrow('Only the guide');
-  mockUser = { id: 'demo_companion_001' };
-  mockWrite.mockRejectedValue(new Error('Storage unavailable'));
-  await expect(createExperience(mockUser.id, payload)).rejects.toThrow('Storage unavailable');
+test('synthetic server services do not appear in production experience results', async () => {
+  mockAxios.get.mockResolvedValueOnce({ data: { success: true, data: { items: [
+    { id: 'real-service' }, { id: 'test-market-temple-walk' }, { id: 'demo-service-1' },
+    { id: 'local_experience_123' }, { id: 'review_experience_bangkok_001' },
+  ] } } });
+  expect((await fetchExperiences('guide-1')).data.items).toEqual([{ id: 'real-service' }]);
 });
 
 test('queries differ across authenticated viewer identity', () => {
