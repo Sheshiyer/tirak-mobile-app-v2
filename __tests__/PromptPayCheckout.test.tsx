@@ -389,7 +389,7 @@ describe('PromptPay traveler checkout', () => {
   });
 
   test.each([
-    ['pending', 'cash', 'Booking request sent', 'Pay your guide in cash.'],
+    ['pending', 'cash', 'Booking request sent', 'Your guide still needs to confirm. You can track the request in Trips.'],
     ['confirmed', 'cash', 'Booking confirmed', 'Pay your guide in cash.'],
     ['confirmed', 'promptpay', 'Booking confirmed', 'PromptPay payment pending.'],
   ] as const)('separates %s booking truth from %s payment truth', (status, method, heading, paymentCopy) => {
@@ -410,6 +410,10 @@ describe('PromptPay traveler checkout', () => {
     const screen = render(<BookingConfirmationStep onPrevious={jest.fn()} />);
     expect(screen.getByText(heading)).toBeTruthy();
     expect(screen.getByText(paymentCopy)).toBeTruthy();
+    if (status === 'pending') {
+      expect(screen.queryByText('Add to Calendar')).toBeNull();
+      expect(screen.queryByLabelText('Message your local guide')).toBeNull();
+    }
     if (method === 'promptpay') {
       expect(screen.queryByLabelText('Booking and payment complete')).toBeNull();
       expect(screen.queryByText(/Paid|Payment complete/i)).toBeNull();

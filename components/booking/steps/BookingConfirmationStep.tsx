@@ -288,7 +288,7 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
                 </View>
               </View>
               
-              <View style={styles.contactButtons}>
+              {isBookingConfirmed && <View style={styles.contactButtons}>
                 <TouchableOpacity 
                   style={styles.contactButton}
                   onPress={handleMessageCompanion}
@@ -298,7 +298,7 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
                   <MessageCircle size={18} color={designTokens.colors.semantic.surface} />
                   <Text style={styles.contactButtonText}>{t('bookingConfirmation.message')}</Text>
                 </TouchableOpacity>
-              </View>
+              </View>}
             </View>
           </View>
         </Card>
