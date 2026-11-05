@@ -27,6 +27,7 @@ import { designTokens } from "@/constants/design-tokens";
 import { ArrowLeft, Calendar, ChevronDown } from "lucide-react-native";
 import { UserRole } from "@/types/auth";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuthStore } from "@/stores/auth-store";
 import { AccountConsentFields } from '@/components/AccountConsentFields';
 import { POLICY_VERSION } from '@/utils/account-consent';
@@ -80,6 +81,8 @@ type FormErrors = {
 
   const { role: roleParam } = useLocalSearchParams();
   const { register, isLoading, error: authError } = useAuthStore();
+  const insets = useSafeAreaInsets();
+  const android = Platform.OS === 'android';
   const isWeb = Platform.OS === 'web';
   
   const DatePicker = Platform.OS === 'web' 
@@ -292,10 +295,9 @@ type FormErrors = {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      enabled={!isWeb}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+      style={styles.container}
+      behavior="padding"
+      enabled={Platform.OS === "ios"}
     >
       <LinearGradient
         colors={[
@@ -307,14 +309,17 @@ type FormErrors = {
         ]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.container}
+        style={[styles.container, android && { paddingTop: insets.top, paddingBottom: insets.bottom }]}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, android && { paddingTop: Math.max(24, 60 - insets.top) }]}
           keyboardShouldPersistTaps="always"
           showsVerticalScrollIndicator={false}
         >
-          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+          <TouchableOpacity
+            style={[styles.backButton, android && { top: Math.max(16, 50 - insets.top) }]}
+            onPress={handleBack}
+          >
             <ArrowLeft size={24} color={designTokens.colors.semantic.text} />
           </TouchableOpacity>
           
@@ -358,6 +363,8 @@ type FormErrors = {
               value={formData.contactNumber}
               onChangeText={handleContactChange}
               keyboardType="phone-pad"
+              autoComplete="tel"
+              helperText={t('register.contactNumberHint')}
               error={errors.contactNumber}
             />
 

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { designTokens } from '@/constants/design-tokens';
-import { MapPin, Star, Heart, MessageCircle, Camera } from 'lucide-react-native';
+import { MapPin, Star, Heart, Camera } from 'lucide-react-native';
 import { useFavoritesStore } from '@/stores/favorites-store';
 import { useTranslation } from 'react-i18next';
 interface Companion {
@@ -27,7 +27,6 @@ interface CompanionCardProps {
   viewMode?: 'grid' | 'list';
   onPress?: () => void;
   onFavorite?: () => void;
-  onMessage?: () => void;
 }
 
 export const CompanionCard: React.FC<CompanionCardProps> = ({
@@ -35,7 +34,6 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
   viewMode = 'grid',
   onPress,
   onFavorite,
-  onMessage,
 }) => {
   const store = useFavoritesStore();
   const isFavorite = store.isFavorite(companion.id);
@@ -116,8 +114,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
             <View style={styles.priceContainer}>
               {formatPrice(companion.price) ? (
                 <>
-                  <Text style={styles.price}>{formatPrice(companion.price)}</Text>
-                  <Text style={styles.priceUnit}>/{t('companionDetails.day')}</Text>
+                  <Text style={styles.price}>{t('companionDetails.priceFrom', { price: formatPrice(companion.price) })}</Text>
                 </>
               ) : (
                 <Text style={styles.priceContact}>Request guide rate</Text>
@@ -168,9 +165,6 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
               size={20}
             />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton} onPress={onMessage}>
-            <MessageCircle size={20} color={designTokens.colors.semantic.primary} />
-          </TouchableOpacity>
         </View>
       </TouchableOpacity>
     );
@@ -217,8 +211,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
         <View style={styles.priceContainer}>
           {formatPrice(companion.price) ? (
             <>
-              <Text style={styles.price}>{formatPrice(companion.price)}</Text>
-              <Text style={styles.priceUnit}>/{t('companionDetails.day')}</Text>
+              <Text style={styles.price}>{t('companionDetails.priceFrom', { price: formatPrice(companion.price) })}</Text>
             </>
           ) : (
             <Text style={styles.priceContact}>Request guide rate</Text>
@@ -365,11 +358,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: designTokens.colors.semantic.accent,
-  },
-  priceUnit: {
-    fontSize: 12,
-    color: designTokens.colors.semantic.textSecondary,
-    marginLeft: 2,
   },
   servicesContainer: {
     flexDirection: 'row',

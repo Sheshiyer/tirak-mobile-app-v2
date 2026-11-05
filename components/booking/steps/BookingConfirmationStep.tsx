@@ -29,6 +29,7 @@ import { CompanionData } from '@/types/companion';
 import { useTranslation } from 'react-i18next';
 import { deriveBookingPaymentPhase, usePaymentStore } from '@/stores/payment-store';
 import {
+  bookingTimeInThailand,
   formatBookingDate,
   formatBookingTime,
   formatBookingTotal,
@@ -125,7 +126,7 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
     : t('payments.bookingRequestSent');
   let paymentStateCopy = isPromptPayMethod
     ? t('payments.promptPayPendingState')
-    : t('payments.cashState');
+    : t(isBookingConfirmed ? 'payments.cashState' : 'bookingConfirmation.awaitingGuide');
 
   if (paymentPhase === 'restitution_pending') {
     paymentStateCopy = t('payments.restitutionPendingState');
@@ -145,7 +146,7 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
     paymentStateCopy = t('payments.expiredState');
   }
   const pendingPresentation = !isBookingConfirmed || (isPromptPayMethod && !paymentConfirmed);
-  const startsAt = dateTime ? new Date(`${dateTime.date}T${dateTime.time}:00`) : null;
+  const startsAt = dateTime ? bookingTimeInThailand(dateTime.date, dateTime.time) : null;
   const countdownMs = startsAt ? Math.max(0, startsAt.getTime() - now.getTime()) : 0;
   const countdownDays = Math.floor(countdownMs / (1000 * 60 * 60 * 24));
   const countdownHours = Math.floor((countdownMs / (1000 * 60 * 60)) % 24);
@@ -169,8 +170,8 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
       return;
     }
 
-    const start = new Date(`${dateTime.date}T${dateTime.time}:00`);
-    const end = new Date(`${dateTime.date}T${dateTime.endTime}:00`);
+    const start = bookingTimeInThailand(dateTime.date, dateTime.time);
+    const end = bookingTimeInThailand(dateTime.date, dateTime.endTime);
     const formatCalendarDate = (date: Date) => date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
     const title = encodeURIComponent(t('bookingConfirmation.calendarTitle', {
       service: service?.name || t('bookingConfirmation.localGuideBooking'),
@@ -241,23 +242,25 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
           <Card style={styles.countdownCard} padding={16}>
             <View style={styles.countdownHeader}>
               <Calendar size={20} color={designTokens.colors.semantic.primary} />
-              <Text style={styles.countdownTitle}>{t('bookingConfirmation.startsIn')}</Text>
+              <Text style={styles.countdownTitle}>
+                {t(pendingPresentation ? 'bookingConfirmation.requestedDate' : 'bookingConfirmation.startsIn')}
+              </Text>
             </View>
-            <Text style={styles.countdownValue}>{countdownText}</Text>
+            {!pendingPresentation && <Text style={styles.countdownValue}>{countdownText}</Text>}
             <Text style={styles.countdownDetail}>
               {t('bookingConfirmation.dateAtTime', {
                 date: formatBookingDate(dateTime.date, language),
                 time: formatBookingTime(dateTime.time, language),
               })}
             </Text>
-            <Button
+            {!pendingPresentation && <Button
               title={t('bookingConfirmation.addToCalendar')}
               variant="outline"
               onPress={handleAddToCalendar}
               style={styles.calendarButton}
               leftIcon={<CalendarPlus size={18} color={designTokens.colors.semantic.primary} />}
               fullWidth
-            />
+            />}
           </Card>
         )}
 

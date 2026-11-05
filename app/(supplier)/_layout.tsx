@@ -1,9 +1,18 @@
 import React from 'react';
-import { Stack } from 'expo-router';
+import { Redirect, Stack } from 'expo-router';
 import { designTokens } from '@/constants/design-tokens';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { useAuthStoreHydrated } from '@/hooks/useAuthStoreHydrated';
 
 export default function SupplierLayout() {
+  const { isHydrated, user } = useAuthStoreHydrated();
+
+  if (!isHydrated) return null;
+  if (!user) return <Redirect href="/splash" />;
+  if (user.userType !== 'supplier' && user.userType !== 'companion') {
+    return <Redirect href="/(app)" />;
+  }
+
   return (
     <ErrorBoundary
       onError={(error, errorInfo) => {

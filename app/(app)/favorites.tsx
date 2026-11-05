@@ -87,10 +87,6 @@ export default function FavoritesScreen() {
     useFavoritesStore.getState().removeFavorite(id);
   };
   
-  const handleMessage = (id: string) => {
-    router.push(`/chat/${id}`);
-  };
-  
   const renderEmptyState = () => (
     <Card style={styles.emptyStateCard} padding={40}>
       <View style={styles.emptyStateIcon}>
@@ -180,7 +176,6 @@ export default function FavoritesScreen() {
                 viewMode={viewMode}
                 onPress={() => handleCompanionPress(item.id)}
                 onFavorite={() => handleFavorite(item.id)}
-                onMessage={() => handleMessage(item.id)}
               />
               ) : null
             }

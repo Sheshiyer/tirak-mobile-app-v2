@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, ViewStyle, TextStyle, ImageStyle, Alert, Modal, TextInput, Platform, Share as NativeShare } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as Linking from 'expo-linking';
@@ -18,7 +18,6 @@ import { useBookingStore } from '@/stores/booking-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { useFavoritesStore } from '@/stores/favorites-store';
 import { useNavigation } from '@react-navigation/native';
-import { BookingService } from '@/types/booking';
 import { useToastStore } from '@/stores/toast-store';
 import { useTranslation } from 'react-i18next';
 import {
@@ -31,6 +30,8 @@ import {
 import { getDemoGuideAvailability } from '@/utils/preview-availability';
 import { usePostHog } from 'posthog-react-native';
 import { isDemoModeEnabled } from '@/utils/demo-mode';
+import { useExperiences, type Experience } from '@/services/api/companion/experience';
+import { experienceToBookingService } from '@/utils/experience-booking';
 
 // Import new API functions
 import { 
@@ -44,7 +45,6 @@ import {
   Heart, 
   Share, 
   Star, 
-  MessageCircle, 
   Calendar, 
   MapPin, 
   Globe, 
@@ -73,7 +73,7 @@ const ShimmerBox = ({ width: w, height: h, style }: { width: number | string; he
 );
 
 // Helper to map API response to UI structure
-function mapCompanionDetails(data: any, allowDemoData = false) {
+function mapCompanionDetails(data: any, allowDemoData = false, activeExperiences?: Experience[]) {
   const isTestProfile = allowDemoData && isTestCompanion(data);
   const demoExperiences = [
     {
@@ -121,8 +121,10 @@ function mapCompanionDetails(data: any, allowDemoData = false) {
     rating: data.rating?.average ?? data.rating ?? (isTestProfile ? 5 : 0),
     reviewCount: data.rating?.count ?? data.reviewCount ?? (isTestProfile ? demoReviews.length : 0),
     price: data.price ?? (isTestProfile ? 1800 : 0),
-    currency: data.currency || data.experiences?.[0]?.currency || 'THB',
-    experiences: Array.isArray(data.experiences) && data.experiences.length > 0 ? data.experiences : isTestProfile ? demoExperiences : [],
+    currency: data.currency || activeExperiences?.[0]?.currency || data.experiences?.[0]?.currency || 'THB',
+    experiences: activeExperiences?.length
+      ? activeExperiences
+      : Array.isArray(data.experiences) && data.experiences.length > 0 ? data.experiences : isTestProfile ? demoExperiences : [],
     languages: Array.isArray(data.languages) && data.languages.length > 0 ? data.languages : isTestProfile ? ['English', 'Thai'] : [],
     verified: data.verified ?? data.phoneVerified ?? isTestProfile,
     online: data.online ?? isTestProfile,
@@ -148,6 +150,7 @@ function mapCompanionDetails(data: any, allowDemoData = false) {
 }
 
 export default function CompanionProfileScreen() {
+  const profileScroll = useRef<ScrollView>(null);
   const { t } = useTranslation();
   const { id } = useLocalSearchParams();
   const [selectedTab, setSelectedTab] = useState<'about' | 'services' | 'reviews'>('about');
@@ -173,9 +176,11 @@ export default function CompanionProfileScreen() {
   // API calls
   const { data: companionData, isLoading: isLoadingCompanion, error: companionError } = useCompanionQuery(id as string);
   const { data: availabilityData, isLoading: isLoadingAvailability, error: availabilityError } = useCompanionWeeklyAvailability(id as string, '00:00', '23:59');
+  const { data: experienceData, isLoading: isLoadingExperiences, error: experiencesError, refetch: refetchExperiences } = useExperiences(id as string);
+  const activeExperiences = experienceData?.data.items.filter(experience => experience.isActive);
   
   // Currency conversion — called before early returns (React hook rules)
-  const companionCurrency = companionData?.data?.currency || companionData?.data?.experiences?.[0]?.currency || 'THB';
+  const companionCurrency = companionData?.data?.currency || activeExperiences?.[0]?.currency || companionData?.data?.experiences?.[0]?.currency || 'THB';
   const convertedPrice = useCurrencyConversion(companionData?.data?.price, companionCurrency);
   const sourcePriceContext = formatOriginalCurrencyContext(companionData?.data?.price, companionCurrency);
   
@@ -224,7 +229,7 @@ export default function CompanionProfileScreen() {
     );
   }
   
-  const companion = mapCompanionDetails(companionData.data, isDemoModeEnabled(user));
+  const companion = mapCompanionDetails(companionData.data, isDemoModeEnabled(user), activeExperiences);
   const isTestProfile = isDemoModeEnabled(user) && isTestCompanion(companion);
   const isOwnProfile =
     user?.id === companion.id ||
@@ -293,13 +298,6 @@ export default function CompanionProfileScreen() {
     );
   };
   
-  const handleChat = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const guideName = companion.displayName || companion.name;
-    const starter = encodeURIComponent(`Hi ${guideName}! I'm interested in exploring Thailand with you. What experiences do you offer?`);
-    router.push(`/chat/${companion.id}?starter=${starter}`);
-  };
-  
   const handleBookNow = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (!selectedDate) {
@@ -312,7 +310,13 @@ export default function CompanionProfileScreen() {
 
     if (companion && companion.experiences && companion.experiences.length > 0) {
       const defaultService = companion.experiences[0];
-      const defaultDuration = defaultService.durationMinutes || 60;
+      const service = experienceToBookingService({
+        ...defaultService,
+        title: defaultService.title || defaultService.name,
+        durationMinutes: defaultService.durationMinutes || 60,
+        currency: defaultService.currency || companion.currency,
+        keywords: defaultService.keywords || [],
+      });
 
       // Set companion data in the store
       setCompanionData({
@@ -323,27 +327,19 @@ export default function CompanionProfileScreen() {
         rating: companion.rating,
         languages: companion.languages || [],
         about: companion.bio,
-        specialties: companion.experiences.map((exp: BookingService & { title?: string }) => exp.name || exp.title || 'Local experience'),
+        specialties: companion.experiences.map((exp: Experience) => exp.title),
       });
 
       // Update service in the store
-      useBookingStore.getState().updateService({
-        id: defaultService.id,
-        name: defaultService.title,
-        description: defaultService.description,
-        price: defaultService.price,
-        currency: defaultService.currency || companion.currency || 'THB',
-        duration: defaultDuration / 60, // Convert to hours
-        category: defaultService.category || 'Experience',
-      });
+      useBookingStore.getState().updateService(service);
 
       // Update date/time in the store
       useBookingStore.getState().updateDateTime({
         date: selectedDate,
-        time: '10:00', // Default to 10 AM
-        duration: defaultDuration / 60, // Convert minutes to hours
-        endTime: '11:00', // Will be calculated properly in the datetime step
-        isAvailable: true
+        time: '',
+        duration: service.duration,
+        endTime: '',
+        isAvailable: false
       });
 
       // Reset to first step and navigate
@@ -476,6 +472,8 @@ export default function CompanionProfileScreen() {
             <TouchableOpacity
               style={styles.actionButton as ViewStyle}
               onPress={toggleFavorite}
+              accessibilityRole="button"
+              accessibilityLabel={t(isFavorite ? 'companionDetails.removeFromWishlist' : 'companionDetails.saveToWishlist')}
             >
               <Heart
                 size={24}
@@ -501,7 +499,7 @@ export default function CompanionProfileScreen() {
         </View>
       </View>
       
-      <ScrollView style={styles.content as ViewStyle} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={profileScroll} style={styles.content as ViewStyle} showsVerticalScrollIndicator={false}>
         {/* Profile Info */}
         <Card style={styles.profileCard as ViewStyle} padding={20}>
           {/* #9: Full-width name/rating/location — avatar is in the carousel above */}
@@ -557,8 +555,9 @@ export default function CompanionProfileScreen() {
           
           {companion.price && companion.price > 0 ? (
             <View style={styles.priceContainer as ViewStyle}>
-              <Text style={styles.price as TextStyle}>{convertedPrice || formatTravelerCurrency(companion.price, companion.currency)}</Text>
-              <Text style={styles.priceUnit as TextStyle}>/{t('companionDetails.day')}</Text>
+              <Text style={styles.price as TextStyle}>{t('companionDetails.priceFrom', {
+                price: convertedPrice || formatTravelerCurrency(companion.price, companion.currency),
+              })}</Text>
               {sourcePriceContext ? (
                 <Text style={styles.priceSecondary as TextStyle}> ({sourcePriceContext})</Text>
               ) : null}
@@ -586,15 +585,15 @@ export default function CompanionProfileScreen() {
           
           <View style={styles.actionButtons as ViewStyle}>
             <Button
-              title={t('companionDetails.chatNow')}
+              title={t('companionDetails.viewAvailability')}
               variant="primary"
               size="large"
               fullWidth
-              onPress={handleChat}
-              style={styles.chatButton as ViewStyle}
-              textStyle={styles.chatButtonText as TextStyle}
-              leftIcon={<MessageCircle size={18} color={designTokens.colors.semantic.surface} />}
+              onPress={() => profileScroll.current?.scrollToEnd({ animated: true })}
+              style={styles.availabilityButton as ViewStyle}
+              leftIcon={<Calendar size={18} color={designTokens.colors.semantic.surface} />}
             />
+            <Text style={styles.chatNote as TextStyle}>{t('companionDetails.chatAfterConfirmation')}</Text>
           </View>
         </Card>
         
@@ -690,7 +689,14 @@ export default function CompanionProfileScreen() {
             {selectedTab === 'services' && (
               <View style={styles.servicesContent as ViewStyle}>
                 <Text style={styles.sectionTitle as TextStyle}>{t('companionDetails.experiencesOffered')}</Text>
-                {companion.experiences.length === 0 ? (
+                {companion.experiences.length === 0 && isLoadingExperiences ? (
+                  <Text style={styles.bioText}>{t('companionDetails.loadingExperiences')}</Text>
+                ) : companion.experiences.length === 0 && experiencesError ? (
+                  <View style={styles.emptyServicesContainer}>
+                    <Text style={styles.emptyServicesSubtitle}>{t('companionDetails.experienceLoadError')}</Text>
+                    <Button title={t('common.tryAgain')} variant="outline" onPress={() => void refetchExperiences()} />
+                  </View>
+                ) : companion.experiences.length === 0 ? (
                   <View style={styles.emptyServicesContainer as ViewStyle}>
                     <Text style={styles.emptyServicesIcon as TextStyle}>🗺️</Text>
                     <Text style={styles.emptyServicesTitle as TextStyle}>
@@ -836,7 +842,7 @@ export default function CompanionProfileScreen() {
           </TouchableOpacity> */}
 
           {/* Conditional Book Now Button */}
-          {selectedDate && (
+          {selectedDate && companion.experiences.length > 0 && (
             <Button
               title={t('companionDetails.bookNow')}
               variant="primary"
@@ -845,6 +851,12 @@ export default function CompanionProfileScreen() {
               leftIcon={<Calendar size={18} color={designTokens.colors.semantic.surface} />}
               fullWidth
             />
+          )}
+          {selectedDate && companion.experiences.length === 0 && (
+            <Text style={styles.availabilitySubtitle}>
+              {isLoadingExperiences ? t('companionDetails.loadingExperiences') :
+                experiencesError ? t('companionDetails.experienceLoadError') : t('companionDetails.noServicesAvailable')}
+            </Text>
           )}
         </Card>
       </ScrollView>
@@ -1026,11 +1038,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: designTokens.colors.semantic.primary,
   },
-  priceUnit: {
-    fontSize: 14,
-    color: designTokens.colors.semantic.textSecondary,
-    marginLeft: 4,
-  },
   priceSecondary: {
     fontSize: 13,
     color: designTokens.colors.semantic.textSecondary,
@@ -1078,14 +1085,16 @@ const styles = StyleSheet.create({
     color: designTokens.colors.semantic.primary,
     fontWeight: '500',
   },
-  chatButton: {
+  availabilityButton: {
     width: '100%',
     alignSelf: 'stretch',
     borderRadius: designTokens.borderRadius.components.button,
   },
-  chatButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
+  chatNote: {
+    marginTop: 8,
+    color: designTokens.colors.semantic.textSecondary,
+    textAlign: 'center',
+    fontSize: 13,
   },
   tabsCard: {
     marginHorizontal: 20,

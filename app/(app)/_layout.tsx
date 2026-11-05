@@ -255,7 +255,7 @@ export default function AppLayout() {
     setActiveTabIndex(index);
     const route = currentTabRoutes[index];
     if (route.name === "index") {
-      router.push("/");
+      router.push("/(app)");
     } else {
       router.push(`/${route.name}` as any);
     }

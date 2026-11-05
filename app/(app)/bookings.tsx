@@ -41,6 +41,7 @@ import {
   Timer
 } from 'lucide-react-native';
 import { router } from 'expo-router';
+import { bookingDateInThailand, bookingTimeInThailand } from '@/components/booking/booking-format';
 import { isReviewModeEnabled, REVIEW_ACCOUNTS, type ReviewAccountKey } from '@/constants/review-mode';
 import {
   REVIEW_BOOKING_ID,
@@ -75,7 +76,7 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate, targetTime 
 
   useEffect(() => {
     const calculateTimeLeft = () => {
-      const target = new Date(`${targetDate}T${targetTime}:00`);
+      const target = bookingTimeInThailand(targetDate, targetTime);
       const now = new Date();
       const difference = target.getTime() - now.getTime();
 
@@ -195,12 +196,10 @@ export default function BookingsScreen() {
   // logger.log('Bookings list items:', allBookings);
 
   // Enhanced filtering and sorting logic with better date handling
+  const today = bookingDateInThailand();
   const filteredBookings = (allBookings || [])
     .filter((booking: BookingListItem) => {
-      const bookingDate = new Date(booking.date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      bookingDate.setHours(0, 0, 0, 0);
+      const bookingDate = booking.date.slice(0, 10);
       if (selectedTab === 'upcoming') {
         const isUpcoming = bookingDate >= today && !['completed', 'cancelled'].includes(booking.status);
         return isUpcoming;
@@ -240,10 +239,7 @@ export default function BookingsScreen() {
 
   // Calculate stats for display
   const upcomingCount = allBookings.filter((b: BookingListItem) => {
-    const bookingDate = new Date(b.date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    bookingDate.setHours(0, 0, 0, 0);
+    const bookingDate = b.date.slice(0, 10);
     return bookingDate >= today && !['completed', 'cancelled'].includes(b.status);
   }).length;
 
@@ -352,7 +348,7 @@ export default function BookingsScreen() {
   const BookingCard: React.FC<BookingCardProps> = ({ booking }) => {
     const status = statusConfig[booking.status as keyof typeof statusConfig] || statusConfig.pending;
     const cardAnimation = useRef(new Animated.Value(0)).current;
-    const isUpcoming = new Date(booking.date) >= new Date() && !['completed', 'cancelled'].includes(booking.status);
+    const showCountdown = booking.status === 'confirmed' && bookingTimeInThailand(booking.date, booking.startTime).getTime() > Date.now();
    
     const getDisplayPerson = () => {
       const person = isCompanion ? booking.customer : booking.companion;
@@ -398,7 +394,7 @@ export default function BookingsScreen() {
     }, []);
 
     const formatDate = (date: string) => {
-      return new Date(date).toLocaleDateString('en-US', {
+      return new Date(`${date.slice(0, 10)}T12:00:00`).toLocaleDateString('en-US', {
         weekday: 'short',
         month: 'short',
         day: 'numeric',
@@ -477,7 +473,7 @@ export default function BookingsScreen() {
           <View style={styles.serviceSection}>
             <Subheading style={styles.serviceName}>{serviceData.name}</Subheading>
 
-            {isUpcoming && (
+            {showCountdown && (
               <CountdownTimer targetDate={booking.date} targetTime={bookingDetails.time} />
             )}
           </View>
@@ -523,7 +519,12 @@ export default function BookingsScreen() {
                 <MessageCircle size={18} color={designTokens.colors.semantic.primary} />
               </TouchableOpacity> */}
               {booking.id !== REVIEW_BOOKING_ID && (
-                <TouchableOpacity style={styles.actionButton} onPress={() => router.push(`/(app)/booking/${booking.id}` as any)}>
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  onPress={() => router.push(`/(app)/booking/${booking.id}` as any)}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('bookings.viewBookingDetails')}
+                >
                   <Eye size={18} color={designTokens.colors.semantic.primary} />
                 </TouchableOpacity>
               )}

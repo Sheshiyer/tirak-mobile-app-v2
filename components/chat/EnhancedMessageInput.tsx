@@ -58,6 +58,9 @@ export const EnhancedMessageInput: React.FC<EnhancedMessageInputProps> = ({
             ]}
             onPress={onSend}
             disabled={!canSend}
+            accessibilityRole="button"
+            accessibilityLabel="Send message"
+            accessibilityState={{ disabled: !canSend }}
             activeOpacity={0.8}
           >
             <Send size={20} color={

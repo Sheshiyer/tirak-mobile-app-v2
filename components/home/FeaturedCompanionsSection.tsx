@@ -13,7 +13,7 @@ import { router } from 'expo-router';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { designTokens, componentTokens } from '@/constants/design-tokens';
-import { MapPin, Heart, MessageCircle, Star, Verified, Send, Camera } from 'lucide-react-native';
+import { MapPin, Heart, Star, Verified, Send, Camera } from 'lucide-react-native';
 import { Companion } from '@/types/companion';
 import { useTranslation } from 'react-i18next';
 import { useFavoritesStore } from '@/stores/favorites-store';
@@ -34,7 +34,6 @@ interface CompanionCardProps {
   companion: Companion;
   onPress: () => void;
   onFavorite: () => void;
-  onMessage: () => void;
   index: number;
 }
 
@@ -43,7 +42,6 @@ const EnhancedCompanionCard: React.FC<CompanionCardProps> = ({
   companion,
   onPress,
   onFavorite,
-  onMessage,
   index,
 }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -142,13 +140,6 @@ const EnhancedCompanionCard: React.FC<CompanionCardProps> = ({
                 fill={isFavorite ? designTokens.colors.semantic.accent : 'transparent'}
               />
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={onMessage}
-              activeOpacity={0.8}
-            >
-              <MessageCircle size={18} color={designTokens.colors.semantic.surface} />
-            </TouchableOpacity>
           </View>
         </View>
         {/* Content Container */}
@@ -193,13 +184,12 @@ const EnhancedCompanionCard: React.FC<CompanionCardProps> = ({
 
           {companion.price > 0 ? (
             <View style={styles.priceContainer}>
-              <Text style={styles.priceText}>{displayPrice}</Text>
-              <Text style={styles.priceUnit}>/day</Text>
+              <Text style={styles.priceText}>{t('companionDetails.priceFrom', { price: displayPrice })}</Text>
             </View>
           ) : (
             <TouchableOpacity
               style={styles.rateRequestButton}
-              onPress={onMessage}
+              onPress={onPress}
               activeOpacity={0.85}
             >
               <Send size={14} color={designTokens.colors.semantic.primary} />
@@ -247,17 +237,11 @@ export const FeaturedCompanionsSection: React.FC<FeaturedCompanionsSectionProps>
     });
   };
 
-  const handleMessage = (companionId: string) => {
-    // TODO: Navigate to chat
-    router.push(`/chat/${companionId}`);
-  };
-
   const renderCompanionCard = ({ item, index }: { item: Companion; index: number }) => (
     <EnhancedCompanionCard
       companion={item}
       onPress={() => handleCompanionPress(item.id)}
       onFavorite={() => handleFavorite(item)}
-      onMessage={() => handleMessage(item.id)}
       index={index}
     />
   );
@@ -589,11 +573,6 @@ const styles = StyleSheet.create({
     fontSize: designTokens.typography.sizes.caption,
     fontWeight: designTokens.typography.weights.semibold,
     color: designTokens.colors.semantic.primary,
-  },
-  priceUnit: {
-    ...designTokens.typography.styles.caption,
-    color: designTokens.colors.semantic.textSecondary,
-    marginLeft: designTokens.spacing.scale.xs,
   },
 
   // Loading States

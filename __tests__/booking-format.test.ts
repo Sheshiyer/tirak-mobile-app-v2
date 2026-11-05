@@ -1,9 +1,16 @@
 import {
+  bookingDateInThailand,
+  bookingTimeInThailand,
   formatBookingDate,
   formatBookingTime,
   formatBookingTotal,
   normalizeBookingLocale,
 } from '@/components/booking/booking-format';
+
+test('keeps Thailand booking times and trip days consistent across device time zones', () => {
+  expect(bookingTimeInThailand('2026-11-06', '00:30').toISOString()).toBe('2026-11-05T17:30:00.000Z');
+  expect(bookingDateInThailand(new Date('2026-11-05T17:30:00.000Z'))).toBe('2026-11-06');
+});
 
 describe('booking locale formatting', () => {
   test.each([

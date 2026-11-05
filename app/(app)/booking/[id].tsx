@@ -14,6 +14,7 @@ import { useCurrencyConversion } from '@/utils/currency';
 import { TEST_COMPANION_ID, isTestCompanion } from '@/utils/companion-display';
 import { ArrowLeft, CalendarPlus, CheckCircle, Clock, MessageCircle, XCircle } from 'lucide-react-native';
 import { toPaymentDisplay } from '@/utils/payment-display';
+import { bookingTimeInThailand } from '@/components/booking/booking-format';
 
 const BookingDetailsScreen = () => {
   const { user, isAuthenticated } = useAuthStore();
@@ -89,10 +90,10 @@ const BookingDetailsScreen = () => {
   const displayFallback = isCompanion ? companion : customer;
   const displayName = displayPerson?.name || displayFallback?.name || (isCompanion ? 'Traveler' : 'Local Guide');
   const displayImage = displayPerson?.profileImage || displayFallback?.profileImage || '';
-  const startAt = new Date(`${booking.date.split('T')[0]}T${booking.startTime}:00`);
-  const endAt = new Date(`${booking.date.split('T')[0]}T${booking.endTime}:00`);
+  const startAt = bookingTimeInThailand(booking.date, booking.startTime);
+  const endAt = bookingTimeInThailand(booking.date, booking.endTime);
   const countdownMs = Math.max(0, startAt.getTime() - now.getTime());
-  const isActiveBooking = ['pending', 'confirmed', 'in_progress'].includes(booking.status);
+  const isActiveBooking = ['confirmed', 'in_progress'].includes(booking.status);
   const countdownDays = Math.floor(countdownMs / (1000 * 60 * 60 * 24));
   const countdownHours = Math.floor((countdownMs / (1000 * 60 * 60)) % 24);
   const countdownMinutes = Math.floor((countdownMs / (1000 * 60)) % 60);
@@ -266,7 +267,7 @@ const BookingDetailsScreen = () => {
             <Body>{booking.date.split('T')[0]}</Body>
           </View>
           <View style={styles.section}>
-            <Subheading>Time</Subheading>
+            <Subheading>Time (Thailand)</Subheading>
             <Body>{booking.startTime} - {booking.endTime} ({booking.duration} mins)</Body>
           </View>
 

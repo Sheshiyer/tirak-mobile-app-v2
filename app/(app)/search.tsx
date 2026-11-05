@@ -11,9 +11,6 @@ import {
   Dimensions,
   Animated,
   Switch,
-  Platform,
-  ActivityIndicator,
-  Modal,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
@@ -34,11 +31,9 @@ import {
   Grid3X3,
   List,
   Heart,
-  MessageCircle,
   ChevronDown,
   X,
   Sliders,
-  Calendar as CalendarIcon,
   Globe,
   DollarSign,
   ArrowUpDown,
@@ -57,7 +52,6 @@ import {
 import { CompanionCard } from '@/components/ui/CompanionCard';
 import { useTranslation } from 'react-i18next';
 import { usePostHog } from 'posthog-react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import {
   getCompanionDisplayName,
   getCompanionGallery,
@@ -67,6 +61,16 @@ import {
 } from '@/utils/companion-display';
 
 const { width, height } = Dimensions.get('window');
+const searchLanguages = [
+  ['th', 'Thai', '🇹🇭'],
+  ['en', 'English', '🇬🇧'],
+  ['zh', 'Chinese', '🇨🇳'],
+  ['ja', 'Japanese', '🇯🇵'],
+  ['ko', 'Korean', '🇰🇷'],
+  ['ru', 'Russian', '🇷🇺'],
+  ['de', 'German', '🇩🇪'],
+  ['fr', 'French', '🇫🇷'],
+] as const;
 
 // Helper function to transform API companion data to match existing interface
 const transformAPICompanion = (apiCompanion: any): Companion => {
@@ -108,19 +112,18 @@ export default function SearchScreen() {
     { id: 'sports', name: t('search.sports'), iconComponent: Dumbbell },
   ];
   
-  const locations = [t('search.allLocations'), t('search.bangkok'), t('search.phuket'), t('search.chiangMai'), t('search.pattaya')];
-  
-  const languages = [
-    { id: 'thai', name: t('search.thai'), flag: '🇹🇭' },
-    { id: 'english', name: t('search.english'), flag: '🇬🇧' },
-    { id: 'chinese', name: t('search.chinese'), flag: '🇨🇳' },
-    { id: 'japanese', name: t('search.japanese'), flag: '🇯🇵' },
-    { id: 'korean', name: t('search.korean'), flag: '🇰🇷' },
-    { id: 'russian', name: t('search.russian'), flag: '🇷🇺' },
-    { id: 'german', name: t('search.german'), flag: '🇩🇪' },
-    { id: 'french', name: t('search.french'), flag: '🇫🇷' },
+  const locations = [
+    { id: '', name: t('search.allLocations') },
+    { id: 'Bangkok', name: t('search.bangkok') },
+    { id: 'Phuket', name: t('search.phuket') },
+    { id: 'Chiang Mai', name: t('search.chiangMai') },
+    { id: 'Pattaya', name: t('search.pattaya') },
   ];
   
+  const languages = searchLanguages.map(([id, alias, flag]) => ({
+    id, name: t(`search.${alias.toLowerCase()}`), flag,
+  }));
+
   const sortOptions = [
     { id: 'relevance', name: t('search.mostRelevant'), icon: '🔍' },
     { id: 'price', name: t('search.priceLowToHigh'), icon: '💰' },
@@ -135,14 +138,13 @@ export default function SearchScreen() {
   const { user } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedLocation, setSelectedLocation] = useState('All Locations');
+  const [selectedLocation, setSelectedLocation] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [showFilters, setShowFilters] = useState(false);
-  const [priceRange, setPriceRange] = useState([1000, 5000]);
-  const [onlineOnly, setOnlineOnly] = useState(false);
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const invalidPriceRange = minPrice !== '' && maxPrice !== '' && Number(minPrice) > Number(maxPrice);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [sortBy, setSortBy] = useState('relevance');
   const isCompanion = user?.userType === 'companion' || user?.userType === 'supplier';
 
@@ -156,10 +158,6 @@ export default function SearchScreen() {
 
   // For location dropdown
   const [locationDropdownOpen, setLocationDropdownOpen] = useState(false);
-
-  // For date picker
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [pendingDate, setPendingDate] = useState<Date | null>(null);
 
   // Build search parameters from filters
   const searchParams: CompanionSearchParams = React.useMemo(() => {
@@ -176,23 +174,24 @@ export default function SearchScreen() {
     }
 
     // Location filter
-    if (selectedLocation !== 'All Locations') {
+    if (selectedLocation) {
       params.location = selectedLocation;
     }
 
     // Price range
-    params.minPrice = priceRange[0];
-    params.maxPrice = priceRange[1];
+    if (!invalidPriceRange) {
+      if (minPrice !== '') params.minPrice = Number(minPrice);
+      if (maxPrice !== '') params.maxPrice = Number(maxPrice);
+    }
 
     // Languages
     if (selectedLanguages.length > 0) {
-      params.languages = selectedLanguages;
+      params.languages = searchLanguages
+        .filter(([id]) => selectedLanguages.includes(id))
+        .flatMap(([id, alias]) => [id, alias]);
     }
 
     // Quick filters
-    if (onlineOnly) {
-      params.available = true;
-    }
     if (verifiedOnly) {
       params.verified = true;
     }
@@ -214,29 +213,28 @@ export default function SearchScreen() {
     }
 
     return params;
-  }, [searchQuery, selectedCategory, selectedLocation, priceRange, selectedLanguages, onlineOnly, verifiedOnly, sortBy]);
+  }, [searchQuery, selectedCategory, selectedLocation, minPrice, maxPrice, invalidPriceRange, selectedLanguages, verifiedOnly, sortBy]);
 
   // Track search_performed with a short debounce to avoid firing on every keystroke
   useEffect(() => {
     const hasQuery = !!searchQuery.trim();
-    const hasFilters = selectedCategory !== 'all' || selectedLocation !== 'All Locations' || onlineOnly || verifiedOnly || selectedLanguages.length > 0;
+    const hasFilters = selectedCategory !== 'all' || selectedLocation !== '' || verifiedOnly || selectedLanguages.length > 0 || minPrice !== '' || maxPrice !== '';
     if (!hasQuery && !hasFilters) return;
     const timer = setTimeout(() => {
       posthog.capture('search_performed', {
         query: searchQuery.trim() || null,
         category: selectedCategory !== 'all' ? selectedCategory : null,
-        location: selectedLocation !== 'All Locations' ? selectedLocation : null,
-        online_only: onlineOnly,
+        location: selectedLocation || null,
         verified_only: verifiedOnly,
         language_count: selectedLanguages.length,
         sort_by: sortBy,
       });
     }, 800);
     return () => clearTimeout(timer);
-  }, [searchQuery, selectedCategory, selectedLocation, onlineOnly, verifiedOnly, selectedLanguages, sortBy]);
+  }, [searchQuery, selectedCategory, selectedLocation, verifiedOnly, selectedLanguages, sortBy, minPrice, maxPrice]);
 
   // Fetch companions using the API
-  const { data: companionsData, isLoading: companionsLoading, error: companionsError } = useCompanionsQuery(searchParams);
+  const { data: companionsData, isLoading: companionsLoading, error: companionsError, refetch } = useCompanionsQuery(searchParams);
 
   // Transform API data to match existing interface
   const companions: Companion[] = React.useMemo(() => {
@@ -254,19 +252,21 @@ export default function SearchScreen() {
   const hasActiveFilters = React.useMemo(() => {
     return (
       selectedCategory !== 'all' ||
-      selectedLocation !== 'All Locations' ||
+      selectedLocation !== '' ||
+      minPrice !== '' ||
+      maxPrice !== '' ||
       selectedLanguages.length > 0 ||
-      onlineOnly ||
       verifiedOnly ||
       sortBy !== 'relevance'
     );
-  }, [selectedCategory, selectedLocation, selectedLanguages, onlineOnly, verifiedOnly, sortBy]);
+  }, [selectedCategory, selectedLocation, minPrice, maxPrice, selectedLanguages, verifiedOnly, sortBy]);
 
   const clearAllFilters = () => {
     setSelectedCategory('all');
-    setSelectedLocation('All Locations');
+    setSelectedLocation('');
+    setMinPrice('');
+    setMaxPrice('');
     setSelectedLanguages([]);
-    setOnlineOnly(false);
     setVerifiedOnly(false);
     setSortBy('relevance');
   };
@@ -274,10 +274,6 @@ export default function SearchScreen() {
   // Navigation handlers
   const handleCompanionPress = (companionId: string) => {
     router.push(`/companion/${companionId}`);
-  };
-
-  const handleMessagePress = (companionId: string) => {
-    router.push(`/chat/${companionId}`);
   };
 
   const openFilterModal = () => {
@@ -328,129 +324,6 @@ export default function SearchScreen() {
     });
   };
 
-  // Loading state
-  if (isLoading) {
-    return (
-      <RadialGradient variant="appBackground" style={styles.container}>
-        <View style={styles.header}>
-          <Card style={styles.searchCard} padding={0}>
-            <View style={styles.searchContainer}>
-              <View style={styles.searchBar}>
-                <Search size={20} color={designTokens.colors.semantic.textSecondary} />
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder={t('search.searchPlaceholder')}
-                  placeholderTextColor={designTokens.colors.semantic.textSecondary}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                />
-              </View>
-              <TouchableOpacity
-                style={[styles.filterButton, showFilters && styles.filterButtonActive]}
-                onPress={openFilterModal}
-              >
-                <Filter size={20} color={showFilters ? designTokens.colors.semantic.surface : designTokens.colors.semantic.primary} />
-              </TouchableOpacity>
-            </View>
-          </Card>
-
-          {/* Categories */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoriesContainer}
-          >
-            {categories.map((category) => (
-              <CategoryChip
-                key={category.id}
-                title={category.name}
-                iconComponent={(category as any).iconComponent}
-                selected={selectedCategory === category.id}
-                onPress={() => setSelectedCategory(category.id)}
-                style={styles.categoryChip}
-              />
-            ))}
-          </ScrollView>
-        </View>
-        
-        {/* Results Header with shimmer count */}
-        <Card style={styles.resultsHeader} padding={16}>
-          <View style={styles.resultsHeaderContent}>
-
-            <Text style={styles.resultsCount}>
-              {isCompanion ? t('search.loadingCompanions') : t('search.loadingCustomers')}
-            </Text>
-            <View style={styles.headerActions}>
-              <View style={styles.viewToggle}>
-                <TouchableOpacity
-                  style={[styles.viewButton, viewMode === 'grid' && styles.viewButtonActive]}
-                  onPress={() => setViewMode('grid')}
-                >
-                  <Grid3X3 size={18} color={viewMode === 'grid' ? designTokens.colors.semantic.surface : designTokens.colors.semantic.textSecondary} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.viewButton, viewMode === 'list' && styles.viewButtonActive]}
-                  onPress={() => setViewMode('list')}
-                >
-                  <List size={18} color={viewMode === 'list' ? designTokens.colors.semantic.surface : designTokens.colors.semantic.textSecondary} />
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Card>
-
-        <SearchShimmer viewMode={viewMode} count={viewMode === 'grid' ? 6 : 4} />
-      </RadialGradient>
-    );
-  }
-
-  // Error state
-  if (error) {
-    return (
-      <RadialGradient variant="appBackground" style={styles.container}>
-        <View style={styles.header}>
-          <Card style={styles.searchCard} padding={0}>
-            <View style={styles.searchContainer}>
-              <View style={styles.searchBar}>
-                <Search size={20} color={designTokens.colors.semantic.textSecondary} />
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder={t('search.searchPlaceholder')}
-                  placeholderTextColor={designTokens.colors.semantic.textSecondary}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                />
-              </View>
-              <TouchableOpacity
-                style={[styles.filterButton, showFilters && styles.filterButtonActive]}
-                onPress={openFilterModal}
-              >
-                <Filter size={20} color={showFilters ? designTokens.colors.semantic.surface : designTokens.colors.semantic.primary} />
-              </TouchableOpacity>
-            </View>
-          </Card>
-        </View>
-        
-        {/* Results Header for error state */}
-        <Card style={styles.resultsHeader} padding={16}>
-          <View style={styles.resultsHeaderContent}>
-            <Text style={styles.resultsCount}>
-              {t('search.failedToLoadCompanions')}
-            </Text>
-          </View>
-        </Card>
-
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{t('search.somethingWentWrong')}</Text>
-          <Text style={styles.errorSubtext}>{error.message}</Text>
-        </View>
-      </RadialGradient>
-    );
-  }
-
-  // Debug: log companions array before rendering
-  // logger.log('COMPANIONS FOR UI:', companions);
-
   const filterModalTranslateY = filterModalAnimation.interpolate({
     inputRange: [0, 1],
     outputRange: [height, 0],
@@ -476,7 +349,6 @@ export default function SearchScreen() {
       companion={item}
       viewMode={viewMode}
             onPress={() => handleCompanionPress(item.id)}
-      onMessage={() => handleMessagePress(item.id)}
     />
   );
 
@@ -512,7 +384,7 @@ export default function SearchScreen() {
             </TouchableOpacity>
           </View>
           
-          <ScrollView style={styles.filterModalContent}>
+          <ScrollView style={styles.filterModalContent} keyboardShouldPersistTaps="handled">
             {/* Location Section */}
             <View style={styles.filterSection}>
               <View style={styles.filterSectionHeader}>
@@ -524,7 +396,7 @@ export default function SearchScreen() {
                 style={styles.locationDropdown}
                 onPress={() => setLocationDropdownOpen(!locationDropdownOpen)}
               >
-                <Text style={styles.locationDropdownText}>{selectedLocation}</Text>
+                <Text style={styles.locationDropdownText}>{locations.find(location => location.id === selectedLocation)?.name}</Text>
                 <ChevronDown size={20} color={designTokens.colors.semantic.textSecondary} />
               </TouchableOpacity>
               
@@ -532,25 +404,25 @@ export default function SearchScreen() {
                 <View style={styles.locationOptions}>
                   {locations.map((location) => (
                     <TouchableOpacity
-                      key={location}
+                      key={location.id}
                       style={[
                         styles.locationOptions,
-                        selectedLocation === location && styles.selectedLocationOption
+                        selectedLocation === location.id && styles.selectedLocationOption
                       ]}
                       onPress={() => {
-                        setSelectedLocation(location);
+                        setSelectedLocation(location.id);
                         setLocationDropdownOpen(false);
                       }}
                     >
                       <Text 
                         style={[
                           styles.locationOptionText,
-                          selectedLocation === location && styles.selectedLocationOptionText
+                          selectedLocation === location.id && styles.selectedLocationOptionText
                         ]}
                       >
-                        {location}
+                        {location.name}
                       </Text>
-                      {selectedLocation === location && (
+                      {selectedLocation === location.id && (
                         <Check size={18} color={designTokens.colors.semantic.primary} />
                       )}
                     </TouchableOpacity>
@@ -567,29 +439,28 @@ export default function SearchScreen() {
               </View>
               
               <View style={styles.priceRangeContainer}>
-                <Text style={styles.priceRangeText}>
-                  ฿{priceRange[0].toLocaleString()} - ฿{priceRange[1].toLocaleString()}
-                </Text>
-                
-                {/* This would be a custom slider component in a real app */}
-                <View style={styles.priceSlider}>
-                  <View style={styles.priceSliderTrack} />
-                  <View 
-                    style={[
-                      styles.priceSliderFill,
-                      { 
-                        width: `${((priceRange[1] - priceRange[0]) / 4000) * 100}%`,
-                        left: `${((priceRange[0] - 1000) / 4000) * 100}%`
-                      }
-                    ]} 
-                  />
-                </View>
-                
-                <View style={styles.priceSliderLabels}>
-                  <Text style={styles.priceSliderLabel}>฿1,000</Text>
-                  <Text style={styles.priceSliderLabel}>฿5,000</Text>
-                </View>
+                <TextInput
+                  accessibilityLabel={t('search.minimumPrice')}
+                  placeholder={t('search.minimumPrice')}
+                  placeholderTextColor={designTokens.colors.semantic.textSecondary}
+                  style={styles.priceInput}
+                  keyboardType="number-pad"
+                  maxLength={9}
+                  value={minPrice}
+                  onChangeText={value => setMinPrice(value.replace(/[^0-9]/g, ''))}
+                />
+                <TextInput
+                  accessibilityLabel={t('search.maximumPrice')}
+                  placeholder={t('search.maximumPrice')}
+                  placeholderTextColor={designTokens.colors.semantic.textSecondary}
+                  style={styles.priceInput}
+                  keyboardType="number-pad"
+                  maxLength={9}
+                  value={maxPrice}
+                  onChangeText={value => setMaxPrice(value.replace(/[^0-9]/g, ''))}
+                />
               </View>
+              {invalidPriceRange && <Text style={styles.priceError} accessibilityRole="alert">{t('search.invalidPriceRange')}</Text>}
             </View>
             
             {/* Languages Section */}
@@ -605,15 +476,15 @@ export default function SearchScreen() {
                     key={language.id}
                     style={[
                       styles.languageChip,
-                      selectedLanguages.includes(language.name) && styles.selectedLanguageChip
+                      selectedLanguages.includes(language.id) && styles.selectedLanguageChip
                     ]}
-                    onPress={() => toggleLanguageSelection(language.name)}
+                    onPress={() => toggleLanguageSelection(language.id)}
                   >
                     <Text style={styles.languageFlag}>{language.flag}</Text>
                     <Text 
                       style={[
                         styles.languageChipText,
-                        selectedLanguages.includes(language.name) && styles.selectedLanguageChipText
+                        selectedLanguages.includes(language.id) && styles.selectedLanguageChipText
                       ]}
                     >
                       {language.name}
@@ -623,81 +494,6 @@ export default function SearchScreen() {
               </View>
             </View>
             
-            {/* Availability Section */}
-            <View style={styles.filterSection}>
-              <View style={styles.filterSectionHeader}>
-                <CalendarIcon size={20} color={designTokens.colors.semantic.primary} />
-                <Text style={styles.filterSectionTitle}>{t('search.availability')}</Text>
-              </View>
-              
-              <TouchableOpacity 
-                style={styles.datePickerButton}
-                onPress={() => {
-                  setPendingDate(selectedDate || new Date());
-                  setShowDatePicker(true);
-                }}
-              >
-                <Text style={styles.datePickerButtonText}>
-                  {selectedDate ? selectedDate.toLocaleDateString() : t('search.selectDate')}
-                </Text>
-                <CalendarIcon size={20} color={designTokens.colors.semantic.textSecondary} />
-              </TouchableOpacity>
-            </View>
-            
-            {/* Date Picker */}
-            {Platform.OS === 'ios' ? (
-              <Modal
-                visible={showDatePicker}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setShowDatePicker(false)}
-              >
-                <View style={styles.dateModalOverlay}>
-                  <View style={styles.dateModalContent}>
-                    <DateTimePicker
-                      value={pendingDate || new Date()}
-                      mode="date"
-                      display="spinner"
-                      onChange={(_, date) => {
-                        if (date) setPendingDate(date);
-                      }}
-                      minimumDate={new Date()}
-                    />
-                    <View style={styles.dateModalButtonRow}>
-                      <TouchableOpacity
-                        style={styles.dateModalButton}
-                        onPress={() => setShowDatePicker(false)}
-                      >
-                        <Text style={styles.dateModalButtonText}>{t('search.cancel')}</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[styles.dateModalButton, styles.dateModalButtonPrimary]}
-                        onPress={() => {
-                          setShowDatePicker(false);
-                          if (pendingDate) setSelectedDate(pendingDate);
-                        }}
-                      >
-                        <Text style={[styles.dateModalButtonText, styles.dateModalButtonPrimaryText]}>{t('search.confirm')}</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                </View>
-              </Modal>
-            ) : (
-              showDatePicker && (
-                <DateTimePicker
-                  value={pendingDate || new Date()}
-                  mode="date"
-                  display="default"
-                  onChange={(_, date) => {
-                    setShowDatePicker(false);
-                    if (date) setSelectedDate(date);
-                  }}
-                  minimumDate={new Date()}
-                />
-              )
-            )}
-            
             {/* Quick Filters Section */}
             <View style={styles.filterSection}>
               <View style={styles.filterSectionHeader}>
@@ -706,17 +502,6 @@ export default function SearchScreen() {
               </View>
               
               <View style={styles.quickFiltersContainer}>
-                <View style={styles.switchContainer}>
-                  <Text style={styles.switchLabel}>{t('search.onlineNow')}</Text>
-                  <Switch
-                    value={onlineOnly}
-                    onValueChange={setOnlineOnly}
-                    trackColor={{ false: designTokens.colors.semantic.border, true: `${designTokens.colors.semantic.primary}80` }}
-                    thumbColor={onlineOnly ? designTokens.colors.semantic.primary : designTokens.colors.semantic.surface}
-                    ios_backgroundColor={designTokens.colors.semantic.border}
-                  />
-                </View>
-                
                 <View style={styles.switchContainer}>
                   <Text style={styles.switchLabel}>{t('search.verifiedOnly')}</Text>
                   <Switch
@@ -735,11 +520,10 @@ export default function SearchScreen() {
             <TouchableOpacity 
               style={styles.resetButton}
               onPress={() => {
-                setSelectedLocation(t('search.allLocations'));
-                setPriceRange([1000, 5000]);
+                setSelectedLocation('');
+                setMinPrice('');
+                setMaxPrice('');
                 setSelectedLanguages([]);
-                setSelectedDate(null);
-                setOnlineOnly(false);
                 setVerifiedOnly(false);
               }}
             >
@@ -747,8 +531,10 @@ export default function SearchScreen() {
             </TouchableOpacity>
             
             <TouchableOpacity 
-              style={styles.applyButton}
+              style={[styles.applyButton, invalidPriceRange && { opacity: 0.5 }]}
               onPress={closeFilterModal}
+              disabled={invalidPriceRange}
+              accessibilityState={{ disabled: invalidPriceRange }}
             >
               <Text style={styles.applyButtonText}>{t('search.applyFilters')}</Text>
             </TouchableOpacity>
@@ -841,10 +627,12 @@ export default function SearchScreen() {
               />
             </View>
             <TouchableOpacity
-              style={[styles.filterButton, (showFilters || hasActiveFilters) && styles.filterButtonActive]}
+              style={[styles.filterButton, hasActiveFilters && styles.filterButtonActive]}
               onPress={openFilterModal}
+              accessibilityRole="button"
+              accessibilityLabel={t('search.filters')}
             >
-              <Filter size={20} color={(showFilters || hasActiveFilters) ? designTokens.colors.semantic.surface : designTokens.colors.semantic.primary} />
+              <Filter size={20} color={hasActiveFilters ? designTokens.colors.semantic.surface : designTokens.colors.semantic.primary} />
               {hasActiveFilters && <View style={styles.filterBadge} />}
             </TouchableOpacity>
           </View>
@@ -868,45 +656,15 @@ export default function SearchScreen() {
           ))}
         </ScrollView>
 
-        {/* Filters Panel */}
-        {showFilters && (
-          <Card style={styles.filtersPanel} padding={16}>
-            <View style={styles.filterSection}>
-              <Text style={styles.filterLabel}>{t('search.location')}</Text>
-              <TouchableOpacity style={styles.filterDropdown}>
-                <Text style={styles.filterDropdownText}>{selectedLocation}</Text>
-                <ChevronDown size={16} color={designTokens.colors.semantic.textSecondary} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.filterSection}>
-              <Text style={styles.filterLabel}>{t('search.quickFilters')}</Text>
-              <View style={styles.quickFilters}>
-                <CategoryChip
-                  title={t('search.onlineNow')}
-                  selected={onlineOnly}
-                  onPress={() => setOnlineOnly(!onlineOnly)}
-                  size="small"
-                  style={styles.quickFilterChip}
-                />
-                <CategoryChip
-                  title={t('search.verifiedOnly')}
-                  selected={verifiedOnly}
-                  onPress={() => setVerifiedOnly(!verifiedOnly)}
-                  size="small"
-                  style={styles.quickFilterChip}
-                />
-              </View>
-            </View>
-          </Card>
-        )}
       </View>
 
       {/* Results Header */}
       <Card style={styles.resultsHeader} padding={16}>
         <View style={styles.resultsHeaderContent}>
           <Text style={styles.resultsCount}>
-            {companions.length} {t('search.found')}
+            {isLoading
+              ? t(isCompanion ? 'search.loadingCustomers' : 'search.loadingCompanions')
+              : error ? t('search.failedToLoadCompanions') : `${companions.length} ${t('search.found')}`}
           </Text>
           <View style={styles.headerActions}>
             <TouchableOpacity
@@ -938,7 +696,16 @@ export default function SearchScreen() {
       </Card>
 
       {/* Results */}
-      {dataList.length === 0 ? (
+      {isLoading ? (
+        <SearchShimmer viewMode={viewMode} count={viewMode === 'grid' ? 6 : 4} />
+      ) : error ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{t('search.somethingWentWrong')}</Text>
+          <TouchableOpacity style={styles.clearFiltersButton} onPress={() => void refetch()}>
+            <Text style={styles.clearFiltersText}>{t('common.tryAgain')}</Text>
+          </TouchableOpacity>
+        </View>
+      ) : dataList.length === 0 ? (
         <View style={styles.emptyStateContainer}>
           <View style={styles.emptyStateIcon}>
             <Search size={48} color={designTokens.colors.semantic.textSecondary} />
@@ -1032,36 +799,8 @@ const styles = StyleSheet.create({
   categoryChip: {
     marginRight: 0,
   },
-  filtersPanel: {
-    gap: 16,
-  },
   filterSection: {
     gap: 8,
-  },
-  filterLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: designTokens.colors.semantic.text,
-  },
-  filterDropdown: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: designTokens.colors.semantic.border,
-    borderRadius: 8,
-  },
-  filterDropdownText: {
-    fontSize: 14,
-    color: designTokens.colors.semantic.text,
-  },
-  quickFilters: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  quickFilterChip: {
-    marginRight: 0,
   },
   resultsHeader: {
     marginHorizontal: 20,
@@ -1376,43 +1115,23 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   priceRangeContainer: {
-    marginBottom: 16,
-  },
-  priceRangeText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: designTokens.colors.semantic.primary,
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  priceSlider: {
-    height: 6,
-    backgroundColor: designTokens.colors.semantic.border,
-    borderRadius: 3,
-    marginBottom: 8,
-    position: 'relative',
-  },
-  priceSliderTrack: {
-    height: 6,
-    backgroundColor: designTokens.colors.semantic.border,
-    borderRadius: 3,
-    position: 'absolute',
-    left: 0,
-    right: 0,
-  },
-  priceSliderFill: {
-    height: 6,
-    backgroundColor: designTokens.colors.semantic.primary,
-    borderRadius: 3,
-    position: 'absolute',
-  },
-  priceSliderLabels: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: 10,
   },
-  priceSliderLabel: {
-    fontSize: 12,
-    color: designTokens.colors.semantic.textSecondary,
+  priceInput: {
+    flex: 1,
+    minHeight: 48,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderRadius: 12,
+    borderColor: designTokens.colors.semantic.border,
+    color: designTokens.colors.semantic.text,
+    fontSize: 14,
+  },
+  priceError: {
+    marginTop: 8,
+    color: designTokens.colors.semantic.error,
+    fontSize: 13,
   },
   languagesContainer: {
     flexDirection: 'row',
@@ -1444,19 +1163,6 @@ const styles = StyleSheet.create({
   selectedLanguageChipText: {
     color: designTokens.colors.semantic.primary,
     fontWeight: '500',
-  },
-  datePickerButton: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 12,
-    backgroundColor: designTokens.colors.semantic.border,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  datePickerButtonText: {
-    fontSize: 16,
-    color: designTokens.colors.semantic.text,
   },
   quickFiltersContainer: {
     marginBottom: 16,
@@ -1542,10 +1248,6 @@ const styles = StyleSheet.create({
     fontSize: designTokens.typography.sizes.body,
     color: designTokens.colors.semantic.text,
   },
-  errorSubtext: {
-    fontSize: designTokens.typography.sizes.body,
-    color: designTokens.colors.semantic.textSecondary,
-  },
   emptyStateContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -1592,42 +1294,4 @@ const styles = StyleSheet.create({
     backgroundColor: designTokens.colors.semantic.surface,
   },
   // Date picker modal styles
-  dateModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  dateModalContent: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: designTokens.spacing.scale.lg,
-    width: '85%',
-    alignItems: 'center',
-  },
-  dateModalButtonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: designTokens.spacing.scale.lg,
-    width: '100%',
-  },
-  dateModalButton: {
-    flex: 1,
-    paddingVertical: designTokens.spacing.scale.md,
-    borderRadius: 12,
-    backgroundColor: designTokens.colors.semantic.surface,
-    alignItems: 'center',
-    marginHorizontal: designTokens.spacing.scale.xs,
-  },
-  dateModalButtonPrimary: {
-    backgroundColor: designTokens.colors.semantic.primary,
-  },
-  dateModalButtonText: {
-    color: designTokens.colors.semantic.text,
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  dateModalButtonPrimaryText: {
-    color: 'white',
-  },
 });
