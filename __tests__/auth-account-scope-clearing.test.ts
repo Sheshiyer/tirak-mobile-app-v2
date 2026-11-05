@@ -205,3 +205,28 @@ describe('account-scoped state clearing on auth transitions', () => {
     expect(queryClient.getQueryData(['notifications'])).toBeUndefined();
   });
 });
+
+describe('release authentication excludes local preview sessions', () => {
+  test('demo and review entry points reject even when legacy flags are enabled', async () => {
+    process.env.EXPO_PUBLIC_DEMO_MODE = 'true';
+    process.env.EXPO_PUBLIC_REVIEW_MODE = 'true';
+    try {
+      await expect(useAuthStore.getState().demoLogin('customer')).rejects.toThrow('Preview accounts are unavailable');
+      await expect(useAuthStore.getState().switchReviewAccount('guide')).rejects.toThrow('Preview accounts are unavailable');
+    } finally {
+      delete process.env.EXPO_PUBLIC_DEMO_MODE;
+      delete process.env.EXPO_PUBLIC_REVIEW_MODE;
+    }
+  });
+
+  test('stored fixture bearer tokens cannot authenticate after an upgrade', async () => {
+    const storage = jest.requireMock('@/utils/secure-storage').secureStorage;
+    storage.getItemAsync.mockImplementation(async (key: string) => key === 'authToken'
+      ? 'tirak-local-fixture-token'
+      : JSON.stringify({ id: 'previous-session', email: 'real@example.com' }));
+    await useAuthStore.getState().validateToken();
+    expect(useAuthStore.getState().isAuthenticated).toBe(false);
+    expect(useAuthStore.getState().user).toBeNull();
+    storage.getItemAsync.mockResolvedValue(null);
+  });
+});

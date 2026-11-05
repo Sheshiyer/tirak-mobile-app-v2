@@ -1,0 +1,30 @@
+{
+  "version": "1.5.4",
+  "build": "21",
+  "bundleId": "com.tirak.pineapple",
+  "sdk": "iphoneos26.5",
+  "minimumOS": "15.1",
+  "team": "BS6SZR4929",
+  "aps": "production",
+  "applicationIdentifier": "BS6SZR4929.com.tirak.pineapple",
+  "getTaskAllow": false,
+  "profile": {
+    "expiration": "2027-03-16T05:23:10Z",
+    "team": [
+      "BS6SZR4929"
+    ],
+    "aps": "production",
+    "getTaskAllow": false,
+    "applicationIdentifier": "BS6SZR4929.com.tirak.pineapple",
+    "distribution": true
+  },
+  "runtime": "1.5.4",
+  "updateURL": "https://u.expo.dev/ba0d6f3e-ed4c-4aaf-8cff-aa2fdb253cc5",
+  "productionApiPresent": true,
+  "qaApiPresent": false,
+  "qaBadgePresent": false,
+  "existingChargeWarningPresent": true,
+  "bundleSha256": "40b38be2bf1219b36b42e08e5783dce9f3e6a765b0ac527b3bcf35e90c0ec4a2",
+  "ipaSha256": "68963537e5d5e3a029520892517515f5c2ae50d3466e6e9cce2fe00d6af539c5",
+  "displayName": "Tirak"
+}

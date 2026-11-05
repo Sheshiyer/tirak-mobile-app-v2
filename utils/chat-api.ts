@@ -9,6 +9,7 @@
 import { secureStorage } from './secure-storage';
 import { API_BASE_URL } from '@/constants/api';
 import { logger } from './logger';
+import { isDemoIdentity } from './demo-mode';
 import { handleApiError } from './api-errors';
 
 export const BACKEND_URL = API_BASE_URL;
@@ -132,7 +133,7 @@ export async function getRooms(): Promise<ChatRoom[]> {
   if (!(await getAuthToken())) return [];
   const data = await apiGet<{ items: ChatRoom[] }>('/api/chat/rooms');
   if (!data) throw new Error('We could not load your conversations. Check your connection and try again.');
-  return (data.items || []).filter(room => !room.id.startsWith('demo_room_'));
+  return (data.items || []).filter(room => !room.id.startsWith('demo_room_') && !isDemoIdentity(room.otherParty));
 }
 
 /**
@@ -166,6 +167,7 @@ type ParticipantChatResult = { roomId: string } | { roomId: null; reason: 'booki
 
 /** Resolve profile links through the same booking policy enforced by the server. */
 export async function resolveParticipantChat(otherUserId: string): Promise<ParticipantChatResult> {
+  if (isDemoIdentity({ id: otherUserId })) return { roomId: null, reason: 'unavailable' };
   const rooms = await apiGet<{ items: ChatRoom[] }>('/api/chat/rooms');
   if (!rooms) return { roomId: null, reason: 'unavailable' };
   const existing = rooms.items.find(room => room.otherParty.id === otherUserId && !room.id.startsWith('demo_room_'));
@@ -219,7 +221,8 @@ export function normalizeRealtimeMessage(event: any, currentUserId: string): Cha
 /** Load room metadata + first page of messages (newest-first, reversed to chrono). */
 export async function getRoomDetail(roomId: string): Promise<RoomDetail | null> {
   if (roomId.startsWith('demo_room_')) return null;
-  return apiGet<RoomDetail>(`/api/chat/rooms/${roomId}`);
+  const room = await apiGet<RoomDetail>(`/api/chat/rooms/${encodeURIComponent(roomId)}`);
+  return room && !isDemoIdentity(room.otherParty) ? room : null;
 }
 
 /** Send a text message to a room. Returns the persisted message or null. */
@@ -229,7 +232,7 @@ export async function sendMessage(
   messageType: 'text' | 'image' = 'text',
 ): Promise<ChatMessage | null> {
   if (roomId.startsWith('demo_room_')) return null;
-  return apiPost<ChatMessage>(`/api/chat/rooms/${roomId}/messages`, {
+  return apiPost<ChatMessage>(`/api/chat/rooms/${encodeURIComponent(roomId)}/messages`, {
     roomId,
     messageType,
     content,

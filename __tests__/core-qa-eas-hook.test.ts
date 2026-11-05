@@ -21,16 +21,16 @@ const SAMPLE_INFO_PLIST = `<?xml version="1.0" encoding="UTF-8"?>
     <key>CFBundleDisplayName</key>
     <string>Tirak</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.5.2</string>
+    <string>1.5.4</string>
     <key>CFBundleVersion</key>
     <string>42</string>
   </dict>
 </plist>`;
 
 const SAMPLE_PBXPROJ = `// !$*UTF8*$!
-MARKETING_VERSION = 1.5.2;
+MARKETING_VERSION = 1.5.4;
 CURRENT_PROJECT_VERSION = 42;
-MARKETING_VERSION = 1.5.2;
+MARKETING_VERSION = 1.5.4;
 CURRENT_PROJECT_VERSION = 84;
 `;
 
@@ -39,7 +39,7 @@ const SAMPLE_EXPO_PLIST = `<?xml version="1.0" encoding="UTF-8"?>
 <plist version="1.0">
   <dict>
     <key>EXUpdatesRuntimeVersion</key>
-    <string>1.5.2</string>
+    <string>1.5.4</string>
     <key>EXUpdatesURL</key>
     <string>https://u.expo.dev/test</string>
   </dict>
@@ -51,7 +51,7 @@ android {
     defaultConfig {
         applicationId "com.tirak.app"
         versionCode 4201
-        versionName "1.5.2"
+        versionName "1.5.4"
         minSdkVersion rootProject.ext.minSdkVersion
     }
 }`;
@@ -147,7 +147,7 @@ describe('core-qa prebuild hook — native file stamping', () => {
   });
 
   test('versionToCode still matches semver helper contract', () => {
-    expect(versionToCode('1.5.2')).toBe(10502);
+    expect(versionToCode('1.5.4')).toBe(10504);
     expect(versionToCode('1.5.3')).toBe(10503);
   });
 });
@@ -274,19 +274,19 @@ describe('core-qa prebuild hook — env validation', () => {
     expect(infoAfter).toContain('<string>1.5.3</string>');
     expect(infoAfter).toContain('<key>CFBundleVersion</key>');
     expect(infoAfter).toContain('<string>1</string>');
-    expect(infoAfter.replace('<string>1.5.3</string>', '<string>1.5.2</string>')).toBe(infoBefore);
+    expect(infoAfter.replace('<string>1.5.3</string>', '<string>1.5.4</string>')).toBe(infoBefore);
 
     expect(expoAfter).toContain('<string>1.5.3-core-qa</string>');
     expect(expoAfter).toContain('<string>https://u.expo.dev/ba0d6f3e-ed4c-4aaf-8cff-aa2fdb253cc5</string>');
-    expect(expoAfter.replace('<string>1.5.3-core-qa</string>', '<string>1.5.2</string>')).toBe(expoBefore);
+    expect(expoAfter.replace('<string>1.5.3-core-qa</string>', '<string>1.5.4</string>')).toBe(expoBefore);
 
     expect(projectAfter).toContain('MARKETING_VERSION = 1.5.3;');
     expect(projectAfter).toContain('CURRENT_PROJECT_VERSION = 1;');
-    expect(projectAfter.replace(/MARKETING_VERSION = 1\.5\.3;/g, 'MARKETING_VERSION = 1.5.2;')).toBe(projectBefore);
+    expect(projectAfter.replace(/MARKETING_VERSION = 1\.5\.3;/g, 'MARKETING_VERSION = 1.5.4;')).toBe(projectBefore);
 
     expect(gradleAfter).toContain('versionName "1.5.3"');
     expect(gradleAfter).toContain('versionCode 1');
-    expect(gradleAfter.replace('versionName "1.5.3"', 'versionName "1.5.2"')).toBe(gradleBefore);
+    expect(gradleAfter.replace('versionName "1.5.3"', 'versionName "1.5.4"')).toBe(gradleBefore);
 
     expect(stringsAfter).toContain('<string name="expo_runtime_version">1.5.3-core-qa</string>');
     expect(manifestAfter).toBe(manifestBefore);

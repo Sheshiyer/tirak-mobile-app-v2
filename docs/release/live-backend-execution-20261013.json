@@ -1,0 +1,22 @@
+{
+  "verifiedAt": "2026-10-13T14:15:01.919Z",
+  "backupSha256": "7b52ebf4683614e3e55e066b51c068fc4c4758e2050d579278645fb215008476",
+  "backupIntegrity": "ok",
+  "backupForeignKeyViolations": 0,
+  "users": 34,
+  "bookings": 5,
+  "allOriginalBookingFieldsUnchanged": true,
+  "migrations": 24,
+  "suspendedReviewAccounts": 2,
+  "coreDeployed": false,
+  "productionChatVerified": false,
+  "sqlSha256": {
+    "PROPOSED-backend-core-reconciliation-20261013.sql": "06f9700ecc9465aae5b9aaa812d049553b0d6a0a7e51ba60f86debff2ae72f2c",
+    "PROPOSED-backend-core-ledger-20261013.sql": "528b7f094a9937f04f51eebc383a335ebf3a88724d6d264daaf657735787a1e3",
+    "PROPOSED-review-account-suspension-20261013.sql": "92fe55eff1c09241ce2fe42f789645d8a212b8a3b8854fee7b131e93c504dfc2"
+  },
+  "historyVerification": "Compared every pre-existing booking column, sorted by booking ID, using pre-change and post-change private full database exports",
+  "chatAccountLookup": "Authorized contact email has no live user record",
+  "deploymentBlocker": "Owner confirmed Worker-scope Cloudflare authorization link expired; Core deployment not performed",
+  "productionChatDisposition": "Owner explicitly deferred chat verification for handoff"
+}

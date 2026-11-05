@@ -340,19 +340,9 @@ const isDemoPreviewBookingRequest = (bookingData: CreateBookingRequest): boolean
   );
 };
 
-const canUseLocalDemoBookingFallback = (bookingData: CreateBookingRequest): boolean => (
-  isDemoPreviewBookingRequest(bookingData)
-  && (__DEV__ || isReviewModeEnabled())
-);
+const canUseLocalDemoBookingFallback = (_bookingData: CreateBookingRequest): boolean => false;
 
-const isLocalPromptPayReviewBooking = (bookingData: CreateBookingRequest): boolean => (
-  isDemoPreviewBookingRequest(bookingData)
-  && isLocalPromptPayEnabled({
-    flag: process.env.EXPO_PUBLIC_PROMPTPAY_ENABLED,
-    apiBaseUrl: API_BASE_URL,
-    isDev: __DEV__,
-  })
-);
+const isLocalPromptPayReviewBooking = (_bookingData: CreateBookingRequest): boolean => false;
 
 const createAndStoreDemoBookingResponse = async (bookingData: CreateBookingRequest): Promise<CreateBookingResponse> => {
   const response = createDemoBookingResponse(bookingData);

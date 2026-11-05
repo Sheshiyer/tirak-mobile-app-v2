@@ -671,7 +671,8 @@
     "qrUnavailable": "QR details are not available. Keep this payment locked and check the booking later.",
     "expires": "Expires",
     "chargeReference": "Reference",
-    "pendingQrA11y": "PromptPay QR for the pending booking payment"
+    "pendingQrA11y": "PromptPay QR for the pending booking payment",
+    "existingChargeWarning": "An earlier electronic payment may still be pending. Do not pay again in cash. Confirm the existing payment status with support before making another payment."
   },
   "bookingConfirmation": {
     "noCompanionData": "No guide data available",

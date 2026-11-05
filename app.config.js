@@ -30,6 +30,15 @@ function validateCoreQaBuildGate() {
 // app.config.js — extends app.json with runtime env vars for PostHog and QA environments
 // Environment variables are read at build time via process.env.
 module.exports = ({ config }) => {
+  const releaseBuild = ['production', 'release-apk'].includes(process.env.EAS_BUILD_PROFILE) || process.env.EXPO_PUBLIC_ENV_NAME === 'production';
+  if (releaseBuild) {
+    const api = new URL(process.env.EXPO_PUBLIC_API_URL || '');
+    if (api.protocol !== 'https:' || api.hostname !== 'tirak-backend.tirak-court.workers.dev' || !['', '/', '/api'].includes(api.pathname) || api.search || api.hash || api.username || api.password) throw new Error('Release requires the verified Tirak HTTPS backend, with no QA endpoint or credentials.');
+    for (const key of ['EXPO_PUBLIC_DEMO_MODE', 'EXPO_PUBLIC_ENABLE_DEMO_MODE', 'EXPO_PUBLIC_REVIEW_MODE', 'EXPO_PUBLIC_PROMPTPAY_ENABLED']) {
+      const value = String(process.env[key] || '').trim().toLowerCase();
+      if (value === 'true' || value === '1') throw new Error('Cash-only release forbids demo, review and online-payment flags.');
+    }
+  }
   const projectId = config.extra?.eas?.projectId;
 
   if (!projectId) {
@@ -68,7 +77,7 @@ module.exports = ({ config }) => {
       posthogProjectToken: process.env.POSTHOG_PROJECT_TOKEN,
       posthogHost: process.env.POSTHOG_HOST,
       // Exact build gate: review-only UI is omitted unless explicitly enabled.
-      reviewMode: process.env.EXPO_PUBLIC_REVIEW_MODE === 'true',
+      reviewMode: false,
       apiUrl: process.env.EXPO_PUBLIC_API_URL,
       envName: process.env.EXPO_PUBLIC_ENV_NAME,
     },
