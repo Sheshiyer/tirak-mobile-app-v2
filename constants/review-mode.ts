@@ -51,9 +51,9 @@ export const REVIEW_ACCOUNT_LIST: readonly ReviewAccount[] = [
 
 /** Exact, build-time opt-in. Mixed case and truthy-looking values stay disabled. */
 export function isReviewModeEnabled(
-  flag: string | undefined = process.env.EXPO_PUBLIC_REVIEW_MODE,
+  _flag?: string,
 ): boolean {
-  return flag === 'true';
+  return false;
 }
 
 export function getReviewAccount(key: ReviewAccountKey): ReviewAccount {

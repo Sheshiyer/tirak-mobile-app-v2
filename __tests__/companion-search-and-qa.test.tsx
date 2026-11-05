@@ -1,5 +1,5 @@
-import React from 'react';
-import { render } from '@testing-library/react-native';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import axios from 'axios';
 import {
   isTestCompanion,
@@ -8,7 +8,6 @@ import {
   TEST_COMPANION_ID,
 } from '@/utils/companion-display';
 import { isCoreQaEnvironment } from '@/utils/qa-env';
-import { QaEnvironmentBadge } from '@/components/ui/QaEnvironmentBadge';
 import { CORE_QA_API_URL } from '@/utils/qa-env';
 
 jest.mock('expo/virtual/env', () => ({ get env() { return process.env; } }));
@@ -159,18 +158,12 @@ describe('QA environment detection and badge', () => {
     expect(isCoreQaEnvironment()).toBe(false);
   });
 
-  test('QaEnvironmentBadge renders badge only in QA environment', () => {
-    process.env['EXPO_PUBLIC_ENV_NAME'] = 'core-qa';
-    const { queryByTestId } = render(<QaEnvironmentBadge />);
-    expect(queryByTestId('qa-environment-badge')).toBeTruthy();
+  test("root layout never mounts a QA environment badge", () => {
+    const layout = readFileSync(join(__dirname, "../app/_layout.tsx"), "utf8");
+    expect(layout).not.toContain("QaEnvironmentBadge");
+    expect(layout).not.toContain("CORE QA");
   });
 
-  test('QaEnvironmentBadge renders null in non-QA environment', () => {
-    delete process.env['EXPO_PUBLIC_ENV_NAME'];
-    process.env['EXPO_PUBLIC_API_URL'] = 'https://api.tirak.com/api';
-    const { queryByTestId } = render(<QaEnvironmentBadge />);
-    expect(queryByTestId('qa-environment-badge')).toBeNull();
-  });
 });
 
 describe("Error handling and query cancellation", () => {

@@ -5,16 +5,18 @@
 See: `.planning/PROJECT.md` (updated 2026-09-12)
 
 **Core value:** Travelers can see a truthful PromptPay checkout state without giving the mobile app payment authority.
-**Current focus:** Phase 2 — payment status and recovery
+**Current focus:** Tirak 1.5.4 cash-only release; owner-approved schema repair and account suspension completed; Core deployment awaits isolated Worker-scope login. Payment Phase 2 is deferred by the current cash-only decision.
 
 ## Current Position
 
-Phase: 2 of 3 (payment status and recovery)
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-09-12 - Phase 1 completed with 8/8 UAT checks and 11/11 threats closed.
-
-Progress: [███████░░░░░░░░░░░░░] 1/3 phases (33%)
+Scope: Cash-only store release readiness, 2026-10-13.
+Source candidate: codex/store-release-20261013 from d2469a6.
+Status: Source cleanup and signed artifacts verified. Backup restored, schema reconciled, two review accounts suspended, all booking history verified unchanged. Core deploy awaits Cloudflare Worker access; real chat/device acceptance pending.
+Acceptance: ISA.md active release criteria, plus docs/release/STORE-HANDOFF-20261013.md.
+Native artifacts: IPA 1.5.4 (21), APK 1.5.4 (13), AAB 1.5.4 (14), all finished and inspected.
+Verification: mobile 438 tests / 41 suites and TypeScript; isolated Core backend 722 tests / 57 files and TypeScript + production dry-run.
+Live findings: schema drift after 019; 34 users, 5 bookings and 2 review accounts. Exact 28-statement schema reconciliation + 7 guarded ledger entries + two-account suspension/rollback prepared. No live writes/deploy/submission.
+Next: owner reviews docs/release/PRODUCTION-BACKEND-REVIEW-20261013.md and approves backup/reconciliation/Core promotion/suspension preserving history. Then verify real-account chat, native devices and Interceptor screenshots before store submission.
 
 ## Performance Metrics
 
@@ -66,3 +68,7 @@ Progress: [███████░░░░░░░░░░░░░] 1/3 pha
 Last session: 2026-09-12
 Stopped at: Phase 1 complete; Phase 2 ready for discussion and planning.
 Resume file: None
+
+## Release continuity — 2026-10-13
+
+Use the dedicated store release worktree and ISA, not the older mobile checkout or Phase 2 payment plan. The original mobile checkout was restored clean after adapting preliminary edits onto the latest Core source. No automatic swarm dispatch, merge or publication is authorized by this checkpoint.

@@ -1,6 +1,8 @@
 module.exports = {
   preset: 'react-native',
   testEnvironment: 'node',
+  modulePathIgnorePatterns: ['<rootDir>/.claude/', '<rootDir>/.worktrees/'],
+  testPathIgnorePatterns: ['/node_modules/', '<rootDir>/.claude/', '<rootDir>/.worktrees/'],
   globals: {
     __DEV__: true,
   },

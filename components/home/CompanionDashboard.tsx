@@ -521,11 +521,6 @@ const CompanionDashboardContent: React.FC<CompanionDashboardProps> = ({ userName
         <View style={styles.recentBookingsHeader as ViewStyle}>
           <View style={styles.titleContainer as ViewStyle}>
             <Text style={styles.recentBookingsTitle as TextStyle}>{t('userHome.companion.recentBookings')}</Text>
-            {!isAuthenticated && (
-              <Badge variant="info" size="sm" style={styles.demoBadge}>
-                Demo
-              </Badge>
-            )}
           </View>
           <SafeTouchableOpacity onPress={() => router.push('/bookings')}>
             <Text style={styles.viewAllText as TextStyle}>{t('userHome.companion.viewAll')}</Text>
@@ -809,8 +804,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: designTokens.spacing.scale.xs,
-  },
-  demoBadge: {
-    marginLeft: designTokens.spacing.scale.xs,
   },
 });
