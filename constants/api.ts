@@ -1,10 +1,11 @@
-import { Platform } from 'react-native';
-
 const ENV_API_URL = process.env.EXPO_PUBLIC_API_URL as string | undefined;
 
 function getBaseUrl(): string {
   if (ENV_API_URL) {
-    return ENV_API_URL.endsWith('/api') ? ENV_API_URL.slice(0, -4) : ENV_API_URL;
+    const url = new URL(ENV_API_URL);
+    if (!__DEV__ && (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash)) throw new Error('Production API must use HTTPS without credentials or query parameters.');
+    const normalized = ENV_API_URL.replace(/\/+$/, '');
+    return normalized.endsWith('/api') ? normalized.slice(0, -4) : normalized;
   }
 
   if (__DEV__) {
@@ -25,7 +26,7 @@ export function apiUrl(path: string): string {
 }
 
 export function wsUrl(path: string): string {
-  const base = API_BASE_URL.replace(/^https?/, Platform.OS === 'web' ? 'ws' : 'wss');
+  const base = API_BASE_URL.replace(/^https:/, 'wss:').replace(/^http:/, 'ws:');
   const separator = path.startsWith('/') ? '' : '/';
   return `${base}${separator}${path}`;
 }

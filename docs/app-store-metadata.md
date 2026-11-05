@@ -35,7 +35,7 @@ WHAT YOU CAN DO WITH TIRAK
 • Browse profiles of trusted local guides, each with experience details and guest reviews
 • Book guided food tours, street market walks, temple circuits, cooking classes, and cultural activities
 • Message your guide directly to customise your experience before you arrive
-• Pay securely for experiences — no cash uncertainty on arrival
+• Arrange a cash booking and pay your guide directly at the agreed time
 • Receive travel tips and local knowledge from people who actually live there
 
 WHY TIRAK IS DIFFERENT
@@ -58,7 +58,7 @@ HOW IT WORKS
 
 1. Browse guides by city, activity type, or language
 2. View profiles, experience listings, availability, and verified reviews
-3. Book directly and pay securely in-app
+3. Request a booking and arrange direct cash payment with your guide
 4. Meet your guide at the agreed location and explore
 
 AVAILABLE ACROSS THAILAND
@@ -91,7 +91,7 @@ Thailand travel,local guide,cultural tour,Bangkok guide,food tour,temple walk,Ch
 
 ## Age Rating
 
-All age-rating questions should be answered:
+Historical questionnaire draft below requires current owner review. Complete the current App Store Connect questionnaire, including user-generated chat/content, messaging and age-assurance questions; do not assume a 4+ result.
 
 | Question | Answer |
 |----------|--------|
@@ -107,7 +107,7 @@ All age-rating questions should be answered:
 | Sexual Content or Nudity | **None** |
 | Graphic Sexual Content and Nudity | **None** |
 
-**Result:** 4+ (suitable for all ages)
+**Result:** Pending current questionnaire and moderation-policy review.
 
 ---
 
@@ -116,7 +116,7 @@ All age-rating questions should be answered:
 > Paste this verbatim into the "Notes" field when submitting for review.
 
 ```
-Tirak is a cultural travel experience marketplace that connects tourists with certified local guides in Thailand. It is similar in concept to Airbnb Experiences or Klook — users can browse guide profiles, book guided activities such as temple visits, food tours, cooking classes, and market walks, and communicate with their guide before and during the trip.
+Tirak is a cultural travel experience marketplace that connects tourists with local guides in Thailand. It is similar in concept to Airbnb Experiences or Klook — users can browse guide profiles, book guided activities such as temple visits, food tours, cooking classes, and market walks, and communicate with their guide before and during the trip.
 
 The platform does NOT facilitate any adult services, escort services, companionship services, dating, or social networking.
 
@@ -124,9 +124,9 @@ The word "companion" appeared in our original app branding and some legacy techn
 
 Guides on the platform are licensed local tourism professionals or knowledgeable residents who offer cultural experiences. All service listings are activity-based (temple walks, food tours, photography walks, cooking classes, market visits, etc.).
 
-This review build includes an App Review Access section on the sign-in screen. Choose the pre-populated Traveler or Guide review account; no password is required. The same role selector is available from Profile.
+This release uses real backend accounts and cash-only bookings. Provide Apple with privately supplied, permissioned reviewer credentials through App Store Connect App Review Information. There is no passwordless review role switch, fabricated booking, demo payment, or online checkout.
 
-To inspect checkout without a real payment, use the Traveler review account, open Explore, choose the displayed Guide review profile, and select Cash. PromptPay is disabled in App Review Mode, so no provider charge or QR payment is created. Then open Bookings, switch to Guide in Profile, approve that same deterministic request, and switch back to Traveler to see its confirmed state. This review-only adapter is local to the signed review build and is not presented as a live backend transaction.
+Traveler: sign in, browse a real published guide, request a cash booking, and wait for the guide to confirm. Guide: sign in using the separate permissioned guide account, confirm the booking, and exchange messages. Booking confirmation does not mean payment has been received. If production has no published guides, do not submit until real guide inventory and reviewer access are available.
 ```
 
 ---
@@ -144,7 +144,7 @@ https://tirak.app/privacy
 ## Support URL
 
 ```
-mailto:support@tirak.app
+https://www.tirak.app/support
 ```
 
 Help Center email: `help@tirak.app`
