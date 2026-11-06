@@ -26,7 +26,7 @@ interface AuthState {
 
 interface AuthActions {
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string, userType: UserRole, contactNumber?: string, dateOfBirth?: Date, gender?: string, consent?: RegistrationConsent) => Promise<void>;
+  register: (name: string, email: string, password: string, userType: UserRole, contactNumber?: string, dateOfBirth?: string, gender?: string, consent?: RegistrationConsent) => Promise<void>;
   demoLogin: (userType: UserRole) => Promise<void>;
   switchReviewAccount: (account: ReviewAccountKey) => Promise<void>;
   logout: () => Promise<void>;
@@ -39,15 +39,6 @@ interface AuthActions {
   saveConsents: (preferences: Pick<AccountConsents, 'marketingOptIn' | 'analyticsOptIn'>) => Promise<void>;
   setEmailVerification: (delivery: EmailVerificationDelivery) => void;
 }
-
-// Helper to format a Date into local YYYY-MM-DD without timezone shifting
-const formatDateLocal = (date?: Date): string | undefined => {
-  if (!date) return undefined;
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
 
 async function clearAccountScopedState(): Promise<void> {
   await usePaymentStore.getState().clearPaymentSession();
@@ -186,7 +177,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         }
       },
 
-      register: async (name: string, email: string, password: string, userType: UserRole, contactNumber?: string, dateOfBirth?: Date, gender?: string, consent?: RegistrationConsent) => {
+      register: async (name: string, email: string, password: string, userType: UserRole, contactNumber?: string, dateOfBirth?: string, gender?: string, consent?: RegistrationConsent) => {
         await applyAnalyticsConsent();
         set({ isLoading: true, error: null, consents: null, emailVerification: null });
         try {
@@ -200,8 +191,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             password,
             userType: userType as "customer" | "companion" | "supplier", // Ensure proper typing
             phone: contactNumber,
-            // Format as local YYYY-MM-DD to avoid timezone-induced off-by-one
-            dateOfBirth: formatDateLocal(dateOfBirth),
+            dateOfBirth,
             gender: gender as "male" | "female" | "other" | "prefer_not_to_say" | undefined,
             ...consent,
           };
@@ -227,8 +217,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
               userType: (response.user?.userType as UserRole) || userType,
               verified: response.user?.verified || false,
               phone: response.user?.phone || contactNumber,
-              // Persist date of birth consistently without UTC conversion
-              dateOfBirth: formatDateLocal(dateOfBirth),
+              dateOfBirth,
               createdAt: new Date().toISOString(),
             };
 
