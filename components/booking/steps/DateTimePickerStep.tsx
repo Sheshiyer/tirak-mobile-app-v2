@@ -17,6 +17,7 @@ import { designTokens } from '@/constants/design-tokens';
 import { useCompanionWeeklyAvailability } from '@/services/api/companion/companion';
 import { useTranslation } from 'react-i18next';
 import { buildBookableTimeSlots } from '@/utils/booking-schedule';
+import { formatBookingDate } from '@/components/booking/booking-format';
 
 interface TimeSlot {
   start: string;
@@ -143,24 +144,7 @@ export const DateTimePickerStep: React.FC<DateTimePickerStepProps> = ({
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
-  const formatDateLong = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
+  const formatDateLong = (dateString: string) => formatBookingDate(dateString, 'en');
 
   return (
     <View style={styles.container}>
@@ -184,39 +168,27 @@ export const DateTimePickerStep: React.FC<DateTimePickerStepProps> = ({
               <Text style={styles.loadingText}>{t('dateTimePicker.loadingAvailability')}</Text>
             </View>
           ) : availableDates.length > 0 ? (
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            style={styles.dateScrollView}
-            contentContainerStyle={styles.dateScrollContent}
-          >
-              {availableDates.map((date, index) => {
-                const dateObj = new Date(date.date);
-                return (
-              <TouchableOpacity
-                    key={date.date}
-                style={[
-                  styles.dateOption,
-                      selectedDate === date.date && styles.selectedDateOption,
-                ]}
-                    onPress={() => handleDateSelect(date.date)}
-              >
-                <Text style={[
-                  styles.dateLabel,
-                      selectedDate === date.date && styles.selectedDateLabel,
-                ]}>
-                      {dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short' })}
-                </Text>
-                <Text style={[
-                  styles.dateNumber,
-                      selectedDate === date.date && styles.selectedDateNumber,
-                ]}>
-                      {dateObj.getDate()}
-                </Text>
-              </TouchableOpacity>
-                );
-              })}
-          </ScrollView>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.dateScrollView}
+              contentContainerStyle={styles.dateScrollContent}
+            >
+              {availableDates.map(date => (
+                <TouchableOpacity
+                  key={date.date}
+                  style={[styles.dateOption, selectedDate === date.date && styles.selectedDateOption]}
+                  onPress={() => handleDateSelect(date.date)}
+                >
+                  <Text style={[styles.dateLabel, selectedDate === date.date && styles.selectedDateLabel]}>
+                    {formatBookingDate(date.date, 'en', { weekday: 'short', month: 'short' })}
+                  </Text>
+                  <Text style={[styles.dateNumber, selectedDate === date.date && styles.selectedDateNumber]}>
+                    {formatBookingDate(date.date, 'en', { day: 'numeric' })}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           ) : (
             <View style={styles.noTimesContainer}>
               <Text style={styles.noTimesText}>{t('dateTimePicker.noDatesAvailable')}</Text>

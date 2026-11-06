@@ -21,7 +21,12 @@ jest.mock('../components/ui/Card',()=>({Card:require('react-native').View}));
 jest.mock('../components/ui/GuideStartingPrice',()=>({GuideStartingPrice:require('react-native').View}));
 jest.mock('../components/ui/CategoryChip',()=>({CategoryChip:require('react-native').View}));
 jest.mock('../components/ui/RadialGradient',()=>({RadialGradient:require('react-native').View}));
-jest.mock('../components/ui/Button',()=>({Button:require('react-native').View}));
+jest.mock('../components/ui/Button', () => ({
+  Button: ({ title, onPress }: { title: string; onPress: () => void }) => {
+    const { TouchableOpacity, Text } = require('react-native');
+    return <TouchableOpacity accessibilityRole="button" onPress={onPress}><Text>{title}</Text></TouchableOpacity>;
+  },
+}));
 jest.mock('../components/ui/ImageCarousel',()=>({ImageCarousel:require('react-native').View}));
 jest.mock('../components/ui/ProfileImage',()=>({ProfileImage:require('react-native').View}));
 jest.mock('../components/ui/LoadingState',()=>({LoadingState:require('react-native').View}));
@@ -39,14 +44,15 @@ it('named favorite button saves and removes the actual guide through the owner-s
  expect(ui.getByRole('button',{name:'Save guide to favorites',selected:false})).toBeTruthy();
  ui.unmount();
 });
-it('named Back, Share and Report buttons keep their existing actions',async()=>{
+it('keeps Back and Share and offers availability without simulated reporting or pre-booking chat',async()=>{
  const share=jest.spyOn(Share,'share').mockResolvedValue({action:Share.dismissedAction});
  const ui=render(<Screen/>);
  fireEvent.press(ui.getByRole('button',{name:'Back'}));expect(router.back).toHaveBeenCalledTimes(1);
  await act(async()=>{fireEvent.press(ui.getByRole('button',{name:'Share guide'}));});
  expect(share).toHaveBeenCalledWith(expect.objectContaining({title:'Canal Guide — Tirak Local Guide'}));
- fireEvent.press(ui.getByRole('button',{name:'Report guide'}));
- expect(ui.getByText('Inappropriate content or photos')).toBeTruthy();
+ expect(ui.getByRole('button', { name: 'companionDetails.viewAvailability' })).toBeTruthy();
+ expect(ui.queryByRole('button', { name: 'Report guide' })).toBeNull();
+ expect(ui.queryByRole('button', { name: 'companionDetails.chatNow' })).toBeNull();
  expect(useFavoritesStore.getState().favorites).toEqual([]);
  ui.unmount();share.mockRestore();
 });

@@ -13,7 +13,7 @@ import { router } from 'expo-router';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { designTokens, componentTokens } from '@/constants/design-tokens';
-import { MapPin, Heart, MessageCircle, Star, Verified, Send, Camera } from 'lucide-react-native';
+import { MapPin, Heart, Star, Verified, Camera } from 'lucide-react-native';
 import { Companion } from '@/types/companion';
 import { useTranslation } from 'react-i18next';
 import { useFavoritesStore } from '@/stores/favorites-store';
@@ -33,7 +33,6 @@ interface CompanionCardProps {
   companion: Companion;
   onPress: () => void;
   onFavorite: () => void;
-  onMessage: () => void;
   index: number;
   cardWidth: number;
 }
@@ -43,7 +42,6 @@ const EnhancedCompanionCard: React.FC<CompanionCardProps> = ({
   companion,
   onPress,
   onFavorite,
-  onMessage,
   index,
   cardWidth,
 }) => {
@@ -53,7 +51,7 @@ const EnhancedCompanionCard: React.FC<CompanionCardProps> = ({
   const isFavorite = useFavoritesStore((state) => state.isFavorite(companion.id));
   const displayPrice = companion.price && companion.price > 0
     ? `฿${companion.price.toLocaleString()}`
-    : 'Request guide rate';
+    : t('companionDetails.contactForPricing');
   const showReviews = companion.reviews > 0;
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
@@ -146,13 +144,6 @@ const EnhancedCompanionCard: React.FC<CompanionCardProps> = ({
                 fill={isFavorite ? designTokens.colors.semantic.accent : 'transparent'}
               />
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={onMessage}
-              activeOpacity={0.8}
-            >
-              <MessageCircle size={18} color={designTokens.colors.semantic.surface} />
-            </TouchableOpacity>
           </View>
         </View>
         {/* Content Container */}
@@ -200,14 +191,7 @@ const EnhancedCompanionCard: React.FC<CompanionCardProps> = ({
               <GuideStartingPrice style={styles.priceText} amount={displayPrice} />
             </View>
           ) : (
-            <TouchableOpacity
-              style={styles.rateRequestButton}
-              onPress={onMessage}
-              activeOpacity={0.85}
-            >
-              <Send size={14} color={designTokens.colors.semantic.primary} />
-              <Text style={styles.rateRequestText}>{displayPrice}</Text>
-            </TouchableOpacity>
+            <Text style={styles.unavailableRateText}>{displayPrice}</Text>
           )}
         </View>
       </TouchableOpacity>
@@ -257,17 +241,11 @@ export const FeaturedCompanionsSection: React.FC<FeaturedCompanionsSectionProps>
     });
   };
 
-  const handleMessage = (companionId: string) => {
-    // TODO: Navigate to chat
-    router.push(`/chat/${companionId}`);
-  };
-
   const renderCompanionCard = ({ item, index }: { item: Companion; index: number }) => (
     <EnhancedCompanionCard
       companion={item}
       onPress={() => handleCompanionPress(item.id)}
       onFavorite={() => handleFavorite(item)}
-      onMessage={() => handleMessage(item.id)}
       index={index}
       cardWidth={cardWidth}
     />
@@ -588,24 +566,10 @@ const styles = StyleSheet.create({
     fontWeight: designTokens.typography.weights.medium,
     color: designTokens.colors.semantic.textSecondary,
   },
-  rateRequestButton: {
-    minHeight: 44,
-    alignSelf: 'stretch',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: designTokens.spacing.scale.xs,
-    marginTop: designTokens.spacing.scale.xs,
-    paddingHorizontal: designTokens.spacing.scale.md,
-    borderRadius: designTokens.borderRadius.components.button,
-    backgroundColor: designTokens.colors.semantic.primary + '12',
-    borderWidth: 1,
-    borderColor: designTokens.colors.semantic.primary + '24',
-  },
-  rateRequestText: {
+  unavailableRateText: {
     fontSize: designTokens.typography.sizes.caption,
     fontWeight: designTokens.typography.weights.semibold,
-    color: designTokens.colors.semantic.primary,
+    color: designTokens.colors.semantic.textSecondary,
   },
   priceUnit: {
     ...designTokens.typography.styles.caption,

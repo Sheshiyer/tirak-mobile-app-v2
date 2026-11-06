@@ -11,7 +11,7 @@ import { ProfileImage } from '@/components/ui/ProfileImage';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/stores/auth-store';
 import { useCurrencyConversion } from '@/utils/currency';
-import { TEST_COMPANION_ID, isTestCompanion } from '@/utils/companion-display';
+import { createOrGetRoom } from '@/utils/chat-api';
 import { ArrowLeft, CalendarPlus, CheckCircle, Clock, MessageCircle, XCircle } from 'lucide-react-native';
 import { toPaymentDisplay } from '@/utils/payment-display';
 import { bookingDateTimeToInstant, calendarUtcDate, CORE_BOOKING_TIME_ZONE } from '@/utils/booking-timezone';
@@ -25,6 +25,7 @@ const BookingDetailsScreen = () => {
   const updateStatusMutation = useUpdateBookingStatus();
   const [cancelling, setCancelling] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [openingChat, setOpeningChat] = useState(false);
   const [confirmation, setConfirmation] = useState<'cancel' | 'reject' | null>(null);
   const [feedback, setFeedback] = useState('');
   const actionBusy = useRef(false);
@@ -95,7 +96,7 @@ const BookingDetailsScreen = () => {
   const displayFallback = isCompanion ? companion : customer;
   const displayName = displayPerson?.name || displayFallback?.name || (isCompanion ? 'Traveler' : 'Local Guide');
   const displayImage = displayPerson?.profileImage || displayFallback?.profileImage || '';
-  const timeZone = (booking as any).timeZone || (booking as any).timezone || CORE_BOOKING_TIME_ZONE;
+  const timeZone = booking.timeZone || booking.timezone || CORE_BOOKING_TIME_ZONE;
   let startAt: Date | null = null;
   let endAt: Date | null = null;
   try {
@@ -103,13 +104,14 @@ const BookingDetailsScreen = () => {
     endAt = bookingDateTimeToInstant(booking.date, booking.endTime, timeZone);
   } catch { /* Keep booking history readable when schedule metadata is invalid. */ }
   const countdownMs = startAt ? Math.max(0, startAt.getTime() - now.getTime()) : 0;
-  const isActiveBooking = ['pending', 'confirmed', 'in_progress'].includes(booking.status);
+  const isActiveBooking = booking.status === 'confirmed' || booking.status === 'in_progress';
+  const canAddToCalendar = Boolean(startAt && endAt && endAt > startAt);
   const countdownDays = Math.floor(countdownMs / (1000 * 60 * 60 * 24));
   const countdownHours = Math.floor((countdownMs / (1000 * 60 * 60)) % 24);
   const countdownMinutes = Math.floor((countdownMs / (1000 * 60)) % 60);
   const countdownText = !startAt ? 'Schedule unavailable' : countdownMs > 0
     ? `${countdownDays}d ${countdownHours}h ${countdownMinutes}m`
-    : 'Starting now';
+    : 'Start time reached';
   const isPendingCompanionRequest = isCompanion && booking.status === 'pending';
 
   const formatBookingStatus = () => {
@@ -135,7 +137,7 @@ const BookingDetailsScreen = () => {
   });
 
   const handleAddToCalendar = async () => {
-    if (!startAt || !endAt) { showFeedback('Calendar unavailable', 'This booking schedule could not be verified.'); return; }
+    if (!isActiveBooking || !startAt || !endAt || !canAddToCalendar) return;
     const title = encodeURIComponent(`Tirak: ${service?.name || experience?.name || 'Local guide booking'}`);
     const details = encodeURIComponent(`Booking with ${displayName}. ${paymentDisplay.collectionNote}`);
     const location = encodeURIComponent([booking.meetingPoint, booking.location].filter(Boolean).join(', '));
@@ -149,13 +151,22 @@ const BookingDetailsScreen = () => {
     }
   };
 
-  const handleMessage = () => {
-    const chatTarget = isCompanion
-      ? booking.customerId
-      : isTestCompanion(booking.companion)
-        ? TEST_COMPANION_ID
-        : booking.companionId;
-    router.push(`/chat/${chatTarget}`);
+  const handleMessage = async () => {
+    if (actionBusy.current || !isAuthenticated || !isActiveBooking) return;
+    actionBusy.current = true;
+    setOpeningChat(true);
+    setFeedback('');
+    try {
+      const roomId = await createOrGetRoom(booking.id);
+      if (!roomId) {
+        showFeedback('Could not open chat', 'Check your connection and try again.');
+        return;
+      }
+      router.push(`/chat/${encodeURIComponent(roomId)}`);
+    } finally {
+      actionBusy.current = false;
+      setOpeningChat(false);
+    }
   };
 
   const handleApproveBooking = async () => {
@@ -267,11 +278,11 @@ const BookingDetailsScreen = () => {
 
           {/* Date, Time, Location, Meeting Point */}
           <View style={styles.section}>
-            <Subheading>Date</Subheading>
+            <Subheading>{booking.status === 'pending' ? 'Requested date' : 'Date'}</Subheading>
             <Body>{booking.date.split('T')[0]}</Body>
           </View>
           <View style={styles.section}>
-            <Subheading>Time</Subheading>
+            <Subheading>{`Time (${timeZone === CORE_BOOKING_TIME_ZONE ? 'Thailand' : timeZone})`}</Subheading>
             <Body>{booking.startTime} - {booking.endTime} ({booking.duration} mins)</Body>
           </View>
 
@@ -288,11 +299,18 @@ const BookingDetailsScreen = () => {
                 {booking.date.split('T')[0]} at {booking.startTime} ({timeZone})
               </Caption>
               <View style={styles.detailActions}>
-                <TouchableOpacity style={styles.messageButton} onPress={handleMessage}>
+                <TouchableOpacity
+                  style={styles.messageButton}
+                  onPress={handleMessage}
+                  disabled={openingChat}
+                  accessibilityRole="button"
+                  accessibilityLabel="Message"
+                  accessibilityState={{ busy: openingChat, disabled: openingChat }}
+                >
                   <MessageCircle size={18} color={designTokens.colors.semantic.surface} />
-                  <Text style={styles.messageButtonText}>Message</Text>
+                  <Text style={styles.messageButtonText}>{openingChat ? 'Opening chat…' : 'Message'}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity accessibilityRole="button" accessibilityLabel="Add booking to calendar" accessibilityState={{ disabled: !startAt || !endAt }} disabled={!startAt || !endAt} style={styles.calendarButton} onPress={handleAddToCalendar}>
+                <TouchableOpacity accessibilityRole="button" accessibilityLabel="Add booking to calendar" accessibilityState={{ disabled: !canAddToCalendar }} disabled={!canAddToCalendar} style={styles.calendarButton} onPress={handleAddToCalendar}>
                   <CalendarPlus size={18} color={designTokens.colors.semantic.primary} />
                   <Text style={styles.calendarButtonText}>Add to Calendar</Text>
                 </TouchableOpacity>

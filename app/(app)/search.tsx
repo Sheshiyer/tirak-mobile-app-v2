@@ -29,7 +29,6 @@ import {
   Grid3X3,
   List,
   Heart,
-  MessageCircle,
   ChevronDown,
   X,
   Sliders,
@@ -223,10 +222,6 @@ export default function SearchScreen() {
     router.push(`/companion/${companionId}`);
   };
 
-  const handleMessagePress = (companionId: string) => {
-    router.push(`/chat/${companionId}`);
-  };
-
   const openFilterModal = () => {
     setFilterModalVisible(true);
     Animated.timing(filterModalAnimation, {
@@ -299,8 +294,7 @@ export default function SearchScreen() {
     <CompanionCard
       companion={item}
       viewMode={viewMode}
-            onPress={() => handleCompanionPress(item.id)}
-      onMessage={() => handleMessagePress(item.id)}
+      onPress={() => handleCompanionPress(item.id)}
     />
   );
 

@@ -148,11 +148,12 @@ export async function getRooms(): Promise<ChatRoom[]> {
  * Returns the room UUID or null on failure.
  */
 export async function createOrGetRoom(bookingId: string): Promise<string | null> {
-  const data = await apiPost<{ roomId: string; existed: boolean }>(
+  const data = await apiPost<{ roomId: string; bookingId?: string; existed: boolean }>(
     '/api/chat/rooms',
     { bookingId },
   );
-  return data?.roomId ?? null;
+  if (data?.bookingId !== undefined && data.bookingId !== bookingId) return null;
+  return typeof data?.roomId === 'string' && data.roomId ? data.roomId : null;
 }
 
 /** Exchange bearer authentication for a short-lived, single-use socket credential. */

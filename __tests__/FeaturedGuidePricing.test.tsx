@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { render, fireEvent } from '@testing-library/react-native';
 let mockLocale = 'en';
 jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
 jest.mock('expo-image', () => ({ Image: () => null }));
@@ -15,13 +15,14 @@ it.each(['en', 'th'])('home featured guide shows the localized minimum experienc
   expect(screen.getByText(`${locale === 'th' ? 'เริ่มต้น' : 'From'} ฿1`)).toBeTruthy();
   expect(screen.queryByText(/\/day|\/hour|ต่อวัน|ต่อชั่วโมง/)).toBeNull();
 });
-it('keeps an unknown guide price as a request rather than inventing a minimum amount', () => {
+it('labels an unavailable guide rate without offering pre-booking chat', () => {
   const screen = render(<FeaturedCompanionsSection companions={[{ ...guide, price: 0 }]} onSeeAll={jest.fn()} />);
-  expect(screen.getByText('Request guide rate')).toBeTruthy();
+  fireEvent.press(screen.getByText('companionDetails.contactForPricing'));
+  expect(require('expo-router').router.push).toHaveBeenLastCalledWith('/companion/real-guide');
   expect(screen.queryByText(/฿0/)).toBeNull();
 });
 
-import { act, fireEvent } from '@testing-library/react-native';
+import { act } from '@testing-library/react-native';
 import { Dimensions, StyleSheet, FlatList } from 'react-native';
 it('recomputes rendered home card widths and carousel snap geometry after desktop to phone resize', () => {
   const resize = (width: number) => act(() => Dimensions.set({ window: { width, height: 844, scale: 1, fontScale: 1 }, screen: { width, height: 844, scale: 1, fontScale: 1 } }));

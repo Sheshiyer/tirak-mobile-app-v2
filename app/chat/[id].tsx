@@ -425,8 +425,7 @@ export default function ChatScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         style={styles.keyboardContainer}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        behavior={Platform.select({ ios: 'padding', android: 'height' })}
       >
         <ChatPeerHeader name={companionForHeader.name} image={companionForHeader.image} onBack={handleBack} />
 

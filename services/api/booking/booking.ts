@@ -118,6 +118,8 @@ export interface Booking {
   date: string;
   startTime: string;
   endTime: string;
+  timeZone?: string;
+  timezone?: string;
   duration: number;
   location?: string;
   specialRequests?: string;
@@ -141,6 +143,8 @@ export interface BookingListItem {
   date: string;
   startTime: string;
   endTime: string;
+  timeZone?: string;
+  timezone?: string;
   duration: number;
   location?: string;
   status: BookingStatus;
@@ -381,6 +385,7 @@ const toBookingListItem = (booking: Booking): BookingListItem => ({
   date: booking.date,
   startTime: booking.startTime,
   endTime: booking.endTime,
+  ...(booking.timeZone || booking.timezone ? { timeZone: booking.timeZone || booking.timezone } : {}),
   duration: booking.duration,
   location: booking.location,
   status: booking.status,

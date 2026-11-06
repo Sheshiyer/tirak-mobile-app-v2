@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { designTokens } from '@/constants/design-tokens';
-import { MapPin, Star, Heart, MessageCircle, Camera } from 'lucide-react-native';
+import { MapPin, Star, Heart, Camera } from 'lucide-react-native';
 import { useFavoritesStore } from '@/stores/favorites-store';
 import { useTranslation } from 'react-i18next';
 import { GuideStartingPrice } from './GuideStartingPrice';
@@ -28,7 +28,6 @@ interface CompanionCardProps {
   viewMode?: 'grid' | 'list';
   onPress?: () => void;
   onFavorite?: () => void;
-  onMessage?: () => void;
 }
 
 export const CompanionCard: React.FC<CompanionCardProps> = ({
@@ -36,7 +35,6 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
   viewMode = 'grid',
   onPress,
   onFavorite,
-  onMessage,
 }) => {
   const store = useFavoritesStore();
   const isFavorite = store.isFavorite(companion.id);
@@ -173,9 +171,6 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
               fill={isFavorite ? 'red' : 'none'}
               size={20}
             />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton} onPress={onMessage}>
-            <MessageCircle size={20} color={designTokens.colors.semantic.primary} />
           </TouchableOpacity>
         </View>
       </TouchableOpacity>

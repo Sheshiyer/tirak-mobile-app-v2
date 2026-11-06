@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, ViewStyle, TextStyle, ImageStyle, Alert, Modal, TextInput, Platform, Share as NativeShare } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, ViewStyle, TextStyle, ImageStyle, Alert, Platform, Share as NativeShare } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as Linking from 'expo-linking';
 import { Image } from 'expo-image';
-import { useLocalSearchParams, router, Link } from 'expo-router';
+import { useLocalSearchParams, router } from 'expo-router';
 import { formatOriginalCurrencyContext, formatTravelerCurrency, useCurrencyConversion } from '@/utils/currency';
 import { Card } from '@/components/ui/Card';
 import { GuideStartingPrice } from '@/components/ui/GuideStartingPrice';
+import { formatBookingDate } from '@/components/booking/booking-format';
 import { CategoryChip } from '@/components/ui/CategoryChip';
 import { RadialGradient } from '@/components/ui/RadialGradient';
 import { Button } from '@/components/ui/Button';
@@ -45,7 +46,6 @@ import {
   Heart, 
   Share, 
   Star, 
-  MessageCircle, 
   Calendar, 
   MapPin, 
   Globe, 
@@ -53,20 +53,10 @@ import {
   ChevronRight,
   ChevronDown,
   ChevronUp,
-  Flag,
   Info,
 } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
-
-const REPORT_REASONS = [
-  'Inappropriate content or photos',
-  'Misleading profile information',
-  'Suspicious or fraudulent behavior',
-  'Harassment or offensive messages',
-  'Offering prohibited services',
-  'Other',
-];
 
 // Simple shimmer for inline loading states
 const ShimmerBox = ({ width: w, height: h, style }: { width: number | string; height: number; style?: ViewStyle }) => (
@@ -160,9 +150,7 @@ export default function CompanionProfileScreen() {
   const [showAllLanguages, setShowAllLanguages] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [expandedServices, setExpandedServices] = useState<Set<string>>(new Set());
-  const [showReportModal, setShowReportModal] = useState(false);
-  const [selectedReportReason, setSelectedReportReason] = useState('');
-  const [reportDetails, setReportDetails] = useState('');
+  const profileScroll = useRef<ScrollView>(null);
 
   // Toggle service description expansion
   const toggleServiceExpansion = (serviceId: string) => {
@@ -278,33 +266,6 @@ export default function CompanionProfileScreen() {
     }
   };
 
-  const handleReport = () => {
-    setShowReportModal(true);
-  };
-
-  const submitReport = () => {
-    if (!selectedReportReason) {
-      Alert.alert('Select a reason', 'Choose what Tirak should review before submitting.');
-      return;
-    }
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setShowReportModal(false);
-    setSelectedReportReason('');
-    setReportDetails('');
-    Alert.alert(
-      t('companionDetails.reportSubmittedTitle'),
-      t('companionDetails.reportSubmittedBody'),
-      [{ text: t('common.ok') }]
-    );
-  };
-  
-  const handleChat = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const guideName = companion.displayName || companion.name;
-    const starter = encodeURIComponent(`Hi ${guideName}! I'm interested in exploring Thailand with you. What experiences do you offer?`);
-    router.push(`/chat/${companion.id}?starter=${starter}`);
-  };
-  
   const handleBookNow = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (!selectedDate) {
@@ -392,8 +353,8 @@ export default function CompanionProfileScreen() {
     : availabilityData?.success && availabilityData.data.availability && availabilityData.data.availability.length > 0
       ? availabilityData.data.availability.map(day => ({
         date: day.date,
-        day: new Date(day.date).getDate(),
-        weekday: new Date(day.date).toLocaleDateString('en', { weekday: 'short' }),
+        day: formatBookingDate(day.date, 'en', { day: 'numeric' }),
+        weekday: formatBookingDate(day.date, 'en', { weekday: 'short' }),
         available: day.available,
       }))
       : [];
@@ -493,19 +454,11 @@ export default function CompanionProfileScreen() {
               <Share size={24} color={designTokens.colors.semantic.surface} />
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.actionButton as ViewStyle}
-              onPress={handleReport}
-              accessibilityRole="button"
-              accessibilityLabel="Report guide"
-            >
-              <Flag size={24} color={designTokens.colors.semantic.surface} />
-            </TouchableOpacity>
           </View>
         </View>
       </View>
       
-      <ScrollView style={styles.content as ViewStyle} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={profileScroll} style={styles.content as ViewStyle} showsVerticalScrollIndicator={false}>
         {/* Profile Info */}
         <Card style={styles.profileCard as ViewStyle} padding={20}>
           {/* #9: Full-width name/rating/location — avatar is in the carousel above */}
@@ -589,14 +542,14 @@ export default function CompanionProfileScreen() {
           
           <View style={styles.actionButtons as ViewStyle}>
             <Button
-              title={t('companionDetails.chatNow')}
+              title={t('companionDetails.viewAvailability')}
               variant="primary"
               size="large"
               fullWidth
-              onPress={handleChat}
-              style={styles.chatButton as ViewStyle}
-              textStyle={styles.chatButtonText as TextStyle}
-              leftIcon={<MessageCircle size={18} color={designTokens.colors.semantic.surface} />}
+              onPress={() => profileScroll.current?.scrollToEnd({ animated: true })}
+              style={styles.availabilityButton as ViewStyle}
+              textStyle={styles.availabilityButtonText as TextStyle}
+              leftIcon={<Calendar size={18} color={designTokens.colors.semantic.surface} />}
             />
           </View>
         </Card>
@@ -852,58 +805,6 @@ export default function CompanionProfileScreen() {
         </Card>
       </ScrollView>
 
-      {/* Report Modal */}
-      <Modal
-        visible={showReportModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowReportModal(false)}
-      >
-        <View style={styles.reportOverlay as ViewStyle}>
-          <View style={styles.reportSheet as ViewStyle}>
-            <View style={styles.reportHeader as ViewStyle}>
-              <Text style={styles.reportTitle as TextStyle}>Report this local guide</Text>
-              <TouchableOpacity onPress={() => setShowReportModal(false)}>
-                <Text style={styles.reportClose as TextStyle}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.reportSubtitle as TextStyle}>What should Tirak review?</Text>
-
-            {REPORT_REASONS.map((reason) => (
-              <TouchableOpacity
-                key={reason}
-                style={[
-                  styles.reportOption as ViewStyle,
-                  selectedReportReason === reason && styles.reportOptionSelected as ViewStyle,
-                ]}
-                onPress={() => setSelectedReportReason(reason)}
-              >
-                <View style={[styles.reportRadio as ViewStyle, selectedReportReason === reason && styles.reportRadioSelected as ViewStyle]} />
-                <Text style={styles.reportOptionText as TextStyle}>{reason}</Text>
-              </TouchableOpacity>
-            ))}
-
-            <TextInput
-              style={styles.reportInput as any}
-              placeholder="Add details for the Tirak safety team (optional)"
-              placeholderTextColor={designTokens.colors.semantic.textSecondary}
-              value={reportDetails}
-              onChangeText={setReportDetails}
-              multiline
-              numberOfLines={3}
-            />
-
-            <Button
-              title="Submit report"
-              variant="primary"
-              onPress={submitReport}
-              style={styles.reportSubmitButton as ViewStyle}
-              fullWidth
-            />
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -1081,12 +982,12 @@ const styles = StyleSheet.create({
     color: designTokens.colors.semantic.primary,
     fontWeight: '500',
   },
-  chatButton: {
+  availabilityButton: {
     width: '100%',
     alignSelf: 'stretch',
     borderRadius: designTokens.borderRadius.components.button,
   },
-  chatButtonText: {
+  availabilityButtonText: {
     fontSize: 16,
     fontWeight: '700',
   },
@@ -1386,80 +1287,6 @@ const styles = StyleSheet.create({
   },
   bookNowButton: {
     marginTop: designTokens.spacing.scale.lg,
-    borderRadius: designTokens.borderRadius.components.button,
-  },
-  reportOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  reportSheet: {
-    backgroundColor: designTokens.colors.semantic.surface,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    paddingBottom: 40,
-  },
-  reportHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  reportTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: designTokens.colors.semantic.text,
-  },
-  reportClose: {
-    fontSize: 18,
-    color: designTokens.colors.semantic.textSecondary,
-    padding: 4,
-  },
-  reportSubtitle: {
-    fontSize: 14,
-    color: designTokens.colors.semantic.textSecondary,
-    marginBottom: 16,
-  },
-  reportOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: designTokens.colors.semantic.border,
-  },
-  reportOptionSelected: {
-    backgroundColor: designTokens.colors.semantic.primary + '10',
-  },
-  reportRadio: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 2,
-    borderColor: designTokens.colors.semantic.textSecondary,
-    marginRight: 12,
-  },
-  reportRadioSelected: {
-    borderColor: designTokens.colors.semantic.primary,
-    backgroundColor: designTokens.colors.semantic.primary,
-  },
-  reportOptionText: {
-    fontSize: 15,
-    color: designTokens.colors.semantic.text,
-  },
-  reportInput: {
-    borderWidth: 1,
-    borderColor: designTokens.colors.semantic.border,
-    borderRadius: 8,
-    padding: 12,
-    marginTop: 16,
-    marginBottom: 16,
-    fontSize: 14,
-    color: designTokens.colors.semantic.text,
-    minHeight: 80,
-    textAlignVertical: 'top',
-  },
-  reportSubmitButton: {
     borderRadius: designTokens.borderRadius.components.button,
   },
 });

@@ -255,7 +255,7 @@ export default function AppLayout() {
     setActiveTabIndex(index);
     const route = currentTabRoutes[index];
     if (route.name === "index") {
-      router.push("/");
+      router.push("/(app)");
     } else {
       router.push(`/${route.name}` as any);
     }
@@ -263,7 +263,7 @@ export default function AppLayout() {
 
   const handleProfileEdit = () => {
     toggleDrawer();
-    router.push("/profile/edit");
+    router.push(isCompanion ? '/supplier/profile/edit' : '/profile/edit');
   };
 
   const navigateTo = (route: string) => {
@@ -390,7 +390,7 @@ export default function AppLayout() {
 
               <TouchableOpacity
                 style={styles.menuItem}
-                onPress={() => navigateTo("/settings")}
+                onPress={() => navigateTo(isCompanion ? '/(supplier)/settings' : '/(app)/settings')}
               >
                 <Icons.Settings
                   size={22}

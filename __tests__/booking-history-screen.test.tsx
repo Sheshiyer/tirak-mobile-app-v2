@@ -29,3 +29,33 @@ it('complete history includes a third-page booking in global counts and search',
  expect(ui.getByText('Third page canal walk')).toBeTruthy();expect(ui.queryByText('Earlier walk 1')).toBeNull();expect(ui.queryByText('Earlier walk 2')).toBeNull();
  expect(ui.getAllByRole('button',{name:'View booking details'})).toHaveLength(1);expect(ui.getAllByText('3')).toHaveLength(2);ui.unmount();
 });
+
+it('shows a same-day confirmed Thailand countdown but no countdown for a pending trip', () => {
+  jest.useFakeTimers();
+  jest.setSystemTime(new Date('2026-11-06T01:00:00Z'));
+  const schedule = {
+    date: '2026-11-06',
+    startTime: '09:00',
+    duration: 30,
+    totalAmount: 300,
+    paymentMethod: 'cash',
+    companion: { name: 'Guide' },
+  };
+  mockHistory = { success: true, data: { items: [
+    { ...schedule, id: 'confirmed-today', status: 'confirmed', service: { name: 'Confirmed canal walk' } },
+    { ...schedule, id: 'pending-today', status: 'pending', service: { name: 'Requested canal walk' } },
+    { ...schedule, id: 'completed', status: 'completed', service: { name: 'Completed canal walk' } },
+  ] } };
+  const ui = render(<Screen />);
+  try {
+    expect(ui.getByText('Confirmed canal walk')).toBeTruthy();
+    expect(ui.getByText('Requested canal walk')).toBeTruthy();
+    expect(ui.getAllByText('1h 0m')).toHaveLength(1);
+    expect(ui.queryByText('Completed canal walk')).toBeNull();
+    fireEvent.press(ui.getByText('bookings.past'));
+    expect(ui.getByText('Completed canal walk')).toBeTruthy();
+  } finally {
+    ui.unmount();
+    jest.useRealTimers();
+  }
+});

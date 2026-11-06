@@ -4,11 +4,11 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   Alert,
   ScrollView,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RadialGradient } from '@/components/ui/RadialGradient';
 import { ProgressBar } from '@/components/ui/ProgressBar';

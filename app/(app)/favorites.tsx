@@ -110,10 +110,6 @@ export default function FavoritesScreen() {
     useFavoritesStore.getState().removeFavorite(id);
   };
   
-  const handleMessage = (id: string) => {
-    router.push(`/chat/${id}`);
-  };
-  
   const hasSearchNoMatch = savedFavorites.length > 0 && (searchQuery.trim() !== '' || hasPriceFilter) && favorites.length === 0;
   const clearLabel = hasPriceFilter ? 'Clear filters' : t('search.clearSearch');
 
@@ -228,7 +224,6 @@ export default function FavoritesScreen() {
                 viewMode={viewMode}
                 onPress={() => handleCompanionPress(item.id)}
                 onFavorite={() => handleFavorite(item.id)}
-                onMessage={() => handleMessage(item.id)}
               />
               </View>
               ) : null

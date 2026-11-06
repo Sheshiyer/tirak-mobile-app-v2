@@ -121,12 +121,12 @@ export default function ProfileScreen() {
     {
       icon: <HelpCircle size={20} color={designTokens.colors.semantic.text} />,
       title: 'Help & Support',
-      onPress: () => router.push('/settings'),
+      onPress: () => router.push(isCompanion ? '/(supplier)/settings' : '/(app)/settings'),
     },
     {
       icon: <Settings size={20} color={designTokens.colors.semantic.text} />,
       title: 'Settings',
-      onPress: () => router.push('/settings'),
+      onPress: () => router.push(isCompanion ? '/(supplier)/settings' : '/(app)/settings'),
     },
   ];
 

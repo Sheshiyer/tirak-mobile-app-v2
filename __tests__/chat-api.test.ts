@@ -114,6 +114,14 @@ describe('chat-api service', () => {
     );
   });
 
+  test('rejects a room response explicitly tied to a different booking', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: true, data: { roomId: 'old-room', bookingId: 'previous-trip', existed: true } }),
+    });
+    await expect(createOrGetRoom('selected-trip')).resolves.toBeNull();
+  });
+
   test('blocks local demo-room detail and delivery for normal users', async () => {
     await expect(getRoomDetail('demo_room_test_companion')).resolves.toBeNull();
     await expect(sendMessage('demo_room_test_companion', 'Hello')).resolves.toBeNull();

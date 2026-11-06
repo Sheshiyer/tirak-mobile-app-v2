@@ -588,7 +588,7 @@ export const BookingSummaryStep: React.FC<BookingSummaryStepProps> = ({
       <BookingStepFooter
         onPrevious={onPrevious}
         onNext={handleNext}
-        nextTitle={t('bookingSummary.confirm')}
+        nextTitle={t('bookingSummary.sendRequest')}
         nextDisabled={!termsAccepted || isSubmitting || createBookingMutation.isPending}
         loading={isSubmitting || createBookingMutation.isPending}
         showPrevious={true}

@@ -249,6 +249,18 @@ describe('PromptPay traveler checkout', () => {
 
   afterEach(() => cleanup());
 
+  test('pending cash requests show the requested Thai schedule without calendar or chat actions', () => {
+    seedPayment({
+      booking: { id: 'booking-1', status: 'pending', paymentStatus: 'pending' },
+      selectedMethod: 'cash',
+    });
+    const screen = render(<BookingConfirmationStep onPrevious={jest.fn()} />);
+    expect(screen.getByText('Booking request sent')).toBeTruthy();
+    expect(screen.getByText('Requested date and time (Thailand)')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Add to Calendar' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Message your local guide' })).toBeNull();
+  });
+
   test('keeps cash visible and hides PromptPay when the capability is off', () => {
     process.env.EXPO_PUBLIC_PROMPTPAY_ENABLED = 'false';
     seedPayment();

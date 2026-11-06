@@ -1,5 +1,19 @@
 /** Core experience schedules are Thailand local time unless the booking declares another zone. */
 export const CORE_BOOKING_TIME_ZONE = 'Asia/Bangkok';
+
+export function bookingCalendarDate(instant: Date, timeZone = CORE_BOOKING_TIME_ZONE): string {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(instant);
+  const year = parts.find(part => part.type === 'year')?.value;
+  const month = parts.find(part => part.type === 'month')?.value;
+  const day = parts.find(part => part.type === 'day')?.value;
+  return `${year}-${month}-${day}`;
+}
+
 export function bookingDateTimeToInstant(date: string, time: string, timeZone = CORE_BOOKING_TIME_ZONE): Date {
   const day = /^(\d{4})-(\d{2})-(\d{2})(?=T|$)/.exec(date);
   const clock = /^(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(time);

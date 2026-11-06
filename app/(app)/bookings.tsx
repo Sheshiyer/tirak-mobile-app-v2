@@ -14,7 +14,8 @@ import {
   Modal,
 } from 'react-native';
 import { useToast } from '@/stores/toast-store';
-import { bookingDateTimeToInstant, CORE_BOOKING_TIME_ZONE } from '@/utils/booking-timezone';
+import { formatBookingDate } from '@/components/booking/booking-format';
+import { bookingCalendarDate, bookingDateTimeToInstant, CORE_BOOKING_TIME_ZONE } from '@/utils/booking-timezone';
 import { useAuthStore } from '@/stores/auth-store';
 import { Card } from '@/components/ui/Card';
 import { ProfileImage } from '@/components/ui/ProfileImage';
@@ -72,6 +73,18 @@ interface CountdownTimerProps {
   targetDate: string;
   targetTime: string;
   timeZone?: string;
+}
+
+function bookingPeriod(booking: BookingListItem, now: Date): 'upcoming' | 'past' | null {
+  if (booking.status === 'completed' || booking.status === 'cancelled') return 'past';
+  const timeZone = booking.timeZone || booking.timezone || CORE_BOOKING_TIME_ZONE;
+  try {
+    const startsAt = bookingDateTimeToInstant(booking.date, booking.startTime, timeZone);
+    return bookingCalendarDate(startsAt, timeZone) >= bookingCalendarDate(now, timeZone) ? 'upcoming' : 'past';
+  } catch {
+    // Keep bookings with unknown schedules available in All.
+    return null;
+  }
 }
 
 // Countdown Timer Component
@@ -212,25 +225,10 @@ export default function BookingsScreen() {
       ? bookingsData?.data?.items || []
       : [];
 
-  // Debug: Log the actual bookings array to inspect companion data
-  // logger.log('Bookings list items:', allBookings);
-
-  // Enhanced filtering and sorting logic with better date handling
-  const filteredBookings = (allBookings || [])
-    .filter((booking: BookingListItem) => {
-      const bookingDate = new Date(booking.date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      bookingDate.setHours(0, 0, 0, 0);
-      if (selectedTab === 'upcoming') {
-        const isUpcoming = bookingDate >= today && !['completed', 'cancelled'].includes(booking.status);
-        return isUpcoming;
-      } else if (selectedTab === 'past') {
-        const isPast = bookingDate < today || ['completed', 'cancelled'].includes(booking.status);
-        return isPast;
-      }
-      return true;
-    })
+  const now = new Date();
+  const bookingPeriods = new Map(allBookings.map(booking => [booking.id, bookingPeriod(booking, now)]));
+  const filteredBookings = allBookings
+    .filter(booking => selectedTab === 'all' || bookingPeriods.get(booking.id) === selectedTab)
     .filter((booking: BookingListItem) => {
       if (!search.trim()) return true;
       const q = search.toLowerCase();
@@ -259,14 +257,7 @@ export default function BookingsScreen() {
       }
     });
 
-  // Calculate stats for display
-  const upcomingCount = allBookings.filter((b: BookingListItem) => {
-    const bookingDate = new Date(b.date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    bookingDate.setHours(0, 0, 0, 0);
-    return bookingDate >= today && !['completed', 'cancelled'].includes(b.status);
-  }).length;
+  const upcomingCount = allBookings.filter(booking => bookingPeriods.get(booking.id) === 'upcoming').length;
 
   const completedCount = allBookings.filter((b: BookingListItem) => b.status === 'completed').length;
 
@@ -383,7 +374,8 @@ export default function BookingsScreen() {
   const BookingCard: React.FC<BookingCardProps> = ({ booking }) => {
     const status = statusConfig[booking.status as keyof typeof statusConfig] || statusConfig.pending;
     const cardAnimation = useRef(new Animated.Value(0)).current;
-    const isUpcoming = new Date(booking.date) >= new Date() && !['completed', 'cancelled'].includes(booking.status);
+    const showCountdown = bookingPeriods.get(booking.id) === 'upcoming'
+      && (booking.status === 'confirmed' || booking.status === 'in_progress');
    
     const getDisplayPerson = () => {
       const person = isCompanion ? booking.customer : booking.companion;
@@ -429,7 +421,7 @@ export default function BookingsScreen() {
     }, []);
 
     const formatDate = (date: string) => {
-      return new Date(date).toLocaleDateString('en-US', {
+      return formatBookingDate(date, 'en', {
         weekday: 'short',
         month: 'short',
         day: 'numeric',
@@ -508,8 +500,8 @@ export default function BookingsScreen() {
           <View style={styles.serviceSection}>
             <Subheading style={styles.serviceName}>{serviceData.name}</Subheading>
 
-            {isUpcoming && (
-              <CountdownTimer targetDate={booking.date} targetTime={bookingDetails.time} timeZone={(booking as any).timeZone || (booking as any).timezone || CORE_BOOKING_TIME_ZONE} />
+            {showCountdown && (
+              <CountdownTimer targetDate={booking.date} targetTime={bookingDetails.time} timeZone={booking.timeZone || booking.timezone || CORE_BOOKING_TIME_ZONE} />
             )}
           </View>
 
