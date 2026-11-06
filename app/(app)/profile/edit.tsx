@@ -31,11 +31,12 @@ import {
 } from 'lucide-react-native';
 import designTokens from '@/constants/design-tokens';
 import { SimpleInput } from '@/components/ui/SimpleInput';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/auth-store';
 import { chooseProfileImage } from '@/utils/profile-image-picker';
+import { formatLocalDate, NATIVE_BIRTH_DATE_MINIMUM, parseLocalDate } from '@/utils/birth-date';
 
 export default function ProfileEditScreen() {
   const { data, isLoading, error } = useCustomerProfile() as any;
@@ -52,6 +53,7 @@ export default function ProfileEditScreen() {
     bio: user?.bio || '',
     dateOfBirth: user?.dateOfBirth || '',
   });
+  const birthDate = formData.dateOfBirth.split('T')[0];
   const [profileImage, setProfileImage] = useState<string>(
     user?.profileImage || ''
   );
@@ -151,25 +153,20 @@ export default function ProfileEditScreen() {
     }, message => notify(t('profile.customer.updateFailed'), message));
   };
 
-  const handleDateChange = (event: any, selectedDate?: Date) => {
-    // Always update tempDate, don't close modal
+  const handleDateChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
     if (selectedDate) {
       setTempDate(selectedDate);
     }
   };
 
   const handleDatePickerOpen = () => {
-    setTempDate(formData.dateOfBirth ? new Date(formData.dateOfBirth) : new Date());
+    setTempDate(parseLocalDate(birthDate) ?? new Date());
     setShowDatePicker(true);
   };
 
   const handleDatePickerDone = () => {
     if (tempDate) {
-      hasLocalFormChange.current = true;
-      setFormData({
-        ...formData,
-        dateOfBirth: tempDate.toISOString().split('T')[0],
-      });
+      updateFormField('dateOfBirth', formatLocalDate(tempDate));
     }
     setShowDatePicker(false);
   };
@@ -249,18 +246,27 @@ export default function ProfileEditScreen() {
           />
 
           {Platform.OS === 'web' ? (
-            <View style={{ gap: 8, marginBottom: 16 }}>
-              <Text style={{ fontSize: 14, fontWeight: '600', color: designTokens.colors.semantic.text }}>{t('profile.customer.dateOfBirth')}</Text>
-              <input aria-label={t('profile.customer.dateOfBirth')} type="date" max={[new Date().getFullYear(), String(new Date().getMonth() + 1).padStart(2, '0'), String(new Date().getDate()).padStart(2, '0')].join('-')} value={formData.dateOfBirth?.split('T')[0] || ''} onInput={event => updateFormField('dateOfBirth', event.currentTarget.value)} onChange={event => updateFormField('dateOfBirth', event.currentTarget.value)} style={{ boxSizing: 'border-box', width: '100%', minHeight: 48, padding: '12px 16px', fontSize: 16, fontFamily: 'inherit', borderRadius: 12, border: `1px solid ${designTokens.colors.semantic.border}`, color: designTokens.colors.semantic.text, backgroundColor: designTokens.colors.semantic.surface }} />
+            <View style={styles.birthDateField}>
+              <Text style={styles.birthDateLabel}>{t('profile.customer.dateOfBirth')}</Text>
+              <input aria-label={t('profile.customer.dateOfBirth')} type="date" max={formatLocalDate(new Date())} value={birthDate} onInput={event => updateFormField('dateOfBirth', event.currentTarget.value)} onChange={event => updateFormField('dateOfBirth', event.currentTarget.value)} style={{ boxSizing: 'border-box', width: '100%', minHeight: 48, padding: '12px 16px', fontSize: 16, fontFamily: 'inherit', borderRadius: 12, border: `1px solid ${designTokens.colors.semantic.border}`, color: designTokens.colors.semantic.text, backgroundColor: designTokens.colors.semantic.surface }} />
             </View>
-          ) : <>
-          <SimpleInput
-            label={t('profile.customer.dateOfBirth')}
-            value={formData.dateOfBirth}
-            placeholder={t('profile.customer.enterDateOfBirth')}
-            editable={false}
-            onPressIn={handleDatePickerOpen}
-          />
+          ) : (
+            <View style={styles.birthDateField}>
+              <Text style={styles.birthDateLabel}>{t('profile.customer.dateOfBirth')}</Text>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={t('profile.customer.dateOfBirth')}
+                accessibilityValue={{ text: birthDate || t('profile.customer.enterDateOfBirth') }}
+                onPress={handleDatePickerOpen}
+                style={styles.birthDateButton}
+              >
+                <Text style={{ color: birthDate ? designTokens.colors.semantic.text : designTokens.colors.semantic.textSecondary }}>
+                  {birthDate || t('profile.customer.enterDateOfBirth')}
+                </Text>
+                <Calendar size={20} color={designTokens.colors.semantic.primary} />
+              </TouchableOpacity>
+            </View>
+          )}
           {Platform.OS === 'ios' ? (
             <Modal
               visible={showDatePicker}
@@ -275,6 +281,7 @@ export default function ProfileEditScreen() {
                     mode="date"
                     display="spinner"
                     onChange={handleDateChange}
+                    minimumDate={NATIVE_BIRTH_DATE_MINIMUM}
                     maximumDate={new Date()}
                     style={{ width: 250 }}
                   />
@@ -288,27 +295,22 @@ export default function ProfileEditScreen() {
               </View>
             </Modal>
           ) : (
-            showDatePicker && (
+            Platform.OS === 'android' && showDatePicker && (
               <DateTimePicker
                 value={tempDate || new Date()}
                 mode="date"
                 display="default"
                 onChange={(event, selectedDate) => {
                   setShowDatePicker(false);
-                  if (selectedDate) {
-                    hasLocalFormChange.current = true;
-                    setFormData({
-                      ...formData,
-                      dateOfBirth: selectedDate.toISOString().split('T')[0],
-                    });
+                  if (event.type === 'set' && selectedDate) {
+                    updateFormField('dateOfBirth', formatLocalDate(selectedDate));
                   }
                 }}
+                minimumDate={NATIVE_BIRTH_DATE_MINIMUM}
                 maximumDate={new Date()}
               />
             )
           )}
-
-          </>}
 
           <SimpleInput
             label={t('profile.customer.bio')}
@@ -416,6 +418,19 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: designTokens.colors.semantic.text,
     marginBottom: 20,
+  },
+  birthDateField: { gap: 8, marginBottom: 16 },
+  birthDateLabel: { fontSize: 14, fontWeight: '600', color: designTokens.colors.semantic.text },
+  birthDateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 50,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: designTokens.colors.semantic.border,
+    borderRadius: 12,
+    backgroundColor: designTokens.colors.semantic.surface,
   },
   bioInput: {
     minHeight: 100,
