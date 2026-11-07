@@ -1,74 +1,25 @@
-# Project State
+# Tirak Core client preparation state
 
-## Project Reference
+Updated 7 November 2026. Read `PROJECT.md` and `RELEASE-PREP-20261107.md`; acceptance belongs to the enclosing Tirak container's ISA and Core Spec Kit packet.
 
-See: `.planning/PROJECT.md` (updated 2026-09-12)
+## Current source
 
-**Core value:** Travelers can see a truthful PromptPay checkout state without giving the mobile app payment authority.
-**Current focus:** Tirak 1.5.4 cash-only release; owner-approved schema repair and account suspension completed; Core deployment awaits isolated Worker-scope login. Payment Phase 2 is deferred by the current cash-only decision.
+- Starting Core source: `fae29c2`, on `a718e8c` and consolidation `1276250`.
+- Fresh remote main: `05c6b03`; its deliberate `ci.yml` and `eas-update.yml` removals are preserved in the prepared branch.
+- The hero-only correction from consolidation `b6ea256` is reconciled without importing held payment ancestry or the stale `296a161` pickup instructions.
+- Current branch: `codex/tirak-core-release-prep-20261107`. Exact prepared head and verification belong in the coordinator's receipt.
 
-## Current Position
+## Evidence layers
 
-Scope: Cash-only store release readiness, 2026-10-13.
-Source candidate: codex/store-release-20261013 from d2469a6.
-Status: Source cleanup and signed artifacts verified. Backup restored, schema reconciled, two review accounts suspended, all booking history verified unchanged. Core deploy awaits Cloudflare Worker access; real chat/device acceptance pending.
-Acceptance: ISA.md active release criteria, plus docs/release/STORE-HANDOFF-20261013.md.
-Native artifacts: IPA 1.5.4 (21), APK 1.5.4 (13), AAB 1.5.4 (14), all finished and inspected.
-Verification: mobile 438 tests / 41 suites and TypeScript; isolated Core backend 722 tests / 57 files and TypeScript + production dry-run.
-Live findings: schema drift after 019; 34 users, 5 bookings and 2 review accounts. Exact 28-statement schema reconciliation + 7 guarded ledger entries + two-account suspension/rollback prepared. No live writes/deploy/submission.
-Next: owner reviews docs/release/PRODUCTION-BACKEND-REVIEW-20261013.md and approves backup/reconciliation/Core promotion/suspension preserving history. Then verify real-account chat, native devices and Interceptor screenshots before store submission.
+Recorded Core source/disposable checks passed before this preparation. Final combined-source checks and local hero/fallback browser evidence are recorded in `RELEASE-PREP-20261107.md` as they complete.
 
-## Performance Metrics
+Android 1.5.4 build 18 is available in Internal testing with a tester list selected. The owner performs the physical signup/profile date save and reload. The old Play Store emulator flow was skipped. Scoped PWA `7f446ee` is live; neither scoped release accepts the broader Core changes.
 
-**Velocity:**
-- Total plans completed: 2
-- Average duration: n/a
-- Total execution time: 0 hours
+## Remaining gates
 
-**By Phase:**
+- Obtain replacement local-job definition, source pin and successful terminal receipt; intentional workflow removal alone is insufficient.
+- API compatibility and exact runtime/rollback proof precede dependent client publication.
+- Select and verify broader signed Android/PWA artifact, runtime, channel, version and signing continuity under later release instruction.
+- Keep live guide roles, physical availability, inventory and birth-date acceptance separate from local checks.
 
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| 1. Local PromptPay pending checkout | 2 | 2 | multi-session recovery |
-
-**Recent Trend:** Phase 1 completed locally; Phase 2 remains unplanned.
-
-## Accumulated Context
-
-### Decisions
-
-- Phase 1 is a local-only vertical checkout slice; Tirak Plus and supplier signup remain untouched.
-- Cash remains visible, and payment-method switching locks whenever a PromptPay charge may exist.
-- Booking status, charge attempt, payment status, settlement, and restitution remain distinct server-owned truths.
-- Live or uncertain payment sessions survive navigation and relaunch and cannot be replaced or retried unsafely.
-- Custom-scheme cold/warm delivery is proven; universal links remain explicitly unclaimed.
-
-### Pending Todos
-
-- Discuss and plan Phase 2 server-authoritative status refresh and indeterminate recovery.
-
-### Blockers/Concerns
-
-- Production booking creation must expose authoritative currency before PromptPay broadens beyond the exact loopback THB fixture.
-- The backend needs a stable `BOOKING_ALREADY_PAID` machine code before staging/production pairing.
-- Universal links require an Associated Domains entitlement and a real authorized URL; custom-scheme evidence does not satisfy that gate.
-- Staging and production keep PromptPay creation disabled; provider, deployment, release, and backend mutation remain separately owner-gated.
-- The original authoring checkout and its user-owned iOS dependency diffs remain preserved outside this clean recovery branch.
-- GSD specialist registration and external Advisor availability remain runtime concerns, not reasons to weaken completion evidence.
-
-## Deferred Items
-
-| Category | Item | Status | Deferred At |
-|----------|------|--------|-------------|
-| Payment lifecycle | Status polling and indeterminate recovery | Phase 2 | Phase 1 planning |
-| External acceptance | Controlled staging charge | Owner-gated Phase 3 | Phase 1 planning |
-
-## Session Continuity
-
-Last session: 2026-09-12
-Stopped at: Phase 1 complete; Phase 2 ready for discussion and planning.
-Resume file: None
-
-## Release continuity — 2026-10-13
-
-Use the dedicated store release worktree and ISA, not the older mobile checkout or Phase 2 payment plan. The original mobile checkout was restored clean after adapting preliminary edits onto the latest Core source. No automatic swarm dispatch, merge or publication is authorized by this checkpoint.
+Historical state and PromptPay roadmap are preserved in `archive/2026-11-07-previous-pickup/` and `.planning/phases/`. They do not select the next work package.

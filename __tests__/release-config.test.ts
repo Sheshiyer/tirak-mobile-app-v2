@@ -8,9 +8,11 @@ const eas = JSON.parse(read('eas.json'));
 const resolveConfig = require('../app.config.js');
 
 const RELEASE_ENV_KEYS = [
+  'EAS_BUILD_PROFILE',
   'EXPO_PUBLIC_ENV_NAME',
   'EXPO_PUBLIC_API_URL',
   'EXPO_PUBLIC_DEMO_MODE',
+  'EXPO_PUBLIC_ENABLE_DEMO_MODE',
   'EXPO_PUBLIC_REVIEW_MODE',
   'EXPO_PUBLIC_PROMPTPAY_ENABLED',
 ];
@@ -110,13 +112,15 @@ describe('release delivery boundaries', () => {
     expect(read('eas-hooks/core-qa-prebuild.js')).toContain('non-QA build — skipping.');
   });
 
-  test('OTA workflow selects an explicit environment and guards production main', () => {
-    const workflow = read('.github/workflows/eas-update.yml');
-    expect(workflow).toContain("inputs.channel == 'production' && github.ref != 'refs/heads/main'");
-    expect(workflow).toContain('--environment "$EAS_ENVIRONMENT"');
-    expect(workflow).toContain('EXPO_PUBLIC_PROMPTPAY_ENABLED: "false"');
-    const beforePublish = workflow.split('- name: Publish update')[0];
-    expect(beforePublish).not.toContain('EXPO_PUBLIC_REVIEW_MODE:');
+  test('release build profiles enforce the production gate even without an environment label', () => {
+    for (const profile of ['production', 'release-apk']) {
+      const releaseEnv = { ...eas.build.production.env, EAS_BUILD_PROFILE: profile, EXPO_PUBLIC_ENV_NAME: undefined };
+      expect(() => withEnv({ ...releaseEnv, EXPO_PUBLIC_API_URL: 'https://preview.example.test/api' }, () => resolveConfig({ config })))
+        .toThrow('Release requires');
+      expect(() => withEnv({ ...releaseEnv, EXPO_PUBLIC_ENABLE_DEMO_MODE: 'true' }, () => resolveConfig({ config })))
+        .toThrow('Cash-only');
+      expect(withEnv(releaseEnv, () => resolveConfig({ config })).extra.reviewMode).toBe(false);
+    }
   });
 
   test('Bun is authoritative and uploads exclude local secrets and raw evidence', () => {
