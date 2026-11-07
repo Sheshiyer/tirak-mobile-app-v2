@@ -1,7 +1,7 @@
 import { logger } from '@/utils/logger';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getStoredLanguage, setStoredLanguage } from './language-storage';
 
 // Import translation files
 import en from '../locales/en.json';
@@ -9,64 +9,6 @@ import th from '../locales/th.json';
 
 // Check if we're in a browser environment (not during SSR)
 const isBrowser = typeof window !== 'undefined';
-// Check if localStorage is available (web) vs AsyncStorage (native)
-const hasLocalStorage = isBrowser && typeof localStorage !== 'undefined';
-
-// Safe storage getter
-const getStoredLanguage = async (): Promise<string | null> => {
-  if (!isBrowser) {
-    return null; // Server-side: no storage access
-  }
-
-  try {
-    if (hasLocalStorage) {
-      // Use localStorage for web
-      return localStorage.getItem('user-language');
-    } else {
-      // Use AsyncStorage for native (only if available)
-      try {
-        return await AsyncStorage.getItem('user-language');
-      } catch {
-        // AsyncStorage might not be available in some web contexts
-        return null;
-      }
-    }
-  } catch (error) {
-    // Silently fail during SSR or if storage is unavailable
-    if (isBrowser) {
-      logger.log('Error reading language from storage:', error);
-    }
-    return null;
-  }
-};
-
-// Safe storage setter
-const setStoredLanguage = async (lng: string): Promise<void> => {
-  if (!isBrowser) {
-    return; // Server-side: skip storage
-  }
-
-  try {
-    if (hasLocalStorage) {
-      // Use localStorage for web
-      localStorage.setItem('user-language', lng);
-    } else {
-      // Use AsyncStorage for native (only if available)
-      try {
-        await AsyncStorage.setItem('user-language', lng);
-      } catch {
-        // AsyncStorage might not be available in some web contexts
-        // Silently fail
-      }
-    }
-  } catch (error) {
-    // Silently fail during SSR or if storage is unavailable
-    if (isBrowser) {
-      logger.log('Error saving language to storage:', error);
-    }
-  }
-};
-
 // Custom language detector for React Native and Web
 const RNLanguageDetector = {
   type: 'languageDetector' as const,
@@ -75,7 +17,7 @@ const RNLanguageDetector = {
     try {
       // Try to get language from storage first
       const savedLanguage = await getStoredLanguage();
-      if (savedLanguage) {
+      if (savedLanguage === 'en' || savedLanguage === 'th') {
         callback(savedLanguage);
         return;
       }
@@ -98,7 +40,7 @@ const RNLanguageDetector = {
   },
   init: () => {},
   cacheUserLanguage: async (lng: string) => {
-    await setStoredLanguage(lng);
+    await setStoredLanguage(lng).catch(error => logger.log('Language cache unavailable:', error));
   },
 };
 
@@ -144,12 +86,10 @@ export default i18n;
 
 // Helper function to change language
 export const changeLanguage = async (languageCode: string) => {
-  try {
-    await i18n.changeLanguage(languageCode);
-    await setStoredLanguage(languageCode);
-  } catch (error) {
-    logger.log('Error changing language:', error);
-  }
+  if (languageCode !== 'en' && languageCode !== 'th') throw new Error('Unsupported language');
+  // Explicit saves must report storage failures instead of pretending to persist.
+  await setStoredLanguage(languageCode);
+  await i18n.changeLanguage(languageCode);
 };
 
 // Helper function to get current language

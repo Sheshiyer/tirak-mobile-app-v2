@@ -29,8 +29,6 @@ import { useSupplierStore } from '@/stores/supplier-store';
 import { LinearGradient } from 'expo-linear-gradient';
 import { RadialGradient } from '@/components/ui/RadialGradient';
 import { RecentActivityFeed } from '@/components/supplier/RecentActivityFeed';
-import { EarningsChart } from '@/components/supplier/EarningsChart';
-import { PerformanceMetrics } from '@/components/supplier/PerformanceMetrics';
 import { NotificationCenter } from '@/components/supplier/NotificationCenter';
 import { useSupplierStats } from '@/services/api/companion/stats';
 import { useTranslation } from 'react-i18next';
@@ -39,7 +37,7 @@ type SupplierRoute = '/(supplier)/settings';
 
 export default function SupplierDashboard() {
   const router = useRouter();
-  const { data: statsData, isLoading, error } = useSupplierStats();
+  const { data: statsData, isLoading, error, refetch } = useSupplierStats();
   const { t } = useTranslation();
   const handleSettings = () => {
     try {
@@ -47,6 +45,11 @@ export default function SupplierDashboard() {
     } catch (error) {
       console.error('Navigation error:', error);
     }
+  };
+
+  const handleBack = () => {
+    if (router.canGoBack?.()) router.back();
+    else router.replace('/(app)');
   };
 
   if (isLoading) {
@@ -64,7 +67,9 @@ export default function SupplierDashboard() {
         <Text style={styles.errorText}>{t('analytics.failedToLoadAnalytics')}</Text>
         <TouchableOpacity
           style={styles.retryButton}
-          onPress={() => router.replace('/(supplier)/analytics')}
+          onPress={() => { void refetch(); }}
+          accessibilityRole="button"
+          accessibilityLabel="Retry analytics"
         >
           <Text style={styles.retryText}>{t('analytics.retry')}</Text>
         </TouchableOpacity>
@@ -85,14 +90,10 @@ export default function SupplierDashboard() {
     router.push('/supplier/settings');
   };
 
-  const handleBack = () => {
-    router.back();
-  };
 
 
-  const formatCurrency = (amount: number) => {
-    return amount.toLocaleString('en-US');
-  };
+
+  const formatCurrency = (amount: number | null) => amount === null ? t('analytics.unavailable') : `฿${amount.toLocaleString('en-US')}`;
   
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -101,7 +102,7 @@ export default function SupplierDashboard() {
         <View style={styles.headerContent}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => router.back()}
+            onPress={handleBack}
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >
@@ -139,7 +140,7 @@ export default function SupplierDashboard() {
               <View style={styles.ratingContainer}>
                 <Star size={16} color={designTokens.colors.reference.purple} fill={designTokens.colors.reference.purple} />
                 <Text style={styles.ratingText}>
-                  {stats.averageRating} ({profile.totalReviews} {t('analytics.reviews')})
+                  {stats.averageRating ?? t('analytics.unavailable')} ({profile.totalReviews} {t('analytics.reviews')})
                 </Text>
               </View>
               <View style={styles.statusContainer}>
@@ -177,7 +178,7 @@ export default function SupplierDashboard() {
                 style={[styles.analyticsCard, styles.halfCard]}
               >
                 <Users size={24} color={designTokens.colors.semantic.surface} />
-                <Text style={styles.cardValue}>{stats.profileViews}</Text>
+                <Text style={styles.cardValue}>{stats.profileViews ?? t('analytics.unavailable')}</Text>
                 <Text style={styles.cardLabel}>{t('analytics.profileViews')}</Text>
               </LinearGradient>
             </View>
@@ -189,7 +190,7 @@ export default function SupplierDashboard() {
                 style={[styles.analyticsCard, styles.halfCard]}
               >
                 <DollarSign size={24} color={designTokens.colors.semantic.surface} />
-                <Text style={styles.cardValue}>฿{formatCurrency(stats.totalEarnings)}</Text>
+                <Text style={styles.cardValue}>{formatCurrency(stats.totalEarnings)}</Text>
                 <Text style={styles.cardLabel}>{t('analytics.totalEarnings')}</Text>
               </LinearGradient>
 
@@ -198,52 +199,23 @@ export default function SupplierDashboard() {
                 style={[styles.analyticsCard, styles.halfCard]}
               >
                 <DollarSign size={24} color={designTokens.colors.semantic.surface} />
-                <Text style={styles.cardValue}>฿{formatCurrency(stats.thisMonthEarnings)}</Text>
+                <Text style={styles.cardValue}>{formatCurrency(stats.thisMonthEarnings)}</Text>
                 <Text style={styles.cardLabel}>{t('analytics.thisMonthEarnings')}</Text>
               </LinearGradient>
             </View>
           </View>
         </View>
 
-        {/* Earnings Chart Section */}
         <View style={styles.earningsSection}>
           <Text style={styles.sectionTitle}>{t('analytics.earningsOverview')}</Text>
-          <EarningsChart
-            earningsData={stats.monthlyStats.map(m => ({
-              ...m,
-              averageBookingValue: m.earnings && m.bookings ? m.earnings / m.bookings : 0,
-            }))}
-            servicePerformance={stats.servicePerformance.map(s => ({
-              serviceName: s.name,
-              bookings: s.bookings,
-              averageRating: s.rating,
-              earnings: s.earnings,
-              color: '#A9A9A9',
-            }))}
-            totalEarnings={stats.totalEarnings}
-            monthlyGrowth={0}
-          />
+          <Text>{t('analytics.cashEarningsUnavailable')}</Text>
         </View>
-
-        {/* Performance Metrics Section */}
         <View style={styles.performanceSection}>
           <Text style={styles.sectionTitle}>{t('analytics.performanceMetrics')}</Text>
-          {stats.totalBookings > 0 && stats.profileViews > 0 && stats.responseRate > 0 && stats.averageRating > 0 && stats.profileCompletion > 0 ? (
-            <PerformanceMetrics
-              metrics={[
-                { id: 'total-bookings', name: t('analytics.totalBookings'), value: stats.totalBookings },
-                { id: 'completed-bookings', name: t('analytics.completedBookings'), value: stats.completedBookings },
-                { id: 'cancelled-bookings', name: t('analytics.cancelledBookings'), value: stats.cancelledBookings },
-                { id: 'total-earnings', name: t('analytics.totalEarnings'), value: stats.totalEarnings },
-                { id: 'profile-views', name: t('analytics.profileViews'), value: stats.profileViews },
-                { id: 'response-rate', name: t('analytics.responseRate'), value: stats.responseRate },
-                { id: 'average-rating', name: t('analytics.averageRating'), value: stats.averageRating },
-                { id: 'profile-completion', name: t('analytics.profileCompletion'), value: stats.profileCompletion },
-              ]}
-            />
-          ) : (
-            <Text style={styles.sectionTitle}>{t('analytics.noDataAvailable')}</Text>
-          )}
+          <Text>{t('analytics.completedBookings')}: {stats.completedBookings}</Text>
+          <Text>{t('analytics.cancelledBookings')}: {stats.cancelledBookings}</Text>
+          <Text>{t('analytics.responseRate')}: {stats.responseRate === null ? t('analytics.unavailable') : `${stats.responseRate}%`}</Text>
+          <Text>{t('analytics.averageRating')}: {stats.averageRating ?? t('analytics.unavailable')}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -1,9 +1,20 @@
 import React from 'react';
-import { Stack } from 'expo-router';
+import { Platform } from 'react-native';
+import { Redirect, Stack, usePathname } from 'expo-router';
 import { designTokens } from '@/constants/design-tokens';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { useAuthStoreHydrated } from '@/hooks/useAuthStoreHydrated';
 
 export default function SupplierLayout() {
+  const { isHydrated, user } = useAuthStoreHydrated();
+  const pathname = usePathname();
+
+  if (!isHydrated) return null;
+  if (!user) return <Redirect href={Platform.OS === 'web' ? '/auth' : '/splash'} />;
+  if (user.userType !== 'supplier' && user.userType !== 'companion') {
+    return <Redirect href={pathname === '/settings' ? '/(app)/settings' : '/(app)'} />;
+  }
+
   return (
     <ErrorBoundary
       onError={(error, errorInfo) => {
@@ -38,6 +49,7 @@ export default function SupplierLayout() {
           headerShown: false,
         }}
       />
+      <Stack.Screen name="availability/settings" options={{ headerShown: false }} />
       <Stack.Screen
         name="availability/add-slot"
         options={{

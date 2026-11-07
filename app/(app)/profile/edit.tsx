@@ -31,11 +31,12 @@ import {
 } from 'lucide-react-native';
 import designTokens from '@/constants/design-tokens';
 import { SimpleInput } from '@/components/ui/SimpleInput';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/auth-store';
-import * as ExpoImagePicker from 'expo-image-picker';
+import { chooseProfileImage } from '@/utils/profile-image-picker';
+import { formatLocalDate, NATIVE_BIRTH_DATE_MINIMUM, parseLocalDate } from '@/utils/birth-date';
 
 export default function ProfileEditScreen() {
   const { data, isLoading, error } = useCustomerProfile() as any;
@@ -52,15 +53,27 @@ export default function ProfileEditScreen() {
     bio: user?.bio || '',
     dateOfBirth: user?.dateOfBirth || '',
   });
+  const birthDate = formData.dateOfBirth.split('T')[0];
   const [profileImage, setProfileImage] = useState<string>(
     user?.profileImage || ''
   );
+  const [feedback, setFeedback] = useState('');
+  const notify: typeof Alert.alert = (title, message, buttons, options) => {
+    if (Platform.OS === 'web') setFeedback([title, message].filter(Boolean).join(': '));
+    else Alert.alert(title, message, buttons, options);
+  };
+  const goBack = () => router.canGoBack() ? router.back() : router.replace('/(app)');
   const hasLocalProfileImageChange = React.useRef(false);
+  const hasLocalFormChange = React.useRef(false);
+  const updateFormField = (field: keyof typeof formData, value: string) => {
+    hasLocalFormChange.current = true;
+    setFormData(previous => ({ ...previous, [field]: value }));
+  };
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [tempDate, setTempDate] = useState<Date | null>(null);
 
   React.useEffect(() => {
-    if ((data as any)?.data) {
+    if ((data as any)?.data && !hasLocalFormChange.current && !updateProfile.isPending) {
       setFormData({
         name: (data as any).data.name || '',
         email: (data as any).data.email || '',
@@ -73,9 +86,11 @@ export default function ProfileEditScreen() {
         setProfileImage(storedProfileImage);
       }
     }
-  }, [data, user?.profileImage]);
+  }, [data, user?.profileImage, updateProfile.isPending]);
 
   const handleSave = () => {
+    if (updateProfile.isPending) return;
+    setFeedback('');
     const nextProfile = {
       ...formData,
       id: user?.id,
@@ -103,7 +118,8 @@ export default function ProfileEditScreen() {
               profileImage: savedProfileImage,
             },
           });
-          Alert.alert(
+          hasLocalFormChange.current = false;
+          notify(
             t('profile.customer.profileUpdated'),
             t('profile.customer.profileUpdatedDescription'),
             [
@@ -117,7 +133,7 @@ export default function ProfileEditScreen() {
           );
         },
         onError: (err: any) => {
-          Alert.alert(t('profile.customer.updateFailed'), err?.message || t('profile.customer.updateFailedDescription'));
+          notify(t('profile.customer.updateFailed'), err?.message || t('profile.customer.updateFailedDescription'));
         },
       }
     );
@@ -129,87 +145,28 @@ export default function ProfileEditScreen() {
     setProfileImage(uri);
   };
 
-  const pickFromGallery = async () => {
-    const permission = await ExpoImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert('Gallery access needed', 'Please allow photo library access to update your profile picture.');
-      return;
-    }
-
-    const result = await ExpoImagePicker.launchImageLibraryAsync({
-      mediaTypes: ExpoImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.85,
-    });
-
-    if (!result.canceled) {
-      applyPickedImage(result.assets?.[0]?.uri);
-    }
-  };
-
-  const takeProfilePhoto = async () => {
-    const permission = await ExpoImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert('Camera access needed', 'Please allow camera access to take a new profile picture.');
-      return;
-    }
-
-    try {
-      const result = await ExpoImagePicker.launchCameraAsync({
-        mediaTypes: ExpoImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.85,
-      });
-
-      if (!result.canceled) {
-        applyPickedImage(result.assets?.[0]?.uri);
-      }
-    } catch (err: any) {
-      Alert.alert('Camera unavailable', err?.message || 'The camera could not be opened on this device.');
-    }
-  };
-
   const handleImageEdit = () => {
-    Alert.alert(
-      t('profile.customer.changeProfilePicture'),
-      t('profile.customer.chooseOption'),
-      [
-        {
-          text: t('profile.customer.camera'),
-          onPress: takeProfilePhoto,
-        },
-        {
-          text: t('profile.customer.gallery'),
-          onPress: pickFromGallery,
-        },
-        {
-          text: t('profile.customer.cancel'),
-          style: 'cancel',
-        },
-      ]
-    );
+    setFeedback('');
+    chooseProfileImage('profile', uri => {
+      applyPickedImage(uri);
+      setFeedback(t('profile.customer.saveChanges'));
+    }, message => notify(t('profile.customer.updateFailed'), message));
   };
 
-  const handleDateChange = (event: any, selectedDate?: Date) => {
-    // Always update tempDate, don't close modal
+  const handleDateChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
     if (selectedDate) {
       setTempDate(selectedDate);
     }
   };
 
   const handleDatePickerOpen = () => {
-    setTempDate(formData.dateOfBirth ? new Date(formData.dateOfBirth) : new Date());
+    setTempDate(parseLocalDate(birthDate) ?? new Date());
     setShowDatePicker(true);
   };
 
   const handleDatePickerDone = () => {
     if (tempDate) {
-      setFormData({
-        ...formData,
-        dateOfBirth: tempDate.toISOString().split('T')[0],
-      });
+      updateFormField('dateOfBirth', formatLocalDate(tempDate));
     }
     setShowDatePicker(false);
   };
@@ -238,20 +195,17 @@ export default function ProfileEditScreen() {
       <View style={[styles.header, Platform.OS === 'web' && styles.webHeader]}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => router.back()}
+          accessibilityRole="button" accessibilityLabel="Back to profile"
+          onPress={goBack}
         >
           <ArrowLeft size={24} color={designTokens.colors.semantic.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('profile.customer.editProfile')}</Text>
-        <TouchableOpacity
-          style={styles.saveButton}
-          onPress={handleSave}
-        >
-          <Save size={24} color={designTokens.colors.semantic.primary} />
-        </TouchableOpacity>
+        <View style={{ width: 44 }} />
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.content} contentContainerStyle={styles.formContent} showsVerticalScrollIndicator={false}>
+        {feedback ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ padding: 16 }}>{feedback}</Text> : null}
         <Card style={styles.profileCard}>
           <View style={styles.profileImageSection}>
             <ProfileImage
@@ -270,14 +224,14 @@ export default function ProfileEditScreen() {
           <SimpleInput
             label={t('profile.customer.fullName')}
             value={formData.name}
-            onChangeText={(text: string) => setFormData({ ...formData, name: text })}
+            onChangeText={(text: string) => updateFormField('name', text)}
             placeholder={t('profile.customer.enterFullName')}
           />
 
           <SimpleInput
             label={t('profile.customer.email')}
             value={formData.email}
-            onChangeText={(text) => setFormData({ ...formData, email: text })}
+            onChangeText={(text) => updateFormField('email', text)}
             placeholder={t('profile.customer.enterEmail')}
             keyboardType="email-address"
             disabled={true}
@@ -286,18 +240,33 @@ export default function ProfileEditScreen() {
           <SimpleInput
             label={t('profile.customer.phoneNumber')}
             value={formData.phone}
-            onChangeText={(text) => setFormData({ ...formData, phone: text })}
+            onChangeText={(text) => updateFormField('phone', text)}
             placeholder={t('profile.customer.enterPhoneNumber')}
             keyboardType="phone-pad"
           />
 
-          <SimpleInput
-            label={t('profile.customer.dateOfBirth')}
-            value={formData.dateOfBirth}
-            placeholder={t('profile.customer.enterDateOfBirth')}
-            editable={false}
-            onPressIn={handleDatePickerOpen}
-          />
+          {Platform.OS === 'web' ? (
+            <View style={styles.birthDateField}>
+              <Text style={styles.birthDateLabel}>{t('profile.customer.dateOfBirth')}</Text>
+              <input aria-label={t('profile.customer.dateOfBirth')} type="date" max={formatLocalDate(new Date())} value={birthDate} onInput={event => updateFormField('dateOfBirth', event.currentTarget.value)} onChange={event => updateFormField('dateOfBirth', event.currentTarget.value)} style={{ boxSizing: 'border-box', width: '100%', minHeight: 48, padding: '12px 16px', fontSize: 16, fontFamily: 'inherit', borderRadius: 12, border: `1px solid ${designTokens.colors.semantic.border}`, color: designTokens.colors.semantic.text, backgroundColor: designTokens.colors.semantic.surface }} />
+            </View>
+          ) : (
+            <View style={styles.birthDateField}>
+              <Text style={styles.birthDateLabel}>{t('profile.customer.dateOfBirth')}</Text>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={t('profile.customer.dateOfBirth')}
+                accessibilityValue={{ text: birthDate || t('profile.customer.enterDateOfBirth') }}
+                onPress={handleDatePickerOpen}
+                style={styles.birthDateButton}
+              >
+                <Text style={{ color: birthDate ? designTokens.colors.semantic.text : designTokens.colors.semantic.textSecondary }}>
+                  {birthDate || t('profile.customer.enterDateOfBirth')}
+                </Text>
+                <Calendar size={20} color={designTokens.colors.semantic.primary} />
+              </TouchableOpacity>
+            </View>
+          )}
           {Platform.OS === 'ios' ? (
             <Modal
               visible={showDatePicker}
@@ -312,6 +281,7 @@ export default function ProfileEditScreen() {
                     mode="date"
                     display="spinner"
                     onChange={handleDateChange}
+                    minimumDate={NATIVE_BIRTH_DATE_MINIMUM}
                     maximumDate={new Date()}
                     style={{ width: 250 }}
                   />
@@ -325,20 +295,18 @@ export default function ProfileEditScreen() {
               </View>
             </Modal>
           ) : (
-            showDatePicker && (
+            Platform.OS === 'android' && showDatePicker && (
               <DateTimePicker
                 value={tempDate || new Date()}
                 mode="date"
                 display="default"
                 onChange={(event, selectedDate) => {
                   setShowDatePicker(false);
-                  if (selectedDate) {
-                    setFormData({
-                      ...formData,
-                      dateOfBirth: selectedDate.toISOString().split('T')[0],
-                    });
+                  if (event.type === 'set' && selectedDate) {
+                    updateFormField('dateOfBirth', formatLocalDate(selectedDate));
                   }
                 }}
+                minimumDate={NATIVE_BIRTH_DATE_MINIMUM}
                 maximumDate={new Date()}
               />
             )
@@ -347,7 +315,7 @@ export default function ProfileEditScreen() {
           <SimpleInput
             label={t('profile.customer.bio')}
             value={formData.bio}
-            onChangeText={(text) => setFormData({ ...formData, bio: text })}
+            onChangeText={(text) => updateFormField('bio', text)}
             placeholder={t('profile.customer.enterBio')}
             multiline
             numberOfLines={4}
@@ -359,13 +327,15 @@ export default function ProfileEditScreen() {
           <Button
             title={t('profile.customer.saveChanges')}
             onPress={handleSave}
+            loading={updateProfile.isPending}
+            disabled={updateProfile.isPending}
             variant="primary"
             style={styles.saveButtonLarge}
           />
           
           <Button
             title={t('profile.customer.cancel')}
-            onPress={() => router.back()}
+            onPress={goBack}
             variant="outline"
             style={styles.cancelButton}
           />
@@ -383,16 +353,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 60,
+    width: '100%',
+    maxWidth: 720,
+    alignSelf: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 24,
     paddingBottom: 20,
   },
   webHeader: {
     paddingTop: 20,
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: 20,
     backgroundColor: designTokens.colors.semantic.surface,
     justifyContent: 'center',
@@ -409,8 +382,8 @@ const styles = StyleSheet.create({
     color: designTokens.colors.semantic.text,
   },
   saveButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: 20,
     backgroundColor: designTokens.colors.semantic.surface,
     justifyContent: 'center',
@@ -421,10 +394,8 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
+  content: { flex: 1 },
+  formContent: { width: '100%', maxWidth: 720, alignSelf: 'center', paddingHorizontal: 24, paddingBottom: 40 },
   profileCard: {
     marginBottom: 20,
     paddingVertical: 30,
@@ -447,6 +418,19 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: designTokens.colors.semantic.text,
     marginBottom: 20,
+  },
+  birthDateField: { gap: 8, marginBottom: 16 },
+  birthDateLabel: { fontSize: 14, fontWeight: '600', color: designTokens.colors.semantic.text },
+  birthDateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 50,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: designTokens.colors.semantic.border,
+    borderRadius: 12,
+    backgroundColor: designTokens.colors.semantic.surface,
   },
   bioInput: {
     minHeight: 100,

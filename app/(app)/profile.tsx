@@ -1,3 +1,4 @@
+import { useSupplierStats } from '@/services/api/companion/stats';
 import React from 'react';
 import { Alert, View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { router } from 'expo-router';
@@ -29,6 +30,11 @@ import {
 export default function ProfileScreen() {
   const { user, logout, switchReviewAccount, isLoading } = useAuthStore();
   const isCompanion = user?.userType === 'companion' || user?.userType === 'supplier';
+  const { data: statsResponse, isLoading: statsLoading, error: statsError } = useSupplierStats({ enabled: isCompanion });
+  const stats = !statsError && statsResponse?.success ? statsResponse.data.data : undefined;
+  const [notice, setNotice] = React.useState('');
+  const metric = (value: number | null | undefined, suffix = '') => statsLoading ? 'Loading…' : typeof value === 'number' && Number.isFinite(value) ? `${value}${suffix}` : 'Unavailable';
+  const editProfileRoute = isCompanion ? '/supplier/profile/edit' : '/profile/edit';
   const appVersion = Constants.expoConfig?.version ?? 'unknown';
 
   const handleReviewAccountSwitch = (account: ReviewAccountKey) => {
@@ -87,12 +93,12 @@ export default function ProfileScreen() {
     {
       icon: <User size={20} color={designTokens.colors.semantic.text} />,
       title: 'Edit Profile',
-      onPress: () => router.push('/profile/edit'),
+      onPress: () => router.push(editProfileRoute),
     },
     {
       icon: <Bell size={20} color={designTokens.colors.semantic.text} />,
       title: 'Notification Preferences',
-      onPress: () => router.push('/settings'),
+      onPress: () => router.push('/profile/notificationSettings'),
     },
 
     {
@@ -109,18 +115,18 @@ export default function ProfileScreen() {
     {
       icon: <Award size={20} color={designTokens.colors.semantic.text} />,
       title: 'Traveler Reviews',
-      onPress: () => router.push('/settings'),
+      onPress: () => setNotice('Individual traveler reviews are not available on this screen. Your rating and review count above reflect the current account statistics.'),
       hideForCustomer: true,
     },
     {
       icon: <HelpCircle size={20} color={designTokens.colors.semantic.text} />,
       title: 'Help & Support',
-      onPress: () => router.push('/settings'),
+      onPress: () => router.push(isCompanion ? '/(supplier)/settings' : '/(app)/settings'),
     },
     {
       icon: <Settings size={20} color={designTokens.colors.semantic.text} />,
       title: 'Settings',
-      onPress: () => router.push('/settings'),
+      onPress: () => router.push(isCompanion ? '/(supplier)/settings' : '/(app)/settings'),
     },
   ];
 
@@ -140,7 +146,7 @@ export default function ProfileScreen() {
                 uri={user?.profileImage}
                 size="xlarge"
                 editable={true}
-                onEdit={() => router.push('/profile/edit')}
+                onEdit={() => router.push(editProfileRoute)}
               />
               <Text style={styles.profileName}>{user?.name || 'User'}</Text>
               <Text style={styles.profileRole}>
@@ -150,11 +156,11 @@ export default function ProfileScreen() {
                 <View style={styles.statsContainer}>
                   <View style={styles.statItem}>
                     <Star size={16} color={designTokens.colors.semantic.surface} fill={designTokens.colors.semantic.surface} />
-                    <Text style={styles.statText}>4.9</Text>
+                    <Text style={styles.statText}>{metric(stats?.averageRating)}</Text>
                   </View>
                   <View style={styles.statDivider} />
                   <View style={styles.statItem}>
-                    <Text style={styles.statText}>124 Reviews</Text>
+                    <Text style={styles.statText}>{metric(stats?.totalReviews)} Reviews</Text>
                   </View>
                 </View>
               )}
@@ -163,6 +169,8 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.content}>
+          {notice ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ padding: 16 }}>{notice}</Text> : null}
+          {isCompanion && statsError ? <Text accessibilityRole="alert" style={{ padding: 16 }}>Guide statistics could not be loaded. Please try again later.</Text> : null}
           {isReviewModeEnabled() && (
             <Card style={styles.reviewAccountCard} padding={20}>
               <Text style={styles.cardTitle}>App Review Accounts</Text>
@@ -203,15 +211,15 @@ export default function ProfileScreen() {
               <Text style={styles.cardTitle}>Guide Snapshot</Text>
               <View style={styles.quickStatsGrid}>
                 <View style={styles.quickStatItem}>
-                  <Text style={styles.quickStatValue}>12</Text>
-                  <Text style={styles.quickStatLabel}>This Month</Text>
+                  <Text style={styles.quickStatValue}>{metric(stats?.totalBookings)}</Text>
+                  <Text style={styles.quickStatLabel}>Total Bookings</Text>
                 </View>
                 <View style={styles.quickStatItem}>
-                  <Text style={styles.quickStatValue}>฿45,600</Text>
+                  <Text style={styles.quickStatValue}>{stats?.totalEarnings != null ? `฿${stats.totalEarnings.toLocaleString('en-US')}` : metric(undefined)}</Text>
                   <Text style={styles.quickStatLabel}>Earnings</Text>
                 </View>
                 <View style={styles.quickStatItem}>
-                  <Text style={styles.quickStatValue}>98%</Text>
+                  <Text style={styles.quickStatValue}>{metric(stats?.responseRate, '%')}</Text>
                   <Text style={styles.quickStatLabel}>Response Rate</Text>
                 </View>
               </View>

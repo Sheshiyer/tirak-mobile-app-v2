@@ -1,0 +1,53 @@
+import React from 'react';
+import { render, fireEvent } from '@testing-library/react-native';
+let mockLocale = 'en';
+jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
+jest.mock('expo-image', () => ({ Image: () => null }));
+jest.mock('expo-linear-gradient', () => ({ LinearGradient: ({ children }: any) => children }));
+jest.mock('lucide-react-native', () => Object.fromEntries(['MapPin', 'Heart', 'MessageCircle', 'Star', 'Verified', 'Send', 'Camera'].map(key => [key, () => null])));
+jest.mock('@/stores/favorites-store', () => ({ useFavoritesStore: (selector: any) => selector({ isFavorite: () => false }) }));
+jest.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string, params: any) => key === 'companionDetails.fromPrice' ? `${mockLocale === 'th' ? 'เริ่มต้น' : 'From'} ${params.price}` : key }) }));
+import { FeaturedCompanionsSection } from '@/components/home/FeaturedCompanionsSection';
+const guide = { id: 'real-guide', name: 'Local Guide', age: 0, location: 'Bangkok', rating: 0, reviews: 0, price: 1, image: '', services: ['Local experiences'], languages: ['en'], verified: true, online: false, category: 'travel' };
+it.each(['en', 'th'])('home featured guide shows the localized minimum experience amount, never a daily rate (%s)', locale => {
+  mockLocale = locale;
+  const screen = render(<FeaturedCompanionsSection companions={[guide]} onSeeAll={jest.fn()} />);
+  expect(screen.getByText(`${locale === 'th' ? 'เริ่มต้น' : 'From'} ฿1`)).toBeTruthy();
+  expect(screen.queryByText(/\/day|\/hour|ต่อวัน|ต่อชั่วโมง/)).toBeNull();
+});
+it('labels an unavailable guide rate without offering pre-booking chat', () => {
+  const screen = render(<FeaturedCompanionsSection companions={[{ ...guide, price: 0 }]} onSeeAll={jest.fn()} />);
+  fireEvent.press(screen.getByText('companionDetails.contactForPricing'));
+  expect(require('expo-router').router.push).toHaveBeenLastCalledWith('/companion/real-guide');
+  expect(screen.queryByText(/฿0/)).toBeNull();
+});
+
+import { act } from '@testing-library/react-native';
+import { Dimensions, StyleSheet, FlatList } from 'react-native';
+it('recomputes rendered home card widths and carousel snap geometry after desktop to phone resize', () => {
+  const resize = (width: number) => act(() => Dimensions.set({ window: { width, height: 844, scale: 1, fontScale: 1 }, screen: { width, height: 844, scale: 1, fontScale: 1 } }));
+  const original = Dimensions.get('window');
+  resize(1170);
+  const screen = render(<FeaturedCompanionsSection companions={[guide]} onSeeAll={jest.fn()} />);
+  const width = () => StyleSheet.flatten(screen.getByTestId('featured-guide-card-real-guide').props.style).width as number;
+  expect(width()).toBe(360);
+  resize(390);
+  expect(width()).toBeCloseTo(331.5);
+  expect(width()).toBeLessThanOrEqual(390 - 32);
+  let list = screen.UNSAFE_getByType(FlatList);
+  expect(list.props.snapToInterval).toBeCloseTo(width() + 16);
+  expect(list.props.getItemLayout(null, 1).offset).toBeCloseTo(width() + 16);
+  resize(300);
+  expect(width()).toBe(255);
+  list = screen.UNSAFE_getByType(FlatList);
+  expect(list.props.snapToInterval).toBe(271);
+  fireEvent(screen.getByTestId('featured-guides-section'), 'layout', { nativeEvent: { layout: { width: 280 } } });
+  expect(width()).toBe(238);
+  resize(1170);
+  fireEvent(screen.getByTestId('featured-guides-section'), 'layout', { nativeEvent: { layout: { width: 1170 } } });
+  expect(width()).toBe(360);
+  fireEvent(screen.getByRole('button', { name: 'View Local Guide guide profile' }), 'press');
+  expect(require('expo-router').router.push).toHaveBeenCalledWith('/companion/real-guide');
+  screen.unmount();
+  resize(original.width);
+});

@@ -1,5 +1,10 @@
 import '@testing-library/jest-native/extend-expect';
 
+// Mock AsyncStorage
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
+);
+
 // Mock React Native modules
 jest.mock('react-native', () => {
   const RN = jest.requireActual('react-native');
@@ -35,7 +40,23 @@ jest.mock('lucide-react-native', () => ({
   Plus: 'Plus',
   Clock: 'Clock',
   CheckCircle: 'CheckCircle',
+  CheckCircle2: 'CheckCircle2',
   XCircle: 'XCircle',
+  AlertTriangle: 'AlertTriangle',
+  RefreshCw: 'RefreshCw',
+  UploadCloud: 'UploadCloud',
+  ShieldCheck: 'ShieldCheck',
+  Shield: 'Shield',
+  FileText: 'FileText',
+  MapPin: 'MapPin',
+  AlertCircle: 'AlertCircle',
+  Edit: 'Edit',
+  Edit2: 'Edit2',
+  Edit3: 'Edit3',
+  ArrowLeft: 'ArrowLeft',
+  Save: 'Save',
+  X: 'X',
+  Camera: 'Camera',
 }));
 
 // Mock design tokens
@@ -49,6 +70,14 @@ jest.mock('@/constants/design-tokens', () => ({
         surface: '#FFFFFF',
         text: '#000000',
         textSecondary: '#666666',
+        error: '#FF3B30',
+        warning: '#FF9500',
+        border: '#E5E5EA',
+        background: '#F2F2F7',
+      },
+      components: {
+        button: { text: '#FFFFFF' },
+        input: { background: '#FFFFFF', border: '#E5E5EA', placeholder: '#999999' },
       },
     },
     spacing: {
@@ -66,12 +95,32 @@ jest.mock('@/constants/design-tokens', () => ({
         subheading: { fontSize: 18, fontWeight: '600' },
         body: { fontSize: 16 },
       },
+      weights: {
+        semibold: '600',
+        bold: 'bold',
+      },
+      sizes: {
+        body: 16,
+        caption: 12,
+        small: 12,
+        large: 20,
+      },
+      lineHeights: {
+        normal: 1.2,
+      },
     },
     borderRadius: {
       lg: 8,
       xl: 12,
+      components: {
+        button: 8,
+        input: 8,
+        card: 12,
+      },
     },
     shadows: {
+      sm: {},
+      md: {},
       lg: {
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
@@ -79,6 +128,19 @@ jest.mock('@/constants/design-tokens', () => ({
         shadowRadius: 4,
         elevation: 3,
       },
+    },
+  },
+  componentTokens: {
+    text: {
+      subheading: { fontSize: 18, fontWeight: '600' },
+      caption: { fontSize: 12 },
+      body: { fontSize: 16 },
+    },
+    card: {
+      default: {},
+    },
+    button: {
+      primary: {},
     },
   },
 }));

@@ -1,0 +1,31 @@
+import React from 'react';
+import {render,fireEvent} from '@testing-library/react-native';
+const mockSaved={id:'guide-1',name:'Canal Guide',location:'Bangkok',services:[]};
+let mockFavorites=['guide-1'];const mockRemove=jest.fn();
+jest.mock('expo-router',()=>({router:{push:jest.fn()}}));
+jest.mock('../stores/favorites-store',()=>({useFavoritesStore:Object.assign((select:any)=>select({favorites:mockFavorites,favoriteCompanions:{'guide-1':mockSaved}}),{getState:()=>({removeFavorite:mockRemove})})}));
+jest.mock('../stores/auth-store',()=>({useAuthStore:(select:any)=>select({user:{id:'traveler-1'}})}));
+jest.mock('@tanstack/react-query',()=>({useQueries:()=>mockFavorites.map(()=>({isLoading:false,data:{data:mockSaved}}))}));
+jest.mock('../services/api/companion/companion',()=>({fetchCompanionById:jest.fn()}));
+jest.mock('../utils/demo-mode',()=>({isDemoModeEnabled:()=>false}));
+jest.mock('../utils/companion-display',()=>({isDemoCompanion:()=>false}));
+jest.mock('react-i18next',()=>({useTranslation:()=>({t:(key:string)=>key})}));
+jest.mock('../components/ui/RadialGradient',()=>({RadialGradient:require('react-native').View}));
+jest.mock('../components/ui/Card',()=>({Card:require('react-native').View}));
+jest.mock('../components/ui/CompanionCard',()=>({CompanionCard:({companion}:any)=>require('react').createElement(require('react-native').Text,null,companion.name)}));
+import Screen from '../app/(app)/favorites';
+beforeEach(()=>{mockFavorites=['guide-1'];jest.clearAllMocks();});
+it('unmatched search shows no results, then Clear search restores the retained favorite',()=>{
+ const ui=render(<Screen/>);expect(ui.getByText('Canal Guide')).toBeTruthy();
+ fireEvent.changeText(ui.getByPlaceholderText('favorites.searchFavorites'),'no-such-guide-qa');
+ expect(ui.getByText('search.noResultsFor “no-such-guide-qa”')).toBeTruthy();
+ expect(ui.queryByText('favorites.noFavorites')).toBeNull();expect(ui.queryByText('favorites.noFavoritesDescription')).toBeNull();
+ fireEvent.press(ui.getByLabelText('search.clearSearch'));
+ expect(ui.getByText('Canal Guide')).toBeTruthy();expect(ui.getByPlaceholderText('favorites.searchFavorites').props.value).toBe('');
+ expect(mockFavorites).toEqual(['guide-1']);expect(mockRemove).not.toHaveBeenCalled();ui.unmount();
+});
+it('truly empty account keeps the save/explore guidance instead of a clear-search action',()=>{
+ mockFavorites=[];const ui=render(<Screen/>);
+ expect(ui.getByText('favorites.noFavorites')).toBeTruthy();expect(ui.getByText('favorites.noFavoritesDescription')).toBeTruthy();
+ expect(ui.queryByLabelText('search.clearSearch')).toBeNull();ui.unmount();
+});

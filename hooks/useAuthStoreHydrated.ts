@@ -1,5 +1,19 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
+
+// Deduplicate concurrent consumers while restoration is in flight. A later
+// mount validates again instead of trusting a permanently cached readiness bit.
+let restoration: Promise<void> | null = null;
+function restoreAuthSession(): Promise<void> {
+  if (!restoration) {
+    restoration = (async () => {
+      if (!useAuthStore.persist.hasHydrated()) await useAuthStore.persist.rehydrate();
+      if (!useAuthStore.persist.hasHydrated()) throw new Error('Authentication storage has not hydrated');
+      await useAuthStore.getState().validateToken();
+    })().finally(() => { restoration = null; });
+  }
+  return restoration;
+}
 
 /**
  * Custom hook to safely access auth store after hydration
@@ -16,32 +30,22 @@ export function useAuthStoreHydrated() {
   const setOnboarded = useAuthStore((state) => state.setOnboarded);
   const clearError = useAuthStore((state) => state.clearError);
   const updateUser = useAuthStore((state) => state.updateUser);
-  const validateToken = useAuthStore((state) => state.validateToken);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isLoading = useAuthStore((state) => state.isLoading);
   const error = useAuthStore((state) => state.error);
   const onboarded = useAuthStore((state) => state.onboarded);
 
-  // Use ref to store validateToken to avoid dependency issues
-  const validateTokenRef = useRef(validateToken);
-  validateTokenRef.current = validateToken;
-
   useEffect(() => {
-    // Mark as hydrated after first render
-    setIsHydrated(true);
+    let mounted = true;
+    // Persistence and token-backed identity restoration must both finish before
+    // route guards can classify this browser session as authenticated/anonymous.
+    void restoreAuthSession().then(() => {
+      if (mounted) setIsHydrated(true);
+    }).catch(error => {
+      console.error('Unable to restore authentication', error);
+    });
+    return () => { mounted = false; };
   }, []);
-
-  // Validate token after hydration with proper async handling to avoid useInsertionEffect warnings
-  useEffect(() => {
-    if (isHydrated) {
-      // Use requestAnimationFrame to defer execution until after render
-      const frameId = requestAnimationFrame(() => {
-        validateTokenRef.current().catch(console.error);
-      });
-      
-      return () => cancelAnimationFrame(frameId);
-    }
-  }, [isHydrated]);
 
   // Wrap logout to prevent useInsertionEffect warnings
   const logout = useCallback(() => {

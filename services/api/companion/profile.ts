@@ -1,3 +1,4 @@
+import { useAuthStore } from '@/stores/auth-store';
 import { logger } from '@/utils/logger';
 import axios from 'axios';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -137,8 +138,10 @@ export const fetchCompanionProfile = async (): Promise<CompanionProfileResponse>
 };
 
 export const useCompanionProfile = () => {
+  const userId = useAuthStore(state => state.user?.id);
   return useQuery({
-    queryKey: ['companionProfile'],
+    enabled: !!userId,
+    queryKey: ['companionProfile', userId],
     queryFn: fetchCompanionProfile,
   });
 };

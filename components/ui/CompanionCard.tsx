@@ -3,9 +3,10 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { designTokens } from '@/constants/design-tokens';
-import { MapPin, Star, Heart, MessageCircle, Camera } from 'lucide-react-native';
+import { MapPin, Star, Heart, Camera } from 'lucide-react-native';
 import { useFavoritesStore } from '@/stores/favorites-store';
 import { useTranslation } from 'react-i18next';
+import { GuideStartingPrice } from './GuideStartingPrice';
 interface Companion {
   id: string;
   name: string;
@@ -27,7 +28,6 @@ interface CompanionCardProps {
   viewMode?: 'grid' | 'list';
   onPress?: () => void;
   onFavorite?: () => void;
-  onMessage?: () => void;
 }
 
 export const CompanionCard: React.FC<CompanionCardProps> = ({
@@ -35,7 +35,6 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
   viewMode = 'grid',
   onPress,
   onFavorite,
-  onMessage,
 }) => {
   const store = useFavoritesStore();
   const isFavorite = store.isFavorite(companion.id);
@@ -48,6 +47,10 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
   };
 
   const handleFavoritePress = () => {
+    if (onFavorite) {
+      onFavorite();
+      return;
+    }
     toggleFavorite({
       id: companion.id,
       name: companion.name,
@@ -65,7 +68,6 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
       category: companion.category,
       categories: companion.category ? [companion.category] : [],
     });
-    onFavorite?.();
   };
 
   const renderListImage = () => {
@@ -116,8 +118,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
             <View style={styles.priceContainer}>
               {formatPrice(companion.price) ? (
                 <>
-                  <Text style={styles.price}>{formatPrice(companion.price)}</Text>
-                  <Text style={styles.priceUnit}>/{t('companionDetails.day')}</Text>
+                  <GuideStartingPrice style={styles.price} amount={formatPrice(companion.price)!} />
                 </>
               ) : (
                 <Text style={styles.priceContact}>Request guide rate</Text>
@@ -160,6 +161,9 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
         <View style={styles.cardActions}>
           <TouchableOpacity
             style={styles.actionButton}
+            accessibilityRole="button"
+            accessibilityLabel={isFavorite ? `Remove ${companion.name} from favorites` : `Add ${companion.name} to favorites`}
+            accessibilityState={{ selected: isFavorite }}
             onPress={handleFavoritePress}
           >
             <Heart
@@ -167,9 +171,6 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
               fill={isFavorite ? 'red' : 'none'}
               size={20}
             />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton} onPress={onMessage}>
-            <MessageCircle size={20} color={designTokens.colors.semantic.primary} />
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -183,6 +184,9 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
         {companion.online && <View style={styles.onlineIndicatorGrid} />}
         <TouchableOpacity
           style={styles.favoriteButton}
+          accessibilityRole="button"
+          accessibilityLabel={isFavorite ? `Remove ${companion.name} from favorites` : `Add ${companion.name} to favorites`}
+          accessibilityState={{ selected: isFavorite }}
           onPress={handleFavoritePress}
         >
           <Heart
@@ -217,8 +221,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
         <View style={styles.priceContainer}>
           {formatPrice(companion.price) ? (
             <>
-              <Text style={styles.price}>{formatPrice(companion.price)}</Text>
-              <Text style={styles.priceUnit}>/{t('companionDetails.day')}</Text>
+              <GuideStartingPrice style={styles.price} amount={formatPrice(companion.price)!} />
             </>
           ) : (
             <Text style={styles.priceContact}>Request guide rate</Text>
@@ -242,6 +245,8 @@ const styles = StyleSheet.create({
   // Grid view styles
   gridCard: {
     flex: 1,
+    minWidth: 0,
+    maxWidth: '100%',
     backgroundColor: designTokens.colors.semantic.surface,
     borderRadius: 12,
     margin: 5,
@@ -286,6 +291,8 @@ const styles = StyleSheet.create({
   },
   // List view styles
   listCard: {
+    width: '100%',
+    minWidth: 0,
     flexDirection: 'row',
     backgroundColor: designTokens.colors.semantic.surface,
     borderRadius: 12,
@@ -303,6 +310,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     flex: 1,
+    minWidth: 0,
     padding: 12,
   },
   listHeader: {
@@ -312,6 +320,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   companionName: {
+    minWidth: 0,
+    flexShrink: 1,
     fontSize: 16,
     fontWeight: '600',
     color: designTokens.colors.semantic.text,
@@ -323,6 +333,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   locationText: {
+    flexShrink: 1,
     fontSize: 12,
     color: designTokens.colors.semantic.textSecondary,
     marginLeft: 4,
@@ -399,8 +410,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   actionButton: {
-    width: 36,
-    height: 36,
+    width: 44,
+    height: 44,
     borderRadius: 18,
     backgroundColor: designTokens.colors.semantic.border,
     justifyContent: 'center',

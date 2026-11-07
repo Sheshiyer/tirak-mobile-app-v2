@@ -1,4 +1,3 @@
-import { logger } from '@/utils/logger';
 import { StyleSheet, Text, TouchableOpacity, View, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import React, { useState, useEffect } from 'react'
@@ -22,7 +21,10 @@ interface LanguageOption {
 const language = () => {
   const router = useRouter();
   const { t, i18n } = useTranslation();
-  const [selectedLanguage, setSelectedLanguage] = useState<string>('en');
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(getCurrentLanguage());
+  const [saving, setSaving] = useState(false);
+  const [feedback, setFeedback] = useState('');
+  const [saveError, setSaveError] = useState(false);
 
   // Get language options with translations
   const languages: LanguageOption[] = [
@@ -37,22 +39,28 @@ const language = () => {
   }, []);
 
   const handleSave = async () => {
+    setSaving(true); setFeedback(''); setSaveError(false);
     try {
       await changeLanguage(selectedLanguage);
-      logger.log('Language changed to:', selectedLanguage);
-      router.back();
+      setFeedback(i18n.t('language.saved'));
     } catch (error) {
-      logger.log('Error saving language:', error);
+      setSaveError(true); setFeedback(t('language.saveFailed'));
+    } finally {
+      setSaving(false);
     }
   }
 
   const LanguageOption = ({ option }: { option: LanguageOption }) => (
     <TouchableOpacity
+      accessibilityRole="radio"
+      accessibilityLabel={option.nativeName}
+      accessibilityState={{ checked: selectedLanguage === option.code, disabled: saving }}
+      disabled={saving}
       style={[
         styles.languageOption,
         selectedLanguage === option.code && styles.selectedLanguageOption
       ]}
-      onPress={() => setSelectedLanguage(option.code)}
+      onPress={() => { setSelectedLanguage(option.code); setFeedback(''); }}
     >
       <View style={styles.languageContent}>
         <View style={styles.languageInfo}>
@@ -71,7 +79,7 @@ const language = () => {
     {/* Header */}
     <SafeAreaView edges={Platform.OS === 'web' ? [] : ['top']} style={[styles.header, Platform.OS === 'web' && styles.webHeader]}>
       <View style={styles.headerContent}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.backButton} accessibilityRole="button" accessibilityLabel={t('language.back')} onPress={() => router.canGoBack() ? router.back() : router.replace('/settings')}>
           <ArrowLeft size={24} color={designTokens.colors.semantic.text} />
         </TouchableOpacity>
 
@@ -80,14 +88,16 @@ const language = () => {
           <Caption style={styles.subtitle}>{t('language.selectPreferredLanguage')}</Caption>
         </View>
 
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Save size={20} color="#FFFFFF" />
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('language.save')} accessibilityState={{ disabled: saving, busy: saving }} disabled={saving} style={styles.saveButton} onPress={handleSave}>
+          <Save size={18} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontWeight: "600" }}>{t(saving ? 'language.saving' : 'language.save')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
 
     {/* Language Options */}
-    <View style={styles.content}>
+    <View accessibilityRole="radiogroup" style={styles.content}>
+      {feedback ? <Text accessibilityRole={saveError ? "alert" : undefined} accessibilityLiveRegion="polite" style={{ paddingVertical: 12 }}>{feedback}</Text> : null}
+      {!saving && selectedLanguage !== getCurrentLanguage() && !feedback ? <Text style={{ paddingVertical: 12 }}>{t('language.unsaved')}</Text> : null}
       {languages.map((lang) => (
         <LanguageOption key={lang.code} option={lang} />
       ))}
@@ -103,6 +113,7 @@ const styles = StyleSheet.create({
         flex: 1,
       },
       header: {
+        width: '100%', maxWidth: 720, alignSelf: 'center',
         backgroundColor: 'transparent',
         paddingHorizontal: designTokens.spacing.scale.md,
       },
@@ -133,15 +144,18 @@ const styles = StyleSheet.create({
         color: designTokens.colors.semantic.textSecondary,
       },
       saveButton: {
-        width: 44,
-        height: 44,
+        minWidth: 104,
+        minHeight: 44,
+        paddingHorizontal: 12,
+        flexDirection: 'row',
+        gap: 6,
         borderRadius: 22,
         backgroundColor: designTokens.colors.semantic.accent,
         justifyContent: 'center',
         alignItems: 'center',
       },
       content: {
-        flex: 1,
+        flex: 1, width: '100%', maxWidth: 720, alignSelf: 'center',
         paddingHorizontal: designTokens.spacing.scale.md,
         paddingTop: designTokens.spacing.scale.lg,
       },
@@ -159,6 +173,7 @@ const styles = StyleSheet.create({
         borderWidth: 3,
       },
       languageContent: {
+        minHeight: 88,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',

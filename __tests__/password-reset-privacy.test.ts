@@ -15,3 +15,12 @@ test('reset failures never log the axios request body containing credentials', a
     log.mockRestore();
   }
 });
+
+test('password recovery uses the deployed identifier and newPassword contracts', async () => {
+  mockPost.mockResolvedValue({ data: { success: true, data: { sent: true } } });
+  await requestPasswordReset('person@example.test');
+  expect(mockPost).toHaveBeenLastCalledWith('https://account.test/api/auth/forgot-password', { identifier: 'person@example.test' }, expect.any(Object));
+  mockPost.mockResolvedValue({ data: { success: true, data: { reset: true } } });
+  await resetPassword('opaque-token', 'long-password');
+  expect(mockPost).toHaveBeenLastCalledWith('https://account.test/api/auth/reset-password', { token: 'opaque-token', newPassword: 'long-password' }, expect.any(Object));
+});

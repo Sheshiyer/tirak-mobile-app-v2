@@ -20,7 +20,8 @@ export default function NewPasswordScreen() {
   const { t } = useTranslation();
   
   // Get token from URL parameters
-  const { token } = useLocalSearchParams();
+  const { token: rawToken } = useLocalSearchParams();
+  const token = typeof rawToken === 'string' && rawToken.trim() ? rawToken : null;
   
   // Zod schema for new password form validation
   const newPasswordSchema = z.object({
@@ -134,7 +135,7 @@ export default function NewPasswordScreen() {
         setIsLoading(true);
         setError('');
         
-        const response = await resetPassword(token as string, formData.password);
+        const response = await resetPassword(token, formData.password);
         
         if (response.success) {
           setSuccess(true);
