@@ -114,6 +114,14 @@ describe('chat-api service', () => {
     );
   });
 
+  test('rejects a room response explicitly tied to a different booking', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: true, data: { roomId: 'old-room', bookingId: 'previous-trip', existed: true } }),
+    });
+    await expect(createOrGetRoom('selected-trip')).resolves.toBeNull();
+  });
+
   test('blocks local demo-room detail and delivery for normal users', async () => {
     await expect(getRoomDetail('demo_room_test_companion')).resolves.toBeNull();
     await expect(sendMessage('demo_room_test_companion', 'Hello')).resolves.toBeNull();
@@ -229,5 +237,41 @@ describe('chat-api service', () => {
       sendMessage('demo_room_test_companion', 'Can we meet at 10?'),
     ).resolves.toBeNull();
     expect(mockFetch).not.toHaveBeenCalled();
+  });
+});
+
+describe('room lookup failure classification', () => {
+  beforeEach(() => {
+    jest.clearAllMocks(); mockFetch.mockReset();
+    mockGetItemAsync.mockResolvedValue('valid-token');
+  });
+  test('only a genuine 404 allows participant-route fallback', async () => {
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 404 });
+    await expect(getRoomDetail('participant-id')).resolves.toBeNull();
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+  test.each([401, 403, 429, 500, 503])('rejects HTTP %s instead of presenting a booking gate', async status => {
+    mockFetch.mockResolvedValueOnce({ ok: false, status, clone: () => ({ json: async () => ({ message: 'Failure' }) }) });
+    await expect(getRoomDetail('real-room')).rejects.toThrow('could not load');
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(require('@/utils/api-errors').handleApiError).toHaveBeenCalledWith(expect.objectContaining({ response: expect.objectContaining({ status }) }));
+  });
+  test('rejects a network failure rather than treating a real room as a peer ID', async () => {
+    mockFetch.mockRejectedValueOnce(new Error('offline'));
+    await expect(getRoomDetail('real-room')).rejects.toThrow('could not load');
+  });
+  test('rejects malformed success data rather than treating it as a missing room', async () => {
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ success: true, data: {} }) });
+    await expect(getRoomDetail('real-room')).rejects.toThrow('could not load');
+  });
+  test('rejects missing authentication without attempting a room lookup', async () => {
+    mockGetItemAsync.mockResolvedValueOnce(null);
+    await expect(getRoomDetail('real-room')).rejects.toThrow('could not load');
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+  test('returns an authorized room with valid messages unchanged', async () => {
+    const room = { id: 'real-room', otherParty: { id: 'real-peer', name: 'Guide' }, messages: [] };
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ success: true, data: room }) });
+    await expect(getRoomDetail('real-room')).resolves.toEqual(room);
   });
 });

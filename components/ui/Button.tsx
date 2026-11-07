@@ -197,7 +197,7 @@ export const Button: React.FC<ButtonProps> = ({
   const renderContent = () => (
     <View style={styles.contentContainer}>
       {(leftIcon || icon) && !loading && (
-        <View style={{ marginRight: designTokens.spacing.scale.xs }}>
+        <View style={{ flexShrink: 0, marginRight: designTokens.spacing.scale.xs }}>
           {leftIcon || icon}
         </View>
       )}
@@ -213,7 +213,7 @@ export const Button: React.FC<ButtonProps> = ({
             },
             textStyle,
           ]}
-          numberOfLines={1}
+          numberOfLines={2}
           adjustsFontSizeToFit={false}
           ellipsizeMode="tail"
           maxFontSizeMultiplier={maxFontSizeMultiplier}
@@ -222,7 +222,7 @@ export const Button: React.FC<ButtonProps> = ({
         </Text>
       )}
       {rightIcon && !loading && (
-        <View style={{ marginLeft: designTokens.spacing.scale.xs }}>
+        <View style={{ flexShrink: 0, marginLeft: designTokens.spacing.scale.xs }}>
           {rightIcon}
         </View>
       )}
@@ -238,6 +238,7 @@ export const Button: React.FC<ButtonProps> = ({
           style={[
             styles.button,
             getButtonStyle(),
+            { paddingHorizontal: 0 },
             fullWidth && styles.fullWidth,
             isUnavailable && styles.disabled,
             Platform.OS === 'web' && styles.webButton,
@@ -257,7 +258,7 @@ export const Button: React.FC<ButtonProps> = ({
             end={{ x: 1, y: 0 }}
             style={[
               styles.gradient,
-              { borderRadius: currentSize.borderRadius },
+              { borderRadius: currentSize.borderRadius, paddingHorizontal: currentSize.paddingHorizontal },
               fullWidth && styles.fullWidth,
               Platform.OS === 'web' && styles.webGradient,
             ]}
@@ -306,6 +307,7 @@ const styles = StyleSheet.create({
     userSelect: 'none' as any,
   },
   contentContainer: {
+    width: '100%', minWidth: 0, flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -351,6 +353,9 @@ const styles = StyleSheet.create({
     ...designTokens.typography.styles.body,
     fontWeight: designTokens.typography.weights.semibold,
     textAlign: 'center',
+    flexShrink: 1,
+    minWidth: 0,
+    maxWidth: '100%',
   },
   fullWidth: {
     width: '100%',

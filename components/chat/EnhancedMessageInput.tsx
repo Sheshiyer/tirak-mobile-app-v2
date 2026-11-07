@@ -36,6 +36,7 @@ export const EnhancedMessageInput: React.FC<EnhancedMessageInputProps> = ({
         <View style={styles.textInputContainer}>
           <TextInput
             style={[styles.textInput, { height: Math.max(40, inputHeight) }]}
+            accessibilityLabel="Message"
             placeholder="Type a message..."
             placeholderTextColor={designTokens.colors.semantic.textSecondary}
             value={message}
@@ -57,6 +58,9 @@ export const EnhancedMessageInput: React.FC<EnhancedMessageInputProps> = ({
               canSend ? styles.sendButtonActive : styles.sendButtonDisabled,
             ]}
             onPress={onSend}
+            accessibilityRole="button"
+            accessibilityLabel="Send message"
+            accessibilityState={{ disabled: !canSend }}
             disabled={!canSend}
             activeOpacity={0.8}
           >

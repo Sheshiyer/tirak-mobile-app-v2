@@ -38,6 +38,7 @@ import {
 import { Smartphone, Mail } from 'lucide-react-native';
 import CustomerSettingsScreen from '@/app/(app)/settings';
 import { AccountEmailVerification } from '@/components/AccountEmailVerification';
+import { AccountClosureConfirmation, ACCOUNT_CLOSURE_MESSAGE } from '@/components/AccountClosureConfirmation';
 import { AccountPrivacyPreferences } from '@/components/AccountPrivacyPreferences';
 
 
@@ -59,10 +60,13 @@ function SupplierSettingsScreen() {
 
   const { user } = useAuthStoreHydrated();
   const isCompanion = user?.userType === 'companion' || user?.userType === 'supplier';
-  const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
-  const [emailNotificationsEnabled, setEmailNotificationsEnabled] = React.useState(true);
-  const { data: notificationPreferences } = useNotificationPreferences();
+  const [notificationsEnabled, setNotificationsEnabled] = React.useState<boolean | null>(null);
+  const [emailNotificationsEnabled, setEmailNotificationsEnabled] = React.useState<boolean | null>(null);
+  const { data: notificationPreferences, isLoading: loadingPreferences, error: preferencesError, refetch: refetchPreferences } = useNotificationPreferences();
+  const preferences = notificationPreferences?.success === true ? notificationPreferences.data?.preferences : undefined;
+  const preferencesReady = !loadingPreferences && !preferencesError && typeof preferences?.push === 'boolean' && typeof preferences?.email === 'boolean';
   const updateNotificationPreferences = useUpdateNotificationPreferences();
+  const [preferenceError, setPreferenceError] = React.useState('');
   const { t } = useTranslation();
 
   React.useEffect(() => {
@@ -73,6 +77,8 @@ function SupplierSettingsScreen() {
   }, [notificationPreferences]);
 
   const updatePreference = (key: 'push' | 'email', value: boolean) => {
+    if (!preferencesReady || updateNotificationPreferences.isPending) return;
+    setPreferenceError('');
     if (key === 'push') setNotificationsEnabled(value);
     if (key === 'email') setEmailNotificationsEnabled(value);
     updateNotificationPreferences.mutate(
@@ -81,56 +87,49 @@ function SupplierSettingsScreen() {
         onError: () => {
           if (key === 'push') setNotificationsEnabled(!value);
           if (key === 'email') setEmailNotificationsEnabled(!value);
-          Alert.alert('Could not save preference', 'Please try again.');
+          setPreferenceError(t('settingsFlow.privacySaveError'));
         },
       }
     );
   };
 
+  const [supportError, setSupportError] = React.useState('');
   const openExternalLink = async (url: string, fallbackMessage: string) => {
+    setSupportError('');
     try {
       await Linking.openURL(url);
     } catch {
-      Alert.alert('Unable to open link', fallbackMessage);
+      if (Platform.OS === 'web') setSupportError(`Unable to open your email app. ${fallbackMessage}`);
+      else Alert.alert('Unable to open link', fallbackMessage);
     }
   };
 
-  const handleDeleteAccount = async () => {
-    const performDelete = async () => {
-      if (user?.userType === 'supplier') {
-        logger.log('Deleting supplier account...');
-        await deleteSupplierAccount(user?.id || '');
-        await logout();
-      } else if (user?.userType === 'companion') {
-        logger.log('Deleting companion account...');
-        await deleteCompanionAccount(user?.id || '');
-        await logout();
-      } else {
-        logger.log('Deleting user account...');
-        await deleteUserAccount(user?.id || '');
-        await logout();
-      }
-      
-      // On web, force a page reload to ensure complete cleanup
-      if (typeof window !== 'undefined') {
-        window.location.href = '/auth';
-      } else {
-        router.replace("/auth");
-      }
-    };
-
-    // Web-compatible confirmation
-    if (Platform.OS === 'web') {
-      const confirmed = window.confirm(`${t('settings.deleteAccount')}\n\n${t('settings.deleteAccountDescription')}`);
-      if (confirmed) {
-        await performDelete();
-      }
-    } else {
-      Alert.alert(t('settings.deleteAccount'), t('settings.deleteAccountDescription'), [
-        { text: t('settings.cancel'), style: "cancel" },
-        { text: t('settings.deleteAccount'), onPress: performDelete },
-      ]);
-    }
+  const [showClosure, setShowClosure] = React.useState(false);
+  const deletingRef = React.useRef(false);
+  const performDelete = async () => {
+    if (deletingRef.current) return;
+    if (!user?.id) throw new Error('Please sign in again before closing your account.');
+    deletingRef.current = true;
+    try {
+      const response = user.userType === 'supplier'
+        ? await deleteSupplierAccount(user.id)
+        : user.userType === 'companion'
+          ? await deleteCompanionAccount(user.id)
+          : await deleteUserAccount(user.id);
+      if (!response.success) throw new Error(response.message || 'Unable to close your account. Please try again.');
+      await logout();
+      if (typeof window !== 'undefined') window.location.href = '/auth';
+      else router.replace('/auth');
+    } finally { deletingRef.current = false; }
+  };
+  const handleDeleteAccount = () => {
+    if (Platform.OS === 'web') setShowClosure(true);
+    else Alert.alert(t('settings.deleteAccount'), ACCOUNT_CLOSURE_MESSAGE, [
+      {text:t('settings.cancel'),style:'cancel'},
+      {text:t('settings.deleteAccount'),onPress:()=>{
+        void performDelete().catch(error=>Alert.alert('Error', error instanceof Error ? error.message : 'Network error. Please try again.'));
+      }},
+    ]);
   };
   
   return (
@@ -205,24 +204,28 @@ function SupplierSettingsScreen() {
         </View>
         
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Booking Alerts</Text>
+          <Text style={styles.sectionTitle}>{t('settingsFlow.bookingAlerts')}</Text>
+          {loadingPreferences ? <ActivityIndicator accessibilityLabel="Loading notification preferences" /> : !preferencesReady ? <View><Text accessibilityRole="alert">Unable to load notification preferences.</Text><TouchableOpacity accessibilityRole="button" accessibilityLabel="Retry notification preferences" onPress={()=>{void refetchPreferences();}}><Text style={{paddingVertical:12}}>Retry</Text></TouchableOpacity></View> : null}
+          {preferenceError ? <Text accessibilityRole="alert">{preferenceError}</Text> : null}
           
-          <View style={styles.card}>
+          {preferencesReady && <View style={styles.card}>
             <View style={styles.settingItem}>
               <View style={styles.settingIcon}>
                 <Smartphone size={20} color={designTokens.colors.semantic.surface} />
               </View>
               <View style={styles.settingContent}>
-                <Text style={styles.settingTitle}>Push Alerts</Text>
+                <Text style={styles.settingTitle}>{t('settingsFlow.pushAlerts')}</Text>
                 <Text style={styles.settingDescription}>
-                  Booking requests, guide reminders, and traveler messages
+                  {t('settingsFlow.pushDescription')}
                 </Text>
               </View>
               <Switch
-                value={notificationsEnabled}
+                accessibilityLabel={t('settingsFlow.pushAlerts')}
+                disabled={!preferencesReady || updateNotificationPreferences.isPending}
+                value={notificationsEnabled ?? preferences?.push ?? false}
                 onValueChange={(value) => updatePreference('push', value)}
                 trackColor={{ false: colors.lightGray, true: colors.primaryLight }}
-                thumbColor={notificationsEnabled ? colors.primary : 'white'}
+                thumbColor={(notificationsEnabled ?? preferences?.push) ? colors.primary : 'white'}
               />
             </View>
             
@@ -233,23 +236,25 @@ function SupplierSettingsScreen() {
                 <Mail size={20} color={designTokens.colors.semantic.surface} />
               </View>
               <View style={styles.settingContent}>
-                <Text style={styles.settingTitle}>Email Alerts</Text>
+                <Text style={styles.settingTitle}>{t('settingsFlow.emailAlerts')}</Text>
                 <Text style={styles.settingDescription}>
-                  Booking and message updates sent to your email
+                  {t('settingsFlow.emailDescription')}
                 </Text>
               </View>
               <Switch
-                value={emailNotificationsEnabled}
+                accessibilityLabel={t('settingsFlow.emailAlerts')}
+                disabled={!preferencesReady || updateNotificationPreferences.isPending}
+                value={emailNotificationsEnabled ?? preferences?.email ?? false}
                 onValueChange={(value) => updatePreference('email', value)}
                 trackColor={{ false: colors.lightGray, true: colors.primaryLight }}
-                thumbColor={emailNotificationsEnabled ? colors.primary : 'white'}
+                thumbColor={(emailNotificationsEnabled ?? preferences?.email) ? colors.primary : 'white'}
               />
             </View>
-          </View>
+          </View>}
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tirak Coins</Text>
+          <Text style={styles.sectionTitle}>{t('settingsFlow.coins')}</Text>
           <View style={styles.card}>
             <TouchableOpacity
               style={styles.settingItem}
@@ -259,9 +264,9 @@ function SupplierSettingsScreen() {
                 <Gift size={20} color={designTokens.colors.semantic.surface} />
               </View>
               <View style={styles.settingContent}>
-                <Text style={styles.settingTitle}>Invite & Earn</Text>
+                <Text style={styles.settingTitle}>{t('settingsFlow.invite')}</Text>
                 <Text style={styles.settingDescription}>
-                  Share Tirak with travelers or guides and earn future benefits
+                  {t('settingsFlow.inviteDescription')}
                 </Text>
               </View>
               <ChevronRight size={20} color={designTokens.colors.semantic.text} />
@@ -290,8 +295,8 @@ function SupplierSettingsScreen() {
             </TouchableOpacity>
             <TouchableOpacity style={styles.settingItem} onPress={() => router.push('/auth/legal?type=terms')}>
               <View style={styles.settingContent}>
-                <Text style={styles.settingTitle}>Terms of Service</Text>
-                <Text style={styles.settingDescription}>Review the rules for travelers and guides</Text>
+                <Text style={styles.settingTitle}>{t('settings.termsOfService')}</Text>
+                <Text style={styles.settingDescription}>{t('settings.termsOfServiceDescription')}</Text>
               </View>
               <ChevronRight size={20} color={designTokens.colors.semantic.text} />
             </TouchableOpacity>
@@ -316,6 +321,7 @@ function SupplierSettingsScreen() {
         
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('settings.support')}</Text>
+          {supportError ? <Text selectable accessibilityRole="alert" style={{paddingVertical:12}}>{supportError}</Text> : null}
           
           <View style={styles.card}>
             <TouchableOpacity
@@ -327,7 +333,7 @@ function SupplierSettingsScreen() {
               </View>
               <View style={styles.settingContent}>
                 <Text style={styles.settingTitle}>{t('settings.helpCenter')}</Text>
-                <Text style={styles.settingDescription}>
+                <Text selectable style={styles.settingDescription}>
                   {HELP_CENTER_EMAIL}
                 </Text>
               </View>
@@ -345,7 +351,7 @@ function SupplierSettingsScreen() {
               </View>
               <View style={styles.settingContent}>
                 <Text style={styles.settingTitle}>{t('settings.contactSupport')}</Text>
-                <Text style={styles.settingDescription}>
+                <Text selectable style={styles.settingDescription}>
                   {SUPPORT_EMAIL}
                 </Text>
               </View>
@@ -364,6 +370,7 @@ function SupplierSettingsScreen() {
         
         <Text style={styles.versionText}>{`${t('settings.version')} ${Constants.expoConfig?.version}`}</Text>
       </ScrollView>
+      <AccountClosureConfirmation visible={showClosure} onClose={()=>setShowClosure(false)} onConfirm={performDelete} />
     </SafeAreaView>
   );
 }
@@ -374,8 +381,8 @@ const styles = StyleSheet.create({
     backgroundColor: designTokens.colors.semantic.background,
   },
   scrollContent: {
-    flexGrow: 1,
-    padding: 16,
+    flexGrow: 1, width: '100%', maxWidth: 720, alignSelf: 'center',
+    padding: 24, paddingBottom: 40,
   },
   header: {
     marginBottom: 24,
@@ -411,6 +418,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   settingItem: {
+    minHeight: 72,
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,

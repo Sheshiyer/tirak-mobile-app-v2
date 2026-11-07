@@ -16,8 +16,8 @@ import { useBookingStore, BookingDateTime } from '@/stores/booking-store';
 import { designTokens } from '@/constants/design-tokens';
 import { useCompanionWeeklyAvailability } from '@/services/api/companion/companion';
 import { useTranslation } from 'react-i18next';
-import { isTestCompanionId } from '@/utils/companion-display';
-import { getDemoGuideAvailability } from '@/utils/preview-availability';
+import { buildBookableTimeSlots } from '@/utils/booking-schedule';
+import { formatBookingDate } from '@/components/booking/booking-format';
 
 interface TimeSlot {
   start: string;
@@ -38,49 +38,10 @@ interface DateTimePickerStepProps {
   onPrevious: () => void;
 }
 
-const timeToMinutes = (time: string) => {
-  const [hours = '0', minutes = '0'] = time.split(':');
-  return Number(hours) * 60 + Number(minutes);
-};
-
-const minutesToTime = (totalMinutes: number) => {
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-};
-
 const getDaySlots = (day?: DayAvailability): TimeSlot[] => {
   if (!day) return [];
   const slots = Array.isArray(day.slots) ? day.slots : day.timeSlots;
-  return Array.isArray(slots) ? slots.filter(slot => slot.available !== false) : [];
-};
-
-const buildBookableTimeSlots = (slots: TimeSlot[], durationHours: number): TimeSlot[] => {
-  const sortedSlots = [...slots].sort((a, b) => timeToMinutes(a.start) - timeToMinutes(b.start));
-  const latestAvailableEnd = sortedSlots.reduce(
-    (latest, slot) => Math.max(latest, timeToMinutes(slot.end)),
-    0
-  );
-  const durationMinutes = Math.max(Math.round(durationHours * 60), 30);
-  const seenStarts = new Set<string>();
-
-  return sortedSlots
-    .map(slot => {
-      const startMinutes = timeToMinutes(slot.start);
-      const endMinutes = startMinutes + durationMinutes;
-
-      if (seenStarts.has(slot.start) || endMinutes > latestAvailableEnd) {
-        return null;
-      }
-
-      seenStarts.add(slot.start);
-      return {
-        ...slot,
-        end: minutesToTime(endMinutes),
-        available: true,
-      };
-    })
-    .filter((slot): slot is TimeSlot => Boolean(slot));
+  return Array.isArray(slots) ? slots : [];
 };
 
 export const DateTimePickerStep: React.FC<DateTimePickerStepProps> = ({
@@ -109,12 +70,8 @@ export const DateTimePickerStep: React.FC<DateTimePickerStepProps> = ({
   logger.log('companionId:', companionId);
   logger.log('Raw Availability Data:', availabilityData);
 
-  const demoAvailabilityDates = isTestCompanionId(companionId) ? getDemoGuideAvailability() : [];
-
   // Get available dates and time slots from API response
-  const availableDates = demoAvailabilityDates.length > 0
-    ? demoAvailabilityDates
-    : availabilityData?.success && availabilityData.data.availability
+  const availableDates = availabilityData?.success && availabilityData.data.availability
       ? availabilityData.data.availability.filter(day => day.available)
       : [];
 
@@ -180,31 +137,14 @@ export const DateTimePickerStep: React.FC<DateTimePickerStepProps> = ({
   };
 
   const handleNext = () => {
-    if (selectedDate && selectedTime) {
+    if (selectedDate && selectedTime && selectedSlot) {
       onNext();
     } else {
       Alert.alert(t('dateTimePicker.selectionRequired'), t('dateTimePicker.pleaseSelectBothDateAndTime'));
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
-  const formatDateLong = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
+  const formatDateLong = (dateString: string) => formatBookingDate(dateString, 'en');
 
   return (
     <View style={styles.container}>
@@ -228,39 +168,27 @@ export const DateTimePickerStep: React.FC<DateTimePickerStepProps> = ({
               <Text style={styles.loadingText}>{t('dateTimePicker.loadingAvailability')}</Text>
             </View>
           ) : availableDates.length > 0 ? (
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            style={styles.dateScrollView}
-            contentContainerStyle={styles.dateScrollContent}
-          >
-              {availableDates.map((date, index) => {
-                const dateObj = new Date(date.date);
-                return (
-              <TouchableOpacity
-                    key={date.date}
-                style={[
-                  styles.dateOption,
-                      selectedDate === date.date && styles.selectedDateOption,
-                ]}
-                    onPress={() => handleDateSelect(date.date)}
-              >
-                <Text style={[
-                  styles.dateLabel,
-                      selectedDate === date.date && styles.selectedDateLabel,
-                ]}>
-                      {dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short' })}
-                </Text>
-                <Text style={[
-                  styles.dateNumber,
-                      selectedDate === date.date && styles.selectedDateNumber,
-                ]}>
-                      {dateObj.getDate()}
-                </Text>
-              </TouchableOpacity>
-                );
-              })}
-          </ScrollView>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.dateScrollView}
+              contentContainerStyle={styles.dateScrollContent}
+            >
+              {availableDates.map(date => (
+                <TouchableOpacity
+                  key={date.date}
+                  style={[styles.dateOption, selectedDate === date.date && styles.selectedDateOption]}
+                  onPress={() => handleDateSelect(date.date)}
+                >
+                  <Text style={[styles.dateLabel, selectedDate === date.date && styles.selectedDateLabel]}>
+                    {formatBookingDate(date.date, 'en', { weekday: 'short', month: 'short' })}
+                  </Text>
+                  <Text style={[styles.dateNumber, selectedDate === date.date && styles.selectedDateNumber]}>
+                    {formatBookingDate(date.date, 'en', { day: 'numeric' })}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           ) : (
             <View style={styles.noTimesContainer}>
               <Text style={styles.noTimesText}>{t('dateTimePicker.noDatesAvailable')}</Text>
@@ -348,7 +276,7 @@ export const DateTimePickerStep: React.FC<DateTimePickerStepProps> = ({
         onPrevious={onPrevious}
         onNext={handleNext}
         nextTitle={t('dateTimePicker.continue')}
-        nextDisabled={!selectedDate || !selectedTime}
+        nextDisabled={!selectedDate || !selectedTime || !selectedSlot}
         showPrevious={true}
         showNext={true}
       />

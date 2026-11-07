@@ -113,25 +113,9 @@ export default function ForgotPasswordScreen() {
         
         const response = await requestPasswordReset(formData.identifier);
 
-        logger.log('Response:', response);
-        
-        if (response.success) {
-          setSuccess(true);
-          // In production, the user would receive a deep link via email/SMS like:
-          // tirak://reset-password?token=09da5821-16ac-4187-8910-e984ce1e81d3
-          
-        //   logger.log('Reset link sent! User will receive deep link via email/SMS');
-        //   logger.log('Example link format: tirak://reset-password?token=09da5821-16ac-4187-8910-e984ce1e81d3');
-          
-        //   // For demo purposes, auto-navigate after 3 seconds
-        //   // In production, user would tap the link in their email
-        //   setTimeout(() => {
-        //     const mockToken = '09da5821-16ac-4187-8910-e984ce1e81d3';
-        //     router.push(`/auth/new?token=${mockToken}`);
-        //   }, 3000);
-        }
+        if (response.success) setSuccess(true);
+        else setError(t('login.passwordResetError'));
       } catch (err) {
-        console.error('Password reset request error:', err);
         const resetError = err as PasswordResetError;
         setError(resetError.message || t('login.passwordResetError'));
       } finally {
@@ -199,7 +183,7 @@ export default function ForgotPasswordScreen() {
             />
             
             <Button
-              title={success ? t('login.redirecting') : t('login.reset')}
+              title={success ? t('login.resetRequested') : t('login.reset')}
               onPress={handleForgotPassword}
               loading={isLoading}
               fullWidth
