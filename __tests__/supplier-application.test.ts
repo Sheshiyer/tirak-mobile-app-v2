@@ -308,7 +308,7 @@ describe('submitSupplierApplication', () => {
     });
 
     const payload = buildApplicationPayload(makeSignupData(), ['Bangkok']);
-    const receipt = await submitSupplierApplication(payload, 'idempotency-uuid-1');
+    const receipt = await submitSupplierApplication(payload, 'test-key');
 
     expect(receipt).toEqual({
       applicationId: validUuid,
@@ -320,7 +320,7 @@ describe('submitSupplierApplication', () => {
       {
         headers: {
           'Content-Type': 'application/json',
-          'Idempotency-Key': 'idempotency-uuid-1',
+          'Idempotency-Key': 'test-key',
         },
       },
     );
