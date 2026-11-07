@@ -9,12 +9,15 @@ export const formatBookingTotal = (amount: number, language?: string): string =>
   })}`
 );
 
-export const formatBookingDate = (date: string, language?: string): string => (
-  new Date(`${date}T12:00:00`).toLocaleDateString(normalizeBookingLocale(language), {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
+export const formatBookingDate = (
+  date: string,
+  language?: string,
+  options: Intl.DateTimeFormatOptions = { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' },
+): string => (
+  // Keep the Thailand calendar date in any viewer timezone.
+  new Date(`${date.slice(0, 10)}T12:00:00Z`).toLocaleDateString(normalizeBookingLocale(language), {
+    ...options,
+    timeZone: 'UTC',
   })
 );
 

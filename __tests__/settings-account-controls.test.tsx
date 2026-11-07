@@ -17,7 +17,7 @@ const mockState = { user: { id: 'real-user', userType: 'customer', verified: fal
 let mockHydrated = true;
 
 jest.mock('react-native', () => ({
-  View: 'View', Text: 'Text', ScrollView: 'ScrollView', TouchableOpacity: 'TouchableOpacity', Switch: 'Switch', ActivityIndicator: 'ActivityIndicator',
+  Modal: 'Modal', View: 'View', Text: 'Text', ScrollView: 'ScrollView', TouchableOpacity: 'TouchableOpacity', Switch: 'Switch', ActivityIndicator: 'ActivityIndicator',
   StyleSheet: { create: (styles: unknown) => styles },
   Alert: { alert: jest.fn() }, Linking: { openURL: jest.fn() }, Platform: { OS: 'web', select: (values: Record<string, unknown>) => values.web ?? values.default },
 }));
@@ -44,7 +44,6 @@ const ExplicitSupplierSettings = require('@/app/supplier/settings/index').defaul
 const surfaces = [
   ['customer settings', CustomerSettings],
   ['grouped /settings', GroupedSupplierSettings],
-  ['explicit /supplier/settings', ExplicitSupplierSettings],
 ] as const;
 
 let mounted: MountedScreen | undefined;
@@ -76,21 +75,21 @@ describe.each(surfaces)('%s account controls', (_name, Screen) => {
     mockState.user.userType = role;
     act(() => { mounted = TestRenderer.create(<Screen />); });
     expect(mounted!.root.findAllByType('AccountPrivacyPreferences' as any)).toHaveLength(1);
-    const verify = findButton('Verify your email');
+    const verify = findButton('settingsFlow.verifyEmail');
     expect(verify).toBeDefined();
     act(() => verify!.props.onPress());
     expect(mockRouter.push).toHaveBeenCalledWith('/auth/verify-email');
     act(() => findButton('Privacy Policy')!.props.onPress());
     expect(mockRouter.push).toHaveBeenCalledWith('/auth/legal?type=privacy');
-    act(() => findButton('Terms of Service')!.props.onPress());
+    act(() => findButton('settings.termsOfService')!.props.onPress());
     expect(mockRouter.push).toHaveBeenCalledWith('/auth/legal?type=terms');
   });
 
   test('shows confirmed email status from the authenticated account', () => {
     mockState.user.verified = true;
     act(() => { mounted = TestRenderer.create(<Screen />); });
-    expect(findButton('Email verified')).toBeDefined();
-    expect(findButton('Verify your email')).toBeUndefined();
+    expect(findButton('settingsFlow.emailVerified')).toBeDefined();
+    expect(findButton('settingsFlow.verifyEmail')).toBeUndefined();
   });
 });
 
@@ -102,4 +101,41 @@ test('a cold grouped settings route waits for hydration then renders customer se
   act(() => mounted!.update(<GroupedSupplierSettings />));
   expect(mounted!.root.findAllByType(CustomerSettings)).toHaveLength(1);
   expect(mockRouter.replace).not.toHaveBeenCalled();
+});
+
+
+describe('explicit legacy supplier settings URL',()=>{
+  test.each(['customer','supplier','companion'])('redirects a hydrated %s to its canonical settings',role=>{
+    mockState.user.userType=role;
+    act(()=>{mounted=TestRenderer.create(<ExplicitSupplierSettings/>);});
+    const redirects=mounted!.root.findAllByType('Redirect' as any);
+    expect(redirects).toHaveLength(1);
+    expect(redirects[0].props.href).toBe(role==='customer'?'/(app)/settings':'/(supplier)/settings');
+    expect(mounted!.root.findAllByType('AccountPrivacyPreferences' as any)).toHaveLength(0);
+  });
+  test('waits for hydration without rendering another account settings surface',()=>{
+    mockHydrated=false;act(()=>{mounted=TestRenderer.create(<ExplicitSupplierSettings/>);});
+    expect(mounted!.root.findAllByType('ActivityIndicator' as any)).toHaveLength(1);
+    expect(mounted!.root.findAllByType('Redirect' as any)).toHaveLength(0);
+    expect(mounted!.root.findAllByType('AccountPrivacyPreferences' as any)).toHaveLength(0);
+  });
+  test('sends a signed-out visitor to authentication',()=>{
+    mockState.user=null as any;act(()=>{mounted=TestRenderer.create(<ExplicitSupplierSettings/>);});
+    expect(mounted!.root.findAllByType('Redirect' as any)[0].props.href).toBe('/auth');
+    expect(mockState.logout).not.toHaveBeenCalled();
+  });
+});
+
+test.each([['traveler',CustomerSettings,'Delete Account'],['guide',GroupedSupplierSettings,'settings.deleteAccount']])('%s exposes the real closure confirmation and Keep account dismisses without mutation',(_role,Screen,label)=>{
+  if(_role==='guide')mockState.user.userType='companion';
+  act(()=>{mounted=TestRenderer.create(<Screen/>);});
+  expect(mounted!.root.findAllByType('Modal' as any)[0].props.visible).toBe(false);
+  act(()=>findButton(label)!.props.onPress());
+  expect(mounted!.root.findAllByType('Modal' as any)[0].props.visible).toBe(true);
+  const confirm=findButton('Confirm close account');expect(confirm?.props.accessibilityRole).toBe('button');
+  act(()=>findButton('Keep account')!.props.onPress());
+  expect(mounted!.root.findAllByType('Modal' as any)[0].props.visible).toBe(false);
+  expect(mockState.logout).not.toHaveBeenCalled();
+  const api=require('@/services/api/auth/delete');
+  expect(api.deleteUserAccount).not.toHaveBeenCalled();expect(api.deleteCompanionAccount).not.toHaveBeenCalled();expect(api.deleteSupplierAccount).not.toHaveBeenCalled();
 });

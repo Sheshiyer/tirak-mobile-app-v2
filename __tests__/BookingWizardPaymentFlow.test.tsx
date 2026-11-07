@@ -185,7 +185,7 @@ describe('booking wizard payment routing', () => {
     const screen = render(<BookingWizard />);
 
     fireEvent.press(screen.getByText(/bookingSummary\.agreeToTermsAndConditions/));
-    await act(async () => fireEvent.press(screen.getByLabelText('bookingSummary.confirm')));
+    await act(async () => fireEvent.press(screen.getByLabelText('bookingSummary.sendRequest')));
 
     await waitFor(() => expect(screen.getByText('PAYMENT_STEP')).toBeTruthy());
     expect(usePaymentStore.getState().booking).toEqual({

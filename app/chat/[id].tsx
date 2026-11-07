@@ -41,7 +41,11 @@ import { VoiceMessage } from '@/components/chat/VoiceMessage';
 import { TranslationToggle } from '@/components/chat/TranslationToggle';
 import { ChatSettings } from '@/components/chat/ChatSettings';
 import { EnhancedMessageInput } from '@/components/chat/EnhancedMessageInput';
+import { ChatAccessState } from '@/components/chat/ChatAccessState';
+import { ChatPeerHeader } from '@/components/chat/ChatPeerHeader';
 import { useTranslation } from 'react-i18next';
+import { fetchBookingById } from '@/services/api/booking/booking';
+import { loadChatBookingAccess, type ChatBookingAccess } from '@/utils/chat-booking-access';
 
 // TypeScript interfaces for type safety
 interface Message {
@@ -97,6 +101,9 @@ export default function ChatScreen() {
   const { id, starter } = useLocalSearchParams<{ id: string; starter?: string }>();
   const { user } = useAuthStore();
   const [roomId, setRoomId] = useState<string | null>(null);
+  const [linkedBookingId, setLinkedBookingId] = useState<string | undefined>();
+  const [bookingAccess, setBookingAccess] = useState<ChatBookingAccess | null>(null);
+  const [bookingAccessError, setBookingAccessError] = useState<string | null>(null);
   const [otherParty, setOtherParty] = useState<OtherParty | null>(null);
   const [message, setMessage] = useState(starter ? decodeURIComponent(starter) : '');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -191,6 +198,9 @@ export default function ChatScreen() {
     setSendError(null);
     setBookingRequired(false);
     setRoomId(null);
+    setLinkedBookingId(undefined);
+    setBookingAccess(null);
+    setBookingAccessError(null);
     setMessages([]);
     setOtherParty(null);
     const rawId = typeof id === 'string' ? id : Array.isArray(id) ? id[0] : '';
@@ -203,17 +213,33 @@ export default function ChatScreen() {
 
     // UUIDs can be either room IDs from Messages or participant IDs from profiles.
     // If no room exists, find an eligible booking before opening a participant chat.
-    const roomDetail = await getRoomDetail(rawId);
+    let roomDetail;
+    try {
+      roomDetail = await getRoomDetail(rawId);
+    } catch {
+      if (generation !== initGenerationRef.current) return;
+      setChatError('We could not load this conversation. Check your connection and try again.');
+      setIsLoading(false);
+      return;
+    }
     if (generation !== initGenerationRef.current) return;
     if (roomDetail) {
       setRoomId(rawId);
       setOtherParty(roomDetail.otherParty);
       setMessages(roomDetail.messages.map(backendMsgToLocal));
-      setIsLoading(false);
-
-      if (user?.id && !rawId.startsWith('demo_room_')) {
-        await connectWS(rawId, user.id, generation);
+      setLinkedBookingId(roomDetail.bookingId);
+      try {
+        const access = await loadChatBookingAccess(roomDetail.bookingId, fetchBookingById);
+        if (generation !== initGenerationRef.current) return;
+        setBookingAccess(access);
+        if (access.canSend && user?.id && !rawId.startsWith('demo_room_')) {
+          await connectWS(rawId, user.id, generation);
+        }
+      } catch {
+        if (generation !== initGenerationRef.current) return;
+        setBookingAccessError('We could not verify this booking’s chat status. Your earlier messages are available. Retry before sending.');
       }
+      setIsLoading(false);
     } else {
       const result = rawId.startsWith('demo_room_')
         ? { roomId: null, reason: 'unavailable' as const }
@@ -253,7 +279,7 @@ export default function ChatScreen() {
   };
 
   const handleSend = async () => {
-    if (!message.trim() || !roomId || sendingRef.current) return;
+    if (!message.trim() || !roomId || !bookingAccess?.canSend || sendingRef.current) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     sendingRef.current = true;
     setIsSending(true);
@@ -261,6 +287,15 @@ export default function ChatScreen() {
     const textToSend = message.trim();
     const generation = initGenerationRef.current;
     try {
+      const access = await loadChatBookingAccess(linkedBookingId, fetchBookingById);
+      if (generation !== initGenerationRef.current) return;
+      setBookingAccess(access);
+      if (!access.canSend) {
+        wsRef.current?.close();
+        setConnectionError(null);
+        setMessage('');
+        return;
+      }
       const sent = await sendChatMessage(roomId, textToSend);
       if (generation !== initGenerationRef.current) return;
       if (!sent) throw new Error('Message not sent');
@@ -268,7 +303,23 @@ export default function ChatScreen() {
       setMessage(current => current.trim() === textToSend ? '' : current);
     } catch {
       if (generation === initGenerationRef.current) {
-        setSendError('Your message was not sent. Check your connection and tap send to try again.');
+        try {
+          const access = await loadChatBookingAccess(linkedBookingId, fetchBookingById);
+          if (generation !== initGenerationRef.current) return;
+          setBookingAccess(access);
+          if (!access.canSend) {
+            wsRef.current?.close();
+            setConnectionError(null);
+            setMessage('');
+          } else {
+            setSendError('Your message was not sent. Please try again.');
+          }
+        } catch {
+          if (generation === initGenerationRef.current) {
+            setBookingAccess(null);
+            setBookingAccessError('We could not verify this booking’s chat status. Your earlier messages are available. Retry before sending.');
+          }
+        }
       }
     } finally {
       sendingRef.current = false;
@@ -337,63 +388,6 @@ export default function ChatScreen() {
     }
   };
   
-  // Component: Chat Header with design tokens - Consistent with Home Page
-  const ChatHeader: React.FC<ChatHeaderProps> = ({ companion, onBack, onMore }) => (
-    <View style={styles.header}>
-      <View style={styles.headerContent}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={onBack}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <ArrowLeft size={24} color={designTokens.colors.semantic.text} />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.profileButton}
-          accessibilityRole="button"
-          accessibilityLabel={`View ${companion.name} profile`}
-        >
-          <ProfileImage
-            uri={companion.image}
-            size="small"
-          />
-          <View style={styles.profileInfo}>
-            <Body style={styles.profileName}>{companion.name}</Body>
-          </View>
-        </TouchableOpacity>
-
-        <View style={styles.headerActions}>
-          {/* <TouchableOpacity
-            style={[
-              styles.headerActionButton,
-              showTranslation && styles.headerActionButtonActive,
-            ]}
-            onPress={() => setShowTranslation(!showTranslation)}
-            accessibilityRole="button"
-            accessibilityLabel={t('chat.toggleTranslation')}
-          >
-            <Languages size={20} color={
-              showTranslation
-                ? designTokens.colors.semantic.primaryContrast
-                : designTokens.colors.semantic.text
-            } />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.headerActionButton}
-            onPress={() => setShowChatSettings(true)}
-            accessibilityRole="button"
-            accessibilityLabel={t('chat.chatSettings')}
-          >
-            <MoreVertical size={20} color={designTokens.colors.semantic.text} />
-          </TouchableOpacity> */}
-        </View>
-      </View>
-    </View>
-  );
-
   // Derive a companion-compatible object from the real otherParty for header/settings
   const companionForHeader = {
     id: otherParty?.id ?? '',
@@ -417,16 +411,12 @@ export default function ChatScreen() {
   if (chatError) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-        <View style={styles.errorContainer}>
-          <Body style={styles.errorTitle}>Chat unavailable</Body>
-          <Caption style={styles.errorMessage}>{chatError}</Caption>
-          <TouchableOpacity style={styles.errorButton} onPress={bookingRequired ? () => router.push('/bookings') : initChat}>
-            <Body style={styles.errorButtonText}>{bookingRequired ? 'View bookings' : 'Try again'}</Body>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.secondaryErrorButton} onPress={() => router.replace('/messages')}>
-            <Caption style={styles.secondaryErrorText}>Back to messages</Caption>
-          </TouchableOpacity>
-        </View>
+        <ChatAccessState
+          bookingRequired={bookingRequired}
+          message={chatError}
+          onPrimary={bookingRequired ? () => router.push('/bookings') : initChat}
+          onBack={() => router.replace('/messages')}
+        />
       </SafeAreaView>
     );
   }
@@ -435,14 +425,9 @@ export default function ChatScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         style={styles.keyboardContainer}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        behavior={Platform.select({ ios: 'padding', android: 'height' })}
       >
-        <ChatHeader
-          companion={companionForHeader}
-          onBack={handleBack}
-          onMore={() => {}}
-        />
+        <ChatPeerHeader name={companionForHeader.name} image={companionForHeader.image} onBack={handleBack} />
 
         <View style={styles.chatContainer}>
           <FlatList
@@ -465,19 +450,23 @@ export default function ChatScreen() {
           />
         )}
 
-        {connectionError && (
+        {connectionError && bookingAccess?.canSend && (
           <TouchableOpacity onPress={initChat} accessibilityRole="button" accessibilityLabel="Reconnect live chat">
             <Caption style={styles.errorMessage}>{connectionError}</Caption>
           </TouchableOpacity>
         )}
         {sendError && <Caption accessibilityRole="alert" style={styles.errorMessage}>{sendError}</Caption>}
         {roomId?.startsWith('demo_room_') && <Caption style={styles.errorMessage}>Demo conversation — messages stay on this device.</Caption>}
-        <EnhancedMessageInput
-          message={message}
-          onMessageChange={setMessage}
-          onSend={handleSend}
-          disabled={!roomId || isSending}
-        />
+        {bookingAccessError ? (
+          <View style={styles.accessNotice}>
+            <Caption accessibilityRole="alert" style={styles.accessNoticeText}>{bookingAccessError}</Caption>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Retry booking chat status" style={styles.secondaryErrorButton} onPress={initChat}><Caption style={styles.secondaryErrorText}>Retry booking status</Caption></TouchableOpacity>
+          </View>
+        ) : bookingAccess && !bookingAccess.canSend ? (
+          <View style={styles.accessNotice}><Body style={styles.accessNoticeText}>{bookingAccess.message}</Body></View>
+        ) : (
+          <EnhancedMessageInput message={message} onMessageChange={setMessage} onSend={handleSend} disabled={!roomId || !bookingAccess?.canSend || isSending} />
+        )}
 
         {/* Chat Settings Modal */}
         <ChatSettings
@@ -501,8 +490,14 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    width: '100%',
+    maxWidth: 1170,
+    minWidth: 0,
+    alignSelf: 'center',
     backgroundColor: designTokens.colors.semantic.background,
   },
+  accessNotice: { margin: 16, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: designTokens.colors.semantic.border, backgroundColor: designTokens.colors.semantic.surface },
+  accessNoticeText: { color: designTokens.colors.semantic.textSecondary, lineHeight: 23, flexShrink: 1 },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -510,6 +505,8 @@ const styles = StyleSheet.create({
   },
   keyboardContainer: {
     flex: 1,
+    minWidth: 0,
+    width: '100%',
   },
   header: {
     paddingTop: designTokens.spacing.scale.lg,
@@ -565,6 +562,8 @@ const styles = StyleSheet.create({
   },
   chatContainer: {
     flex: 1,
+    minWidth: 0,
+    width: '100%',
     backgroundColor: designTokens.colors.semantic.background,
   },
   messagesList: {
@@ -574,6 +573,8 @@ const styles = StyleSheet.create({
   },
   messageContainer: {
     maxWidth: '80%',
+    minWidth: 0,
+    flexShrink: 1,
     gap: designTokens.spacing.scale.xs,
   },
   userMessageContainer: {
@@ -583,6 +584,8 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   messageBubble: {
+    minWidth: 0,
+    flexShrink: 1,
     borderRadius: designTokens.borderRadius.components.card,
     paddingHorizontal: designTokens.spacing.scale.md,
     paddingVertical: designTokens.spacing.scale.sm,
@@ -598,6 +601,9 @@ const styles = StyleSheet.create({
     ...designTokens.shadows.md,
   },
   messageText: {
+    minWidth: 0,
+    flexShrink: 1,
+    ...(Platform.OS === 'web' ? { overflowWrap: 'anywhere' } as any : {}),
     ...componentTokens.text.body,
   },
   userMessageText: {

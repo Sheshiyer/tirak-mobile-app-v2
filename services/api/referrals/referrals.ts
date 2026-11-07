@@ -30,6 +30,7 @@ export const getReferralAccount = async (): Promise<{ success: boolean; data: Re
       'Content-Type': 'application/json',
     },
   });
+  if (response.data?.success !== true) throw new Error(response.data?.message || 'Referral request failed. Please try again.');
   return response.data;
 };
 
@@ -41,6 +42,7 @@ export const applyReferralCode = async (code: string): Promise<{ success: boolea
       'Content-Type': 'application/json',
     },
   });
+  if (response.data?.success !== true) throw new Error(response.data?.message || 'Referral request failed. Please try again.');
   return response.data;
 };
 

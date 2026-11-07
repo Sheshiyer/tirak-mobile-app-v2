@@ -1,5 +1,5 @@
 import { logger } from '@/utils/logger';
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { secureStorage } from '@/utils/secure-storage';
 import { API_BASE_URL, apiUrl } from '@/constants/api';
@@ -20,8 +20,27 @@ import {
 } from '@/utils/booking-notifications';
 import { BookingPaymentReadModel } from '@/types/payment';
 import { getDemoModeEnabled } from '@/utils/demo-mode';
+import { collectBookingHistory } from '@/utils/booking-history';
 
 const DEMO_BOOKINGS_STORAGE_KEY = 'tirak-demo-bookings';
+
+/**
+ * Thrown when a booking POST returns 409 due to idempotency key conflict.
+ * The caller should rotate the key and retry with the new draft payload.
+ */
+export class BookingIdempotencyConflictError extends Error {
+  constructor(message = 'Booking idempotency key conflict — draft may have changed') {
+    super(message);
+    this.name = 'BookingIdempotencyConflictError';
+  }
+}
+
+export class BookingScheduleConflictError extends Error {
+  constructor(message = 'Selected booking slot is no longer available') {
+    super(message);
+    this.name = 'BookingScheduleConflictError';
+  }
+}
 
 // TypeScript interfaces for booking API
 export interface CreateBookingRequest {
@@ -38,6 +57,7 @@ export interface CreateBookingRequest {
   preferredLanguages?: string[];
   dietaryRestrictions?: string[];
   accessibilityNeeds?: string[];
+  idempotencyKey?: string;
 }
 
 export interface BookingCompanion {
@@ -98,6 +118,8 @@ export interface Booking {
   date: string;
   startTime: string;
   endTime: string;
+  timeZone?: string;
+  timezone?: string;
   duration: number;
   location?: string;
   specialRequests?: string;
@@ -121,6 +143,8 @@ export interface BookingListItem {
   date: string;
   startTime: string;
   endTime: string;
+  timeZone?: string;
+  timezone?: string;
   duration: number;
   location?: string;
   status: BookingStatus;
@@ -155,6 +179,18 @@ const BOOKING_PAYMENT_STATUSES = new Set<PaymentStatus>([
   'restituted',
   'restitution_failed',
 ]);
+
+function isIdempotencyConflict(error: AxiosError): boolean {
+  const data = error.response?.data as { code?: string; message?: string; error?: string } | undefined;
+  const text = `${data?.code || ''} ${data?.message || ''} ${data?.error || ''}`.toLowerCase();
+  return text.includes('idempot') || text.includes('duplicate request') || text.includes('same idempotency');
+}
+
+function isScheduleConflict(error: AxiosError): boolean {
+  const data = error.response?.data as { code?: string; message?: string; error?: string } | undefined;
+  const text = `${data?.code || ''} ${data?.message || ''} ${data?.error || ''}`.toLowerCase();
+  return text.includes('schedule') || text.includes('availability') || text.includes('slot') || text.includes('time conflict');
+}
 
 export function parseCreateBookingResponse(value: unknown): CreateBookingResponse {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -309,19 +345,9 @@ const isDemoPreviewBookingRequest = (bookingData: CreateBookingRequest): boolean
   );
 };
 
-const canUseLocalDemoBookingFallback = (bookingData: CreateBookingRequest): boolean => (
-  isDemoPreviewBookingRequest(bookingData)
-  && (__DEV__ || isReviewModeEnabled())
-);
+const canUseLocalDemoBookingFallback = (_bookingData: CreateBookingRequest): boolean => false;
 
-const isLocalPromptPayReviewBooking = (bookingData: CreateBookingRequest): boolean => (
-  isDemoPreviewBookingRequest(bookingData)
-  && isLocalPromptPayEnabled({
-    flag: process.env.EXPO_PUBLIC_PROMPTPAY_ENABLED,
-    apiBaseUrl: API_BASE_URL,
-    isDev: __DEV__,
-  })
-);
+const isLocalPromptPayReviewBooking = (_bookingData: CreateBookingRequest): boolean => false;
 
 const createAndStoreDemoBookingResponse = async (bookingData: CreateBookingRequest): Promise<CreateBookingResponse> => {
   const response = createDemoBookingResponse(bookingData);
@@ -359,6 +385,7 @@ const toBookingListItem = (booking: Booking): BookingListItem => ({
   date: booking.date,
   startTime: booking.startTime,
   endTime: booking.endTime,
+  ...(booking.timeZone || booking.timezone ? { timeZone: booking.timeZone || booking.timezone } : {}),
   duration: booking.duration,
   location: booking.location,
   status: booking.status,
@@ -423,17 +450,16 @@ export const createBooking = async (bookingData: CreateBookingRequest): Promise<
 
     const token = await getAuthToken();
     const url = apiUrl('/api/bookings');
+    const idempotencyKey = bookingData.idempotencyKey;
     
     // Clean up optional arrays to prevent sending empty arrays
+    const { idempotencyKey: _idem, ...restData } = bookingData;
     const cleanedData = {
-      ...bookingData,
-      preferredLanguages: bookingData.preferredLanguages?.length ? bookingData.preferredLanguages : undefined,
-      dietaryRestrictions: bookingData.dietaryRestrictions?.length ? bookingData.dietaryRestrictions : undefined,
-      accessibilityNeeds: bookingData.accessibilityNeeds?.length ? bookingData.accessibilityNeeds : undefined
+      ...restData,
+      preferredLanguages: restData.preferredLanguages?.length ? restData.preferredLanguages : undefined,
+      dietaryRestrictions: restData.dietaryRestrictions?.length ? restData.dietaryRestrictions : undefined,
+      accessibilityNeeds: restData.accessibilityNeeds?.length ? restData.accessibilityNeeds : undefined
     };
-    
-    // logger.log("Creating booking:", url, cleanedData); 
-    // logger.log("created booking"); 
     
     let response;
     try {
@@ -442,6 +468,7 @@ export const createBooking = async (bookingData: CreateBookingRequest): Promise<
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           ...(token && { 'Authorization': `Bearer ${token}` }),
+          ...(idempotencyKey && { 'Idempotency-Key': idempotencyKey }),
         },
       });
     } catch (error) {
@@ -452,6 +479,17 @@ export const createBooking = async (bookingData: CreateBookingRequest): Promise<
           companionId: bookingData.companionId,
         });
         return await createAndStoreDemoBookingResponse(bookingData);
+      }
+      if (axios.isAxiosError(error) && error.response?.status === 409) {
+        if (isIdempotencyConflict(error)) {
+          logger.warn('[Booking] 409 idempotency conflict — retry must reuse original payload and key');
+          throw new BookingIdempotencyConflictError();
+        }
+        if (isScheduleConflict(error)) {
+          throw new BookingScheduleConflictError(
+            (error.response?.data as { message?: string })?.message || 'Selected booking slot is no longer available',
+          );
+        }
       }
       throw error;
     }
@@ -464,6 +502,10 @@ export const createBooking = async (bookingData: CreateBookingRequest): Promise<
 
     return parsedResponse;
   } catch (error) {
+    if (error instanceof BookingIdempotencyConflictError || error instanceof BookingScheduleConflictError) {
+      throw error;
+    }
+
     if (isUnauthorizedError(error)) {
       throw new Error("Please log in again to create this booking.");
     }
@@ -749,7 +791,7 @@ const updateDemoBookingStatus = async (
 };
 
 // Fetch bookings list
-export const fetchBookings = async (params: BookingsQueryParams = {}): Promise<BookingsListResponse> => {
+export const fetchBookings = async (params: BookingsQueryParams = {}, options?: {signal?: AbortSignal; syncReminders?: boolean}): Promise<BookingsListResponse> => {
   if (isReviewModeEnabled() && isReviewAccountUser(useAuthStore.getState().user)) {
     const booking = useReviewBookingFixtureStore.getState().booking;
     const items = booking ? [reviewBookingToListItem(booking)] : [];
@@ -782,6 +824,7 @@ export const fetchBookings = async (params: BookingsQueryParams = {}): Promise<B
     logger.log("Fetching bookings:", url);
     
     const response = await axios.get(url, {
+      signal: options?.signal,
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -813,16 +856,17 @@ export const fetchBookings = async (params: BookingsQueryParams = {}): Promise<B
             },
           },
         };
-        await syncBookingReminderNotifications(mergedResponse.data.items || [], getCurrentNotificationRole());
+        if (options?.syncReminders !== false) await syncBookingReminderNotifications(mergedResponse.data.items || [], getCurrentNotificationRole());
         return mergedResponse;
       }
     }
 
     const responseItems = response.data?.data?.bookings || response.data?.data?.items || [];
-    await syncBookingReminderNotifications(responseItems, getCurrentNotificationRole());
+    if (options?.syncReminders !== false) await syncBookingReminderNotifications(responseItems, getCurrentNotificationRole());
 
     return response.data;
   } catch (error: any) {
+    if (options?.signal?.aborted) throw error;
     handleApiError(error);
     if (isUnauthorizedError(error)) {
       throw new Error("Please log in again to view your bookings.");
@@ -956,90 +1000,14 @@ export const updateBookingStatus = async (
 
 // React Query Hooks
 
-// Hook for creating a booking
+// Hook for creating a booking — delegates to the single createBooking transport
+// so the Idempotency-Key header is always forwarded correctly.
 export const useCreateBooking = () => {
   const queryClient = useQueryClient();
-  
-  // logger.log('=== useCreateBooking hook initialized ===');
-  
+
   return useMutation({
     mutationKey: ['createBooking'],
-    mutationFn: async (bookingData: CreateBookingRequest) => {
-      logger.log('🚀 [API Call Start] createBooking mutation triggered'  , {
-        timestamp: new Date().toISOString(),
-        bookingData: {
-          companionId: bookingData.companionId,
-          serviceId: bookingData.serviceId,
-          date: bookingData.date,
-          startTime: bookingData.startTime,
-          duration: bookingData.duration
-        }
-      });
-      
-      // Validate required fields
-      if (!bookingData.companionId || !bookingData.date || !bookingData.startTime || !bookingData.duration) {
-        // console.error('❌ Validation failed: Missing required booking fields'); 
-        throw new Error('Missing required booking fields');
-      }
-
-      if (isReviewCustomerSession()) {
-        return createReviewBookingResponse(bookingData);
-      }
-
-      const token = await getAuthToken();
-      const url = apiUrl('/api/bookings');
-
-      // Clean up optional arrays to prevent sending empty arrays
-      const cleanedData = {
-        ...bookingData,
-        preferredLanguages: bookingData.preferredLanguages?.length ? bookingData.preferredLanguages : undefined,
-        dietaryRestrictions: bookingData.dietaryRestrictions?.length ? bookingData.dietaryRestrictions : undefined,
-        accessibilityNeeds: bookingData.accessibilityNeeds?.length ? bookingData.accessibilityNeeds : undefined
-      };
-      
-      logger.log("📤 Sending API request:", {
-        url,
-        method: 'POST',
-        timestamp: new Date().toISOString(),
-        data: cleanedData
-      });
-      
-      let response;
-      try {
-        response = await axios.post(url, cleanedData, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            ...(token && { 'Authorization': `Bearer ${token}` }),
-          },
-        });
-      } catch (error) {
-        if (axios.isAxiosError(error) && canUseLocalDemoBookingFallback(bookingData) && await getDemoModeEnabled()) {
-          logger.warn('[Booking] Live booking endpoint unavailable for explicit demo booking; using local review fallback.', {
-            status: error.response?.status,
-            serviceId: bookingData.serviceId,
-            companionId: bookingData.companionId,
-          });
-          return await createAndStoreDemoBookingResponse(bookingData);
-        }
-        throw error;
-      }
-
-      logger.log("📥 API Response received:", {
-        timestamp: new Date().toISOString(),
-        status: response.status,
-        data: response.data,
-        success: response.data?.success,
-        bookingId: response.data?.data?.booking?.id
-      });
-
-      const parsedResponse = parseCreateBookingResponse(response.data);
-      
-      await showBookingCreatedNotification(parsedResponse.data.booking, 'traveler');
-      await scheduleThreeHourBookingReminder(parsedResponse.data.booking, 'traveler');
-
-      return parsedResponse;
-    },
+    mutationFn: (bookingData: CreateBookingRequest) => createBooking(bookingData),
     onSuccess: (data) => {
       logger.log("✅ Mutation succeeded:", {
         timestamp: new Date().toISOString(),
@@ -1049,6 +1017,8 @@ export const useCreateBooking = () => {
       // Invalidate and refetch bookings list
       queryClient.invalidateQueries({ queryKey: ['bookings'] });
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['supplierStats'] });
+      queryClient.invalidateQueries({ queryKey: ['companionAvailability'] });
     },
     onError: (error: Error) => {
       console.error("❌ Mutation failed:", {
@@ -1057,6 +1027,40 @@ export const useCreateBooking = () => {
       });
       throw error; // Re-throw to be caught by the component
     },
+  });
+};
+
+// Complete account history for global filters/counts; existing paged consumers stay unchanged.
+export const fetchBookingHistory = async (ownerId: string, signal?: AbortSignal): Promise<BookingsListResponse> => {
+  const assertOwner = () => {
+    if (signal?.aborted) throw new Error('Booking history request cancelled.');
+    const auth = useAuthStore.getState();
+    if (!ownerId || !auth.isAuthenticated || auth.user?.id !== ownerId) {
+      throw new Error('Please sign in again to load your booking history.');
+    }
+  };
+  assertOwner();
+  const complete = await collectBookingHistory(async page => {
+    assertOwner();
+    const response = await fetchBookings({page,limit:100}, {signal,syncReminders:false});
+    assertOwner();
+    return response;
+  }, signal);
+  assertOwner();
+  await syncBookingReminderNotifications(complete.data.items || [], getCurrentNotificationRole());
+  return complete;
+};
+
+export const useBookingHistoryQuery = (options?: {enabled?: boolean}) => {
+  const {user,isAuthenticated} = useAuthStore();
+  return useQuery({
+    queryKey:['bookings','history',user?.id ?? null],
+    queryFn:({signal})=>fetchBookingHistory(user?.id || '',signal),
+    enabled:!!user?.id && isAuthenticated && options?.enabled !== false,
+    staleTime:2 * 60 * 1000,
+    gcTime:5 * 60 * 1000,
+    refetchOnWindowFocus:true,
+    retry:false,
   });
 };
 
@@ -1107,13 +1111,35 @@ export const useUpdateBookingStatus = () => {
   return useMutation({
     mutationFn: ({ id, statusData }: { id: string; statusData: UpdateBookingStatusRequest }) =>
       updateBookingStatus(id, statusData),
-    onSuccess: (data, variables) => {
-      // Invalidate and refetch bookings list
-      queryClient.invalidateQueries({ queryKey: ['bookings'] });
-      // Invalidate and refetch specific booking details
-      queryClient.invalidateQueries({ queryKey: ['booking', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      logger.log("Booking status updated successfully:", data.data.booking.status);
+    onSuccess: async (data, variables) => {
+      const confirmed = data?.data?.booking;
+      if (data.success !== true || confirmed?.id !== variables.id || !['confirmed', 'cancelled', 'completed'].includes(confirmed.status)) {
+        throw new Error('The server did not confirm the booking status update.');
+      }
+      // A list read started before approval must not restore the old pending row.
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: ['bookings'] }),
+        queryClient.cancelQueries({ queryKey: ['booking', variables.id] }),
+      ]);
+      queryClient.setQueriesData<BookingsListResponse>({ queryKey: ['bookings'] }, current => {
+        if (!current?.data) return current;
+        const update = (booking: BookingListItem) => booking.id === variables.id ? { ...booking, status: confirmed.status } : booking;
+        return { ...current, data: { ...current.data,
+          ...(current.data.items ? { items: current.data.items.map(update) } : {}),
+          ...(current.data.bookings ? { bookings: current.data.bookings.map(update) } : {}),
+        } };
+      });
+      queryClient.setQueryData<BookingDetailsResponse>(['booking', variables.id], current => current?.data?.booking
+        ? { ...current, data: { ...current.data, booking: { ...current.data.booking, status: confirmed.status } } }
+        : current);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['bookings'] }),
+        queryClient.invalidateQueries({ queryKey: ['booking', variables.id] }),
+        queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+        queryClient.invalidateQueries({ queryKey: ['supplierStats'] }),
+        queryClient.invalidateQueries({ queryKey: ['companionAvailability'] }),
+      ]);
+      logger.log("Booking status updated successfully:", confirmed.status);
     },
     onError: (error: Error) => {
       logger.warn("Failed to update booking status:", error.message);

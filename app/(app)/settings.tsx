@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -15,6 +16,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { designTokens } from '@/constants/design-tokens';
 import { RadialGradient } from '@/components/ui/RadialGradient';
 import { Card } from '@/components/ui/Card';
+import { AccountClosureConfirmation, ACCOUNT_CLOSURE_MESSAGE } from '@/components/AccountClosureConfirmation';
 import { AccountPrivacyPreferences } from '@/components/AccountPrivacyPreferences';
 import {
   User,
@@ -71,7 +73,7 @@ const SettingsItem: React.FC<SettingsItemProps> = ({
           {title}
         </Text>
         {subtitle && (
-          <Text style={styles.settingsSubtitle}>{subtitle}</Text>
+          <Text selectable style={styles.settingsSubtitle}>{subtitle}</Text>
         )}
       </View>
     </View>
@@ -82,14 +84,20 @@ const SettingsItem: React.FC<SettingsItemProps> = ({
 );
 
 export default function SettingsScreen() {
+  const { t } = useTranslation();
   const { user, logout } = useAuthStore();
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [showClosure, setShowClosure] = useState(false);
+  const deletingRef = useRef(false);
 
+  const [supportError, setSupportError] = useState('');
   const openExternalLink = async (url: string, fallbackMessage: string) => {
+    setSupportError('');
     try {
       await Linking.openURL(url);
     } catch {
-      Alert.alert('Unable to open link', fallbackMessage);
+      if (Platform.OS === 'web') setSupportError(`Unable to open your email app. ${fallbackMessage}`);
+      else Alert.alert('Unable to open link', fallbackMessage);
     }
   };
 
@@ -114,75 +122,56 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleDeleteAccount = () => {
-    const confirmDelete = () => {
-      Alert.alert(
-        'Delete Account',
-        'This is permanent. Your profile, bookings, messages, and saved guides will be removed.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Delete Account',
-            style: 'destructive',
-            onPress: performDeleteAccount,
-          },
-        ]
-      );
-    };
-
-    const performDeleteAccount = async () => {
-      if (!user?.id) return;
-      setDeletingAccount(true);
-      try {
-        const token = await secureStorage.getItemAsync('authToken');
-        const res = await fetch(`${BACKEND_URL}/api/users/${user.id}`, {
-          method: 'DELETE',
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        if (res.ok) {
-          await logout();
-          if (typeof window !== 'undefined') {
-            window.location.href = '/auth';
-          } else {
-            router.replace('/auth');
-          }
-        } else {
-          Alert.alert('Error', `Failed to delete account. Please contact ${SUPPORT_EMAIL}.`);
-        }
-      } catch {
-        Alert.alert('Error', 'Network error. Please try again.');
-      } finally {
-        setDeletingAccount(false);
-      }
-    };
-
-    if (Platform.OS === 'web') {
-      const confirmed = window.confirm('Delete Account\n\nThis permanently removes your Tirak account, profile, bookings, and messages.');
-      if (confirmed) performDeleteAccount();
-    } else {
-      confirmDelete();
+  const performDeleteAccount = async () => {
+    if (deletingRef.current) return;
+    if (!user?.id) throw new Error('Please sign in again before closing your account.');
+    deletingRef.current = true;
+    setDeletingAccount(true);
+    try {
+      const token = await secureStorage.getItemAsync('authToken');
+      const res = await fetch(`${BACKEND_URL}/api/users/${user.id}`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error(`Unable to close your account. Please try again or contact ${SUPPORT_EMAIL}.`);
+      await logout();
+      if (typeof window !== 'undefined') window.location.href = '/auth';
+      else router.replace('/auth');
+    } finally {
+      deletingRef.current = false;
+      setDeletingAccount(false);
     }
+  };
+
+  const handleDeleteAccount = () => {
+    if (Platform.OS === 'web') setShowClosure(true);
+    else Alert.alert('Delete Account', ACCOUNT_CLOSURE_MESSAGE, [
+      {text:'Cancel',style:'cancel'},
+      {text:'Delete Account',style:'destructive',onPress:()=>{
+        void performDeleteAccount().catch(error=>Alert.alert('Error', error instanceof Error ? error.message : 'Network error. Please try again.'));
+      }},
+    ]);
   };
 
   return (
     <RadialGradient variant="appBackground" style={styles.container}>
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Profile Section */}
         <Card style={styles.profileCard}>
           <View style={styles.profileHeader}>
-            <Text style={styles.sectionTitle}>Your Tirak Account</Text>
+            <Text style={styles.sectionTitle}>{t('settingsFlow.yourAccount')}</Text>
           </View>
           
           <SettingsItem
             icon={<User size={22} color={designTokens.colors.semantic.primary} />}
-            title="Edit Profile"
-            subtitle="Keep your photo, contact details, and travel style current"
+            title={t('settingsFlow.editProfile')}
+            subtitle={t('settingsFlow.editDescription')}
             onPress={() => router.push('/profile/edit')}
           />
           <SettingsItem
             icon={<Mail size={22} color={designTokens.colors.semantic.primary} />}
-            title={user?.verified ? 'Email verified' : 'Verify your email'}
-            subtitle={user?.verified ? 'Your account email is confirmed' : 'Receive a code to confirm your account email'}
+            title={user?.verified ? t('settingsFlow.emailVerified') : t('settingsFlow.verifyEmail')}
+            subtitle={user?.verified ? t('settingsFlow.emailConfirmed') : t('settingsFlow.emailCode')}
             onPress={() => router.push('/auth/verify-email')}
           />
         </Card>
@@ -190,19 +179,19 @@ export default function SettingsScreen() {
         {/* App Settings */}
         <Card style={styles.settingsCard}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Preferences</Text>
+            <Text style={styles.sectionTitle}>{t('settingsFlow.preferences')}</Text>
           </View>
           
           <SettingsItem
             icon={<Bell size={22} color={designTokens.colors.semantic.primary} />}
-            title="Notifications"
-            subtitle="Choose booking, message, and reminder alerts"
+            title={t('settingsFlow.notifications')}
+            subtitle={t('settingsFlow.notificationsDescription')}
             onPress={() =>  router.push('/(app)/profile/notificationSettings')}
           />
           <SettingsItem
             icon={<Gift size={22} color={designTokens.colors.semantic.primary} />}
-            title="Tirak Coins"
-            subtitle="Invite travelers or guides and earn future benefits"
+            title={t('settingsFlow.coins')}
+            subtitle={t('settingsFlow.coinsDescription')}
             onPress={() => router.push('/referrals' as any)}
           />
           
@@ -210,30 +199,28 @@ export default function SettingsScreen() {
           
           <SettingsItem
             icon={<Globe size={22} color={designTokens.colors.semantic.primary} />}
-            title="Language"
-            subtitle="English"
-            onPress={() => {
-              Alert.alert('Language pass coming soon', 'English is active now. Thai copy will be reviewed separately.');
-            }}
+            title={t('settings.language')}
+            subtitle={t('settings.languageDescription')}
+            onPress={() => router.push('/supplier/profile/language')}
           />
         </Card>
 
         {/* Privacy & Security */}
         <Card style={styles.settingsCard}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Trust & Safety</Text>
+            <Text style={styles.sectionTitle}>{t('settingsFlow.trustSafety')}</Text>
           </View>
           
           <SettingsItem
             icon={<Shield size={22} color={designTokens.colors.semantic.primary} />}
-            title="Privacy Policy"
-            subtitle="See how Tirak protects your data"
+            title={t('settings.privacyPolicy')}
+            subtitle={t('settings.privacyPolicyDescription')}
             onPress={() => router.push('/auth/legal?type=privacy')}
           />
           <SettingsItem
             icon={<FileText size={22} color={designTokens.colors.semantic.primary} />}
-            title="Terms of Service"
-            subtitle="Review the rules for travelers and guides"
+            title={t('settings.termsOfService')}
+            subtitle={t('settings.termsOfServiceDescription')}
             onPress={() => router.push('/auth/legal?type=terms')}
           />
           <AccountPrivacyPreferences />
@@ -243,6 +230,7 @@ export default function SettingsScreen() {
         <Card style={styles.settingsCard}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Support</Text>
+            {supportError ? <Text selectable accessibilityRole="alert" style={{paddingVertical:12}}>{supportError}</Text> : null}
           </View>
           
           <SettingsItem
@@ -261,18 +249,16 @@ export default function SettingsScreen() {
           
           <SettingsItem
             icon={<Star size={22} color={designTokens.colors.semantic.primary} />}
-            title="Rate App"
-            subtitle="Share feedback after your next Tirak day"
-            onPress={() => {
-              Alert.alert('Thank you', 'Your feedback helps shape Tirak for travelers and guides.');
-            }}
+            title="Send app feedback"
+            subtitle={`Compose an email to ${SUPPORT_EMAIL}`}
+            onPress={() => openExternalLink(`${SUPPORT_MAILTO}?subject=${encodeURIComponent('Tirak app feedback')}`, `Email ${SUPPORT_EMAIL}`)}
           />
         </Card>
 
         {/* Danger Zone */}
         <Card style={styles.settingsCard}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Account Access</Text>
+            <Text style={styles.sectionTitle}>{t('settingsFlow.accountAccess')}</Text>
           </View>
           <SettingsItem
             icon={
@@ -281,7 +267,7 @@ export default function SettingsScreen() {
                 : <Trash2 size={22} color={designTokens.colors.semantic.error} />
             }
             title="Delete Account"
-            subtitle="Permanently remove your profile, bookings, and messages"
+            subtitle="Close your account. Booking history may be retained."
             onPress={handleDeleteAccount}
             danger={true}
           />
@@ -304,6 +290,7 @@ export default function SettingsScreen() {
           <Text style={styles.copyrightText}>© {CURRENT_YEAR} Tirak. All rights reserved.</Text>
         </View>
       </ScrollView>
+      <AccountClosureConfirmation visible={showClosure} onClose={()=>setShowClosure(false)} onConfirm={performDeleteAccount} />
     </RadialGradient>
   );
 }
@@ -312,11 +299,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-  },
+  content: { flex: 1 },
+  scrollContent: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 24, paddingBottom: 40 },
   profileCard: {
     marginBottom: 20,
     padding: 20,
@@ -340,6 +324,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    minHeight: 64,
     paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: designTokens.colors.semantic.border,
