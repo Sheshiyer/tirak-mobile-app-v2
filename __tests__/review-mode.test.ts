@@ -6,15 +6,8 @@ import {
 } from '@/constants/review-mode';
 
 describe('app review mode contract', () => {
-  test.each([
-    [undefined, false],
-    ['', false],
-    ['false', false],
-    ['TRUE', false],
-    ['1', false],
-    ['true', true],
-  ])('requires the exact build flag %p', (flag, expected) => {
-    expect(isReviewModeEnabled(flag)).toBe(expected);
+  test('stays disabled even with the former opt-in flag', () => {
+    expect(isReviewModeEnabled('true')).toBe(false);
   });
 
   test('publishes deterministic password-free customer and guide identities', () => {

@@ -1,6 +1,7 @@
+import { bookingLoadState } from '@/utils/booking-load-state';
 import { logger } from '@/utils/logger';
-import React, { useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ViewStyle, TextStyle, ScrollView, Alert, Platform } from 'react-native';
+import React, { useMemo, useCallback, useRef, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ViewStyle, TextStyle, ScrollView, Alert, Platform, Modal } from 'react-native';
 import { router } from 'expo-router';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -159,18 +160,26 @@ const SafeTouchableOpacity = ({ children, onPress, style, activeOpacity = 0.8, d
 };
 
 // Individual booking item component
-const BookingItem: React.FC<{ booking: BookingListItem; onStatusUpdate: (id: string, status: BookingStatus) => void; isDemo?: boolean; t: (key: string) => string }> = ({
+export const BookingItem: React.FC<{ booking: BookingListItem; onStatusUpdate: (id: string, status: BookingStatus) => void; isDemo?: boolean; t: (key: string) => string }> = ({
   booking,
   onStatusUpdate,
   isDemo = false,
   t
 }) => {
   const updateStatusMutation = useUpdateBookingStatus();
+  const pending = useRef(false);
+  const [busy, setBusy] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [failure, setFailure] = useState('');
+  const [failedStatus, setFailedStatus] = useState<'confirmed' | 'cancelled'>('confirmed');
 
   const handleStatusUpdate = async (newStatus: 'confirmed' | 'cancelled') => {
+    if (pending.current || updateStatusMutation.isPending) return;
+    pending.current = true; setBusy(true); setFailure(''); setFailedStatus(newStatus);
     if (isDemo) {
       // For demo bookings, just update locally
       onStatusUpdate(booking.id, newStatus);
+      pending.current = false; setBusy(false); setRejectOpen(false);
       return;
     }
 
@@ -180,14 +189,17 @@ const BookingItem: React.FC<{ booking: BookingListItem; onStatusUpdate: (id: str
         statusData: { status: newStatus }
       });
       onStatusUpdate(booking.id, newStatus);
+      setRejectOpen(false);
     } catch (error) {
       logger.warn('Failed to update booking status:', error);
-    }
+      setFailure('Unable to update this request. Please try again.');
+    } finally { pending.current = false; setBusy(false); }
   };
 
   const canConfirm = booking.status === 'pending';
 
   return (
+    <View>
     <View style={styles.bookingItem as ViewStyle}>
       <SafeTouchableOpacity
         style={styles.bookingInfo as ViewStyle}
@@ -220,21 +232,38 @@ const BookingItem: React.FC<{ booking: BookingListItem; onStatusUpdate: (id: str
           <View style={styles.quickActions as ViewStyle}>
             <SafeTouchableOpacity
               style={[styles.actionButton as ViewStyle, styles.confirmButton as ViewStyle]}
+              accessibilityRole="button" accessibilityLabel="Approve request"
+              accessibilityState={{disabled:busy || updateStatusMutation.isPending, busy}}
               onPress={() => handleStatusUpdate('confirmed')}
-              disabled={updateStatusMutation.isPending}
+              disabled={busy || updateStatusMutation.isPending}
             >
               <SafeCheckCircleIcon />
             </SafeTouchableOpacity>
             <SafeTouchableOpacity
               style={[styles.actionButton as ViewStyle, styles.cancelButton as ViewStyle]}
-              onPress={() => handleStatusUpdate('cancelled')}
-              disabled={updateStatusMutation.isPending}
+              accessibilityRole="button" accessibilityLabel="Reject request"
+              accessibilityState={{disabled:busy || updateStatusMutation.isPending, busy}}
+              onPress={() => { if (!pending.current) { setFailure(''); setRejectOpen(true); } }}
+              disabled={busy || updateStatusMutation.isPending}
             >
               <SafeXCircleIcon />
             </SafeTouchableOpacity>
           </View>
         )}
       </View>
+    </View>
+    {failure && !rejectOpen ? <View><Text accessibilityRole="alert">{failure}</Text><SafeTouchableOpacity accessibilityRole="button" accessibilityLabel="Retry request update" disabled={busy} onPress={() => handleStatusUpdate(failedStatus)}><Text>Try again</Text></SafeTouchableOpacity></View> : null}
+    <Modal visible={rejectOpen} transparent animationType="fade" onRequestClose={() => { if (!pending.current) setRejectOpen(false); }}>
+      <View style={{flex:1,backgroundColor:'rgba(0,0,0,0.45)',alignItems:'center',justifyContent:'center',padding:16}}>
+        <View accessibilityViewIsModal style={{width:'100%',maxWidth:440,padding:24,gap:16,borderRadius:20,backgroundColor:SAFE_COLORS.surface}}>
+          <Text accessibilityRole="header" style={{fontSize:22,fontWeight:'700',color:SAFE_COLORS.text}}>Reject this request?</Text>
+          <Text style={{fontSize:16,lineHeight:24,color:SAFE_COLORS.textSecondary}}>The traveler will see this booking as cancelled. This action cannot be undone.</Text>
+          {failure ? <Text accessibilityRole="alert" accessibilityLiveRegion="assertive" style={{color:SAFE_COLORS.error}}>{failure}</Text> : null}
+          <SafeTouchableOpacity accessibilityRole="button" accessibilityLabel="Keep request" disabled={busy} accessibilityState={{disabled:busy}} onPress={() => { setRejectOpen(false); setFailure(''); }} style={{padding:12,minHeight:48}}><Text>Keep request</Text></SafeTouchableOpacity>
+          <SafeTouchableOpacity accessibilityRole="button" accessibilityLabel={failure ? 'Retry rejection' : 'Confirm rejection'} disabled={busy} accessibilityState={{disabled:busy,busy}} onPress={() => handleStatusUpdate('cancelled')} style={{padding:12,minHeight:48,borderRadius:12,backgroundColor:SAFE_COLORS.error}}><Text style={{color:'#fff',textAlign:'center'}}>{busy ? 'Rejecting…' : failure ? 'Try again' : 'Confirm rejection'}</Text></SafeTouchableOpacity>
+        </View>
+      </View>
+    </Modal>
     </View>
   );
 };
@@ -332,6 +361,9 @@ const CompanionDashboardContent: React.FC<CompanionDashboardProps> = ({ userName
     const { isAuthenticated } = useAuthStore();
     const { data: statsData, isLoading: isLoadingStats } = useSupplierStats();
     const stats = statsData?.data?.data;
+    const accountStatus = statsData?.data?.user?.status;
+    const statusLabels: Record<string, string> = {active: t('userHome.companion.active'), suspended: 'Suspended', inactive: 'Inactive', pending: 'Pending'};
+    const accountStatusLabel = accountStatus && statusLabels[accountStatus] || t('analytics.unavailable');
 
 
   // Only fetch bookings if user is authenticated
@@ -355,17 +387,12 @@ const CompanionDashboardContent: React.FC<CompanionDashboardProps> = ({ userName
     : emptyBookings;
   
   const showLoadingState = isAuthenticated && isLoading || isLoadingStats;
-  const showErrorState = isAuthenticated && error && !error.message.includes('401');
-  const showEmptyState = (
-    // Show empty state for authenticated users with no bookings
-    (isAuthenticated && bookingsData?.success && (bookingsData.data.bookings?.length === 0 && bookingsData.data.items?.length === 0)) ||
-    // Show empty state for authenticated users when API call failed with auth error (401)
-    (isAuthenticated && error && error.message.includes('401')) ||
-    // Show empty state for authenticated users when API hasn't loaded yet but no error
-    (isAuthenticated && !isLoading && !error && !bookingsData) ||
-    // Show empty state for unauthenticated users (demo mode)
-    (!isAuthenticated && emptyBookings.length === 0)
-  );
+  const loadState = bookingLoadState({
+    authenticated: isAuthenticated, loading: showLoadingState, error,
+    success: bookingsData?.success === true, count: displayBookings.length,
+  });
+  const showErrorState = loadState === 'error';
+  const showEmptyState = loadState === 'empty';
 
   // Debug logging
   // logger.log('CompanionDashboard Debug:');
@@ -428,27 +455,28 @@ const CompanionDashboardContent: React.FC<CompanionDashboardProps> = ({ userName
       <Card style={styles.statsCard as ViewStyle} padding="lg" shadow="lg">
         <View style={styles.statsHeader as ViewStyle}>
           <Text style={styles.statsTitle as TextStyle}>{t('userHome.companion.overview')}</Text>
-          <Badge variant="success" size="sm">
-            {t('userHome.companion.active')}
+          <Badge variant={accountStatus === 'active' ? 'success' : accountStatus === 'suspended' ? 'error' : 'info'} size="sm">
+            {accountStatusLabel}
           </Badge>
         </View>
         
         <View style={styles.statsRow as ViewStyle}>
           <View style={styles.statItem as ViewStyle}>
-            <Text style={styles.statValue as TextStyle}>{stats?.totalBookings ?? 0}</Text>
+            <Text accessible accessibilityLabel={`${t('userHome.companion.bookings')}: ${stats?.totalBookings ?? t('analytics.unavailable')}`} numberOfLines={1} style={styles.statValue as TextStyle}>{stats?.totalBookings ?? '—'}</Text>
             <Text style={styles.statLabel as TextStyle}>{t('userHome.companion.bookings')}</Text>
           </View>
           <Divider orientation="vertical" margin="sm" />
           <View style={styles.statItem as ViewStyle}>
-            <Text style={styles.statValue as TextStyle}>{stats?.averageRating ?? 0}</Text>
+            <Text accessible accessibilityLabel={`${t('userHome.companion.rating')}: ${stats?.averageRating ?? t('analytics.unavailable')}`} numberOfLines={1} style={styles.statValue as TextStyle}>{stats?.averageRating ?? '—'}</Text>
             <Text style={styles.statLabel as TextStyle}>{t('userHome.companion.rating')}</Text>
           </View>
           <Divider orientation="vertical" margin="sm" />
           <View style={styles.statItem as ViewStyle}>
-            <Text style={styles.statValue as TextStyle}>{stats?.thisMonthEarnings ?? 0}</Text>
-            <Text style={styles.statLabel as TextStyle}>{t('userHome.companion.thisWeek')}</Text>
+            <Text accessible accessibilityLabel={`${t('analytics.thisMonthEarnings')}: ${stats?.thisMonthEarnings ?? t('analytics.unavailable')}`} numberOfLines={1} style={styles.statValue as TextStyle}>{stats?.thisMonthEarnings ?? '—'}</Text>
+            <Text style={styles.statLabel as TextStyle}>{t('analytics.thisMonthEarnings')}</Text>
           </View>
         </View>
+        {(stats?.totalBookings == null || stats?.averageRating == null || stats?.thisMonthEarnings == null) && <Text style={styles.statNote as TextStyle}>— {t('analytics.unavailable')}</Text>}
       </Card>
 
       <Card style={styles.actionCard as ViewStyle} padding="lg" shadow="md">
@@ -493,11 +521,6 @@ const CompanionDashboardContent: React.FC<CompanionDashboardProps> = ({ userName
         <View style={styles.recentBookingsHeader as ViewStyle}>
           <View style={styles.titleContainer as ViewStyle}>
             <Text style={styles.recentBookingsTitle as TextStyle}>{t('userHome.companion.recentBookings')}</Text>
-            {!isAuthenticated && (
-              <Badge variant="info" size="sm" style={styles.demoBadge}>
-                Demo
-              </Badge>
-            )}
           </View>
           <SafeTouchableOpacity onPress={() => router.push('/bookings')}>
             <Text style={styles.viewAllText as TextStyle}>{t('userHome.companion.viewAll')}</Text>
@@ -602,14 +625,17 @@ const styles = StyleSheet.create({
   },
   statItem: {
     alignItems: 'center',
-    flex: 1,
+    flex: 1, minWidth: 0, flexShrink: 1,
   },
   statValue: {
+    maxWidth: '100%', textAlign: 'center', flexShrink: 1,
     color: designTokens.colors.semantic.primary,
     marginBottom: designTokens.spacing.scale.xs,
     ...designTokens.typography.styles.subheading,
   },
+  statNote: { ...designTokens.typography.styles.caption, color: designTokens.colors.semantic.textSecondary, marginTop: 12, textAlign: 'center' },
   statLabel: {
+    maxWidth: '100%', textAlign: 'center', flexShrink: 1,
     ...designTokens.typography.styles.caption,
     color: designTokens.colors.semantic.textSecondary,
   },
@@ -778,8 +804,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: designTokens.spacing.scale.xs,
-  },
-  demoBadge: {
-    marginLeft: designTokens.spacing.scale.xs,
   },
 });

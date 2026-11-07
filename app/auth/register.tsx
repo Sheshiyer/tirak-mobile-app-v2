@@ -1,4 +1,3 @@
-import { logger } from '@/utils/logger';
 import React, { useState, useEffect, useRef } from "react";
 import {
   View,
@@ -12,85 +11,77 @@ import {
   Image,
   Animated,
   Easing,
-  TextInput,
-  
 } from "react-native";
-import { WebDatePicker } from "@/components/WebDatePicker";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
 import { z } from "zod";
 import { Logo } from "@/components/ui/Logo";
-import { Input } from "@/components/ui/Input";
 import { SimpleInput } from "@/components/ui/SimpleInput";
 import { Button } from "@/components/ui/Button";
 import { designTokens } from "@/constants/design-tokens";
 import { ArrowLeft, Calendar, ChevronDown } from "lucide-react-native";
 import { UserRole } from "@/types/auth";
-import DateTimePicker from "@react-native-community/datetimepicker";
+import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuthStore } from "@/stores/auth-store";
 import { AccountConsentFields } from '@/components/AccountConsentFields';
 import { POLICY_VERSION } from '@/utils/account-consent';
+import { formatLocalDate, latestAdultBirthDate, NATIVE_BIRTH_DATE_MINIMUM, parseLocalDate } from '@/utils/birth-date';
+import { useTranslation } from "react-i18next";
 
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
-import { useTranslation } from "react-i18next";
-// Zod schema for registration form validation
-
 
 export default function RegisterScreen() {
   const { t } = useTranslation();
-  const registerSchema = z
-  .object({
-  name: z
-    .string()
+  const maximumBirthDate = latestAdultBirthDate();
+  const maximumBirthDateValue = formatLocalDate(maximumBirthDate);
+  const invalidPhone = t('register.contactNumberInvalid');
+  const registerSchema = z.object({
+    name: z.string().trim()
       .min(1, t('register.nameRequired'))
-      .min(2, t('register.nameMin'))
-      .max(50, t('register.nameMax')),
-  email: z
-    .string()
+      .max(100, t('register.nameMax')),
+    email: z.string().trim()
       .min(1, t('register.emailRequired'))
       .email(t('register.emailInvalid')),
-    contactNumber: z
-      .string()
+    contactNumber: z.string().trim()
       .min(1, t('register.contactNumberRequired'))
-      .min(10, t('register.contactNumberMin'))
-      .regex(/^[0-9+\-\s()]+$/, t('register.contactNumberInvalid')),
-    dateOfBirth: z.date().refine((date) => {
-      const age = new Date().getFullYear() - date.getFullYear();
-      return age >= 18;
-    }, t('register.dateInvalid')),
+      .pipe(z.string()
+        .min(8, invalidPhone)
+        .max(32, invalidPhone)
+        .regex(/^\+?[0-9\s()-]+$/, invalidPhone)
+        .refine((phone) => /[0-9]/.test(phone), invalidPhone)),
+    dateOfBirth: z.string().min(1, t('register.dateRequired'))
+      .pipe(z.string().date(t('register.dateInvalidCalendar')))
+      .refine((date) => date <= maximumBirthDateValue, t('register.dateInvalid')),
     gender: z.string().min(1, t('register.genderRequired')),
     role: z.string().optional(),
-  password: z
-    .string()
+    password: z.string()
       .min(1, t('register.passwordRequired'))
       .min(6, t('register.passwordMin'))
       .max(100, t('register.passwordMax')),
     confirmPassword: z.string().min(1, t('register.confirmPasswordRequired')),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-  message: t('register.confirmPasswordMatch'),
-  path: ["confirmPassword"],
-});
+  }).refine((data) => data.password === data.confirmPassword, {
+    message: t('register.confirmPasswordMatch'),
+    path: ["confirmPassword"],
+  });
 
-type RegisterFormData = z.infer<typeof registerSchema>;
+  type RegisterFormData = z.infer<typeof registerSchema>;
 
-type FormErrors = {
-  [K in keyof RegisterFormData]?: string;
-};
+  type FormErrors = {
+    [K in keyof RegisterFormData]?: string;
+  };
 
   const { role: roleParam } = useLocalSearchParams();
   const { register, isLoading, error: authError } = useAuthStore();
+  const insets = useSafeAreaInsets();
+  const isAndroid = Platform.OS === 'android';
   const isWeb = Platform.OS === 'web';
-  
-  const DatePicker = Platform.OS === 'web' 
-  ? require('react-datepicker').default 
-  : null;
   
   const [formData, setFormData] = useState<RegisterFormData>({
     name: "",
     email: "",
     contactNumber: "",
-    dateOfBirth: new Date(2000, 0, 1), // Default date
+    dateOfBirth: "",
     gender: "",
     password: "",
     confirmPassword: "",
@@ -99,6 +90,7 @@ type FormErrors = {
   const [role, setRole] = useState<UserRole>("customer");
   const [errors, setErrors] = useState<FormErrors>({});
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [pendingBirthDate, setPendingBirthDate] = useState(maximumBirthDate);
   const [showGenderPicker, setShowGenderPicker] = useState(false);
   const [showRolePicker, setShowRolePicker] = useState(false);
   const [acceptedPolicies, setAcceptedPolicies] = useState(false);
@@ -151,42 +143,9 @@ type FormErrors = {
     }),
   }), [animatedValue]);
 
-  // const validateForm = (): boolean => {
-  //   try {
-  //     registerSchema.parse(formData);
-      
-  //     // Additional validation for role when roleParam is companion
-  //     if (roleParam === "companion" ) {
-  //       setErrors({ role: t('register.accountTypeRequired') });
-  //       return false;
-  //     }
-      
-  //     setErrors({});
-  //     return true;
-  //   } catch (error) {
-  //     logger.log('error', error);
-  //     if (error instanceof z.ZodError) {
-  //       const fieldErrors: FormErrors = {};
-  //       error.errors.forEach((err) => {
-  //         if (err.path[0]) {
-  //           fieldErrors[err.path[0] as keyof RegisterFormData] = err.message;
-  //         }
-  //       });
-        
-  //       // Add custom role validation error if needed
-  //       if (roleParam === "companion") {
-  //         fieldErrors.role = t('register.accountTypeRequired');
-  //       }
-        
-  //       setErrors(fieldErrors);
-  //     }
-  //     return false;
-  //   }
-  // };
-
   const handleInputChange = React.useCallback((
     field: keyof RegisterFormData,
-    value: string | Date
+    value: string
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
@@ -195,25 +154,26 @@ type FormErrors = {
     }
   }, [errors]);
 
-  const handleDateChange = (event: any, selectedDate?: Date) => {
-    // For Android, close on any interaction (set or dismissed)
-    // For iOS, we'll handle it differently with modal approach
-    if (Platform.OS === "android") {
+  const handleDatePickerOpen = () => {
+    setPendingBirthDate(parseLocalDate(formData.dateOfBirth) ?? maximumBirthDate);
+    setShowDatePicker(true);
+  };
+
+  const handleDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+    if (isAndroid) {
       setShowDatePicker(false);
-      if (selectedDate && event.type === "set") {
-        handleInputChange("dateOfBirth", selectedDate);
+      if (event.type === "set" && selectedDate) {
+        handleInputChange("dateOfBirth", formatLocalDate(selectedDate));
       }
-    } else {
-      // For iOS, update date immediately but don't close picker
-      if (selectedDate) {
-        handleInputChange("dateOfBirth", selectedDate);
-      }
+    } else if (selectedDate) {
+      setPendingBirthDate(selectedDate);
     }
   };
 
-  const handleDatePickerDone = React.useCallback(() => {
+  const handleDatePickerDone = () => {
+    handleInputChange("dateOfBirth", formatLocalDate(pendingBirthDate));
     setShowDatePicker(false);
-  }, []);
+  };
 
   // Memoized input handlers to prevent re-renders
   const handleNameChange = React.useCallback((text: string) => {
@@ -262,13 +222,13 @@ type FormErrors = {
       }
       try {
         await register(
-          formData.name,
-          formData.email,
-          formData.password,
+          result.data.name,
+          result.data.email,
+          result.data.password,
           actualUserType,
-          formData.contactNumber,
-          formData.dateOfBirth,
-          formData.gender,
+          result.data.contactNumber,
+          result.data.dateOfBirth,
+          result.data.gender,
           { policyAcceptance: { termsVersion: POLICY_VERSION, privacyVersion: POLICY_VERSION }, marketingOptIn, analyticsOptIn }
         );
         router.replace('/auth/verify-email');
@@ -292,10 +252,9 @@ type FormErrors = {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      enabled={!isWeb}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+      style={styles.container}
+      behavior="padding"
+      enabled={Platform.OS === "ios"}
     >
       <LinearGradient
         colors={[
@@ -307,14 +266,17 @@ type FormErrors = {
         ]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.container}
+        style={[styles.container, isAndroid && { paddingTop: insets.top, paddingBottom: insets.bottom }]}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, isAndroid && { paddingTop: Math.max(24, 60 - insets.top) }]}
           keyboardShouldPersistTaps="always"
           showsVerticalScrollIndicator={false}
         >
-          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+          <TouchableOpacity
+            style={[styles.backButton, isAndroid && { top: Math.max(16, 50 - insets.top) }]}
+            onPress={handleBack}
+          >
             <ArrowLeft size={24} color={designTokens.colors.semantic.text} />
           </TouchableOpacity>
           
@@ -358,67 +320,90 @@ type FormErrors = {
               value={formData.contactNumber}
               onChangeText={handleContactChange}
               keyboardType="phone-pad"
+              autoComplete="tel"
+              helperText={t('register.contactNumberHint')}
               error={errors.contactNumber}
             />
 
             <Text style={styles.datePickerLabel}>{t('register.dateOfBirth')}</Text>
 
-            <TouchableOpacity
-              style={styles.datePickerButton}
-              onPress={() => setShowDatePicker(true)}
-            >
-              <View style={styles.datePickerContent}>
-                <View style={styles.datePickerValue}>
-                  <Text style={styles.datePickerText}>
-                    {formData.dateOfBirth.toLocaleDateString()}
-                  </Text>
-                  <Calendar
-                    size={20}
-                    color={designTokens.colors.semantic.primary}
-                  />
+            {isWeb ? (
+              <input
+                aria-label={t('register.dateOfBirth')}
+                aria-invalid={!!errors.dateOfBirth}
+                aria-describedby={errors.dateOfBirth ? 'register-birth-date-error' : undefined}
+                type="date"
+                autoComplete="bday"
+                max={maximumBirthDateValue}
+                value={formData.dateOfBirth}
+                onInput={event => handleInputChange("dateOfBirth", event.currentTarget.value)}
+                onChange={event => handleInputChange("dateOfBirth", event.currentTarget.value)}
+                style={{
+                  boxSizing: 'border-box',
+                  width: '100%',
+                  minHeight: 48,
+                  padding: '12px 16px',
+                  marginBottom: 16,
+                  fontSize: 16,
+                  fontFamily: 'inherit',
+                  border: `1px solid ${designTokens.colors.semantic.border}`,
+                  borderRadius: 12,
+                  color: designTokens.colors.semantic.text,
+                  backgroundColor: designTokens.colors.semantic.surface,
+                }}
+              />
+            ) : (
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={t('register.dateOfBirth')}
+                accessibilityValue={{ text: formData.dateOfBirth || t('register.dateRequired') }}
+                style={styles.datePickerButton}
+                onPress={handleDatePickerOpen}
+              >
+                <View style={styles.datePickerContent}>
+                  <View style={styles.datePickerValue}>
+                    <Text style={styles.datePickerText}>
+                      {parseLocalDate(formData.dateOfBirth)?.toLocaleDateString() ?? t('register.dateRequired')}
+                    </Text>
+                    <Calendar size={20} color={designTokens.colors.semantic.primary} />
+                  </View>
                 </View>
-              </View>
-              {errors.dateOfBirth && (
-                <Text style={styles.fieldError}>{errors.dateOfBirth}</Text>
-              )}
-            </TouchableOpacity>
+              </TouchableOpacity>
+            )}
+            {errors.dateOfBirth && (
+              <Text nativeID="register-birth-date-error" accessibilityRole="alert" style={styles.fieldError}>
+                {errors.dateOfBirth}
+              </Text>
+            )}
 
-            {showDatePicker && (
-  <>
-    {isWeb ? (
-      <WebDatePicker
-        value={formData.dateOfBirth}
-        onChange={(date) => handleInputChange("dateOfBirth", date)}
-        onDone={handleDatePickerDone}
-        allowPastDates={true}
-      />
-    ) : Platform.OS === "ios" ? (
-      <View style={styles.datePickerModal}>
-        <View style={styles.datePickerHeader}>
-          <TouchableOpacity onPress={handleDatePickerDone}>
-            <Text style={styles.datePickerDoneButton}>{t('register.done')}</Text>
-          </TouchableOpacity>
-        </View>
-        <DateTimePicker
-          value={formData.dateOfBirth}
-          mode="date"
-          display="spinner"
-          onChange={handleDateChange}
-          maximumDate={new Date()}
-          style={styles.datePickerIOS}
-        />
-      </View>
-    ) : (
-      <DateTimePicker
-        value={formData.dateOfBirth}
-        mode="date"
-        display="default"
-        onChange={handleDateChange}
-        maximumDate={new Date()}
-      />
-    )}
-  </>
-)}
+            {showDatePicker && Platform.OS === "ios" && (
+              <View style={styles.datePickerModal}>
+                <View style={styles.datePickerHeader}>
+                  <TouchableOpacity onPress={handleDatePickerDone}>
+                    <Text style={styles.datePickerDoneButton}>{t('register.done')}</Text>
+                  </TouchableOpacity>
+                </View>
+                <DateTimePicker
+                  value={pendingBirthDate}
+                  mode="date"
+                  display="spinner"
+                  onChange={handleDateChange}
+                  minimumDate={NATIVE_BIRTH_DATE_MINIMUM}
+                  maximumDate={maximumBirthDate}
+                  style={styles.datePickerIOS}
+                />
+              </View>
+            )}
+            {showDatePicker && isAndroid && (
+              <DateTimePicker
+                value={pendingBirthDate}
+                mode="date"
+                display="default"
+                onChange={handleDateChange}
+                minimumDate={NATIVE_BIRTH_DATE_MINIMUM}
+                maximumDate={maximumBirthDate}
+              />
+            )}
             <Text style={styles.genderPickerLabel}>{t('register.gender')}</Text>
             <TouchableOpacity
               style={styles.genderPickerButton}

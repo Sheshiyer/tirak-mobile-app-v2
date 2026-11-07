@@ -95,14 +95,19 @@ const buildCompanionQueryParams = (params: CompanionSearchParams = {}): URLSearc
     queryParams.append(key, String(value));
   };
 
-  // The live Worker currently validates some numeric/boolean query params before
-  // coercion. Keep list reads to the string-backed filters it accepts.
   appendValue('search', params.search?.trim());
   if (params.category && params.category !== 'all') appendValue('category', params.category);
   if (params.location && params.location !== 'All Locations') appendValue('location', params.location);
   appendValue('languages', params.languages);
   appendValue('sortBy', params.sortBy);
   appendValue('sortOrder', params.sortOrder);
+  appendValue('page', params.page);
+  appendValue('limit', params.limit);
+  appendValue('minPrice', params.minPrice);
+  appendValue('maxPrice', params.maxPrice);
+  appendValue('rating', params.rating);
+  if (typeof params.available === 'boolean') appendValue('available', params.available);
+  if (typeof params.verified === 'boolean') appendValue('verified', params.verified);
 
   return queryParams;
 };
@@ -377,7 +382,7 @@ export const getAuthToken = async (): Promise<string | null> => {
 };
 
 // Main API function to fetch companions
-export const fetchCompanions = async (params: CompanionSearchParams = {}): Promise<CompanionSearchResponse> => {
+export const fetchCompanions = async (params: CompanionSearchParams = {}, signal?: AbortSignal): Promise<CompanionSearchResponse> => {
   if (await getReviewModeEnabled()) {
     const guide = reviewGuideDetails();
     return {
@@ -433,22 +438,13 @@ export const fetchCompanions = async (params: CompanionSearchParams = {}): Promi
   try {
     const response = await axios.get(url, {
       headers,
+      signal,
     });
     
     return filterFixtures(response.data);
   } catch (error) {
     if (axios.isAxiosError(error)) {
       const statusCode = error.response?.status;
-      if (statusCode === 400 && queryString) {
-        logger.warn('Companion list query rejected; retrying without filters', {
-          url,
-          status: statusCode,
-          data: error.response?.data,
-        });
-        const response = await axios.get(apiUrl('/api/companions'), { headers });
-        return filterFixtures(response.data);
-      }
-
       logger.warn('Error fetching companions', {
         status: statusCode,
         data: error.response?.data,
@@ -458,7 +454,7 @@ export const fetchCompanions = async (params: CompanionSearchParams = {}): Promi
       throw new Error(errorMessage);
     }
     
-    throw new Error("Network error occurred while fetching companions");
+    throw error instanceof Error ? error : new Error("Network error occurred while fetching companions");
   }
 };
 
@@ -467,7 +463,7 @@ export const useCompanionsQuery = (params: CompanionSearchParams = {}) => {
   const user = useAuthStore(state => state.user);
   return useQuery({
     queryKey: ['companions', user?.id || 'public', isDemoModeEnabled(user), params],
-    queryFn: () => fetchCompanions(params),
+    queryFn: ({ signal }) => fetchCompanions(params, signal),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false,
@@ -524,7 +520,7 @@ export const useCompanions = (params: CompanionSearchParams = {}) => {
   const user = useAuthStore(state => state.user);
   return {
     queryKey: ['companions', user?.id || 'public', isDemoModeEnabled(user), params],
-    queryFn: () => fetchCompanions(params),
+    queryFn: ({ signal }: { signal?: AbortSignal } = {}) => fetchCompanions(params, signal),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
     refetchOnWindowFocus: false,
@@ -577,12 +573,12 @@ export const searchFeaturedCompanions = (additionalParams: Partial<CompanionSear
 };
 
 // Convenience functions for companion details and availability
-export const getCompanionDetails = (id: string) => {
-  return fetchCompanionById(id);
+export const getCompanionDetails = (id: string, signal?: AbortSignal) => {
+  return fetchCompanionById(id, signal);
 };
 
 // Get companion availability for the next 7 days
-export const getCompanionWeeklyAvailability = (id: string, startDate?: string) => {
+export const getCompanionWeeklyAvailability = (id: string, startDate?: string, signal?: AbortSignal) => {
   const start = startDate || new Date().toISOString().split('T')[0]; // Today if not provided
   const endDate = new Date(start);
   endDate.setDate(endDate.getDate() + 6); // 7 days total
@@ -593,11 +589,11 @@ export const getCompanionWeeklyAvailability = (id: string, startDate?: string) =
     startTime: '00:00',
     endTime: '23:59',
     isAvailable: true,
-  });
+  }, signal);
 };
 
 // Get companion availability for a specific month
-export const getCompanionMonthlyAvailability = (id: string, year: number, month: number, startTime: string, endTime: string) => {
+export const getCompanionMonthlyAvailability = (id: string, year: number, month: number, startTime: string, endTime: string, signal?: AbortSignal) => {
   const startDate = new Date(year, month - 1, 1).toISOString().split('T')[0];
   const endDate = new Date(year, month, 0).toISOString().split('T')[0]; // Last day of month
   
@@ -607,11 +603,11 @@ export const getCompanionMonthlyAvailability = (id: string, year: number, month:
     startTime,
     endTime,
     isAvailable: true,
-  });
+  }, signal);
 };
 
 // Get companion availability for a custom date range
-export const getCompanionAvailabilityRange = (id: string, startDate: string, endDate: string, startTime: string, endTime: string) => {
+export const getCompanionAvailabilityRange = (id: string, startDate: string, endDate: string, startTime: string, endTime: string, signal?: AbortSignal) => {
   return fetchCompanionAvailability(id, {
     startDate,
     endDate,
@@ -651,7 +647,7 @@ export const useCompanionMonthlyAvailability = (id: string, year: number, month:
 };
 
 // API function to fetch companion details by ID
-export const fetchCompanionById = async (id: string): Promise<CompanionDetailsResponse> => {
+export const fetchCompanionById = async (id: string, signal?: AbortSignal): Promise<CompanionDetailsResponse> => {
   const demoEnabled = await getDemoModeEnabled();
   if (!demoEnabled && isDemoCompanion({ id })) throw new Error('This profile is not available.');
   try {
@@ -673,6 +669,7 @@ export const fetchCompanionById = async (id: string): Promise<CompanionDetailsRe
         'Accept': 'application/json',
         ...(token && { 'Authorization': `Bearer ${token}` }),
       },
+      signal,
     });
 
     // logger.log("Companion details API response:", response.data);
@@ -693,7 +690,7 @@ export const fetchCompanionById = async (id: string): Promise<CompanionDetailsRe
 };
 
 // API function to fetch companion availability
-export const fetchCompanionAvailability = async (id: string, params: AvailabilityParams): Promise<AvailabilityResponse> => {
+export const fetchCompanionAvailability = async (id: string, params: AvailabilityParams, signal?: AbortSignal): Promise<AvailabilityResponse> => {
   try {
     if (await getReviewModeEnabled() && id === REVIEW_ACCOUNTS.guide.user.id) {
       const start = new Date(`${params.startDate}T00:00:00.000Z`);
@@ -729,6 +726,7 @@ export const fetchCompanionAvailability = async (id: string, params: Availabilit
         'Accept': 'application/json',
         ...(token && { 'Authorization': `Bearer ${token}` }),
       },
+      signal,
     });
 
     // logger.log("Companion availability API response:", response.data);
@@ -791,7 +789,7 @@ export const useCompanionQuery = (id: string) => {
   const user = useAuthStore(state => state.user);
   return useQuery({
     queryKey: ['companion', id, user?.id || 'public', isDemoModeEnabled(user)],
-    queryFn: () => fetchCompanionById(id),
+    queryFn: ({ signal }) => fetchCompanionById(id, signal),
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,
@@ -812,7 +810,7 @@ export const useCompanionAvailabilityQuery = (id: string, params: AvailabilityPa
   const user = useAuthStore(state => state.user);
   return useQuery({
     queryKey: ['companionAvailability', id, user?.id || 'public', isDemoModeEnabled(user), params],
-    queryFn: () => fetchCompanionAvailability(id, params),
+    queryFn: ({ signal }) => fetchCompanionAvailability(id, params, signal),
     staleTime: 1 * 60 * 1000, // 1 minute (availability changes frequently)
     gcTime: 2 * 60 * 1000, // 2 minutes
     refetchOnWindowFocus: false,

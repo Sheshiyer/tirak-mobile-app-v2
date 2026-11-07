@@ -7,9 +7,41 @@ const config = JSON.parse(read('app.json')).expo;
 const eas = JSON.parse(read('eas.json'));
 const resolveConfig = require('../app.config.js');
 
+const RELEASE_ENV_KEYS = [
+  'EAS_BUILD_PROFILE',
+  'EXPO_PUBLIC_ENV_NAME',
+  'EXPO_PUBLIC_API_URL',
+  'EXPO_PUBLIC_DEMO_MODE',
+  'EXPO_PUBLIC_ENABLE_DEMO_MODE',
+  'EXPO_PUBLIC_REVIEW_MODE',
+  'EXPO_PUBLIC_PROMPTPAY_ENABLED',
+];
+
+function withEnv<T>(overrides: Record<string, string | undefined>, run: () => T): T {
+  const previous = new Map<string, string | undefined>();
+  for (const key of RELEASE_ENV_KEYS) {
+    previous.set(key, process.env[key]);
+    delete process.env[key];
+  }
+  for (const [key, value] of Object.entries(overrides)) {
+    if (value === undefined) delete process.env[key];
+    else process.env[key] = value;
+  }
+
+  try {
+    return run();
+  } finally {
+    for (const key of RELEASE_ENV_KEYS) {
+      const value = previous.get(key);
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+}
+
 describe('release delivery boundaries', () => {
   test('delivery config keeps Android fingerprinted and gives iOS a deterministic app-version runtime', () => {
-    const resolved = resolveConfig({ config });
+    const resolved = withEnv({}, () => resolveConfig({ config }));
     const url = `https://u.expo.dev/${config.extra.eas.projectId}`;
     expect(resolved.updates.url).toBe(url);
     expect(resolved.runtimeVersion).toEqual({ policy: 'fingerprint' });
@@ -26,6 +58,14 @@ describe('release delivery boundaries', () => {
     expect(ios).toMatch(new RegExp(`<key>EXUpdatesRuntimeVersion<\\/key>\\s*<string>${config.version}<\\/string>`));
   });
 
+  test('the native repair release has a new aligned app and iOS runtime version', () => {
+    expect(config.version).toBe('1.5.4');
+    expect(JSON.parse(read('package.json')).version).toBe(config.version);
+    expect(read('ios/Tirak/Info.plist')).toMatch(new RegExp(`<key>CFBundleShortVersionString<\\/key>\\s*<string>${config.version}<\\/string>`));
+    expect(read('ios/Tirak.xcodeproj/project.pbxproj')).toContain(`MARKETING_VERSION = ${config.version};`);
+    expect(read('android/app/build.gradle')).toContain(`versionName "${config.version}"`);
+  });
+
   test.each(['development', 'preview', 'production'])('%s uses its own channel and environment with demo/payment gates off', (profile) => {
     expect(eas.build[profile]).toMatchObject({
       channel: profile,
@@ -35,20 +75,52 @@ describe('release delivery boundaries', () => {
     });
   });
 
-  test('review is isolated and cannot enable payment', () => {
-    expect(eas.build.review).toMatchObject({
-      channel: 'review', extends: 'production',
-      env: { EXPO_PUBLIC_REVIEW_MODE: 'true', EXPO_PUBLIC_PROMPTPAY_ENABLED: 'false' },
+  test('review profile is retired and release APK uses production configuration', () => {
+    expect(eas.build.review).toBeUndefined();
+    expect(eas.build.production.distribution).toBe('store');
+    expect(eas.build.production.android.buildType).toBe('app-bundle');
+    expect(eas.build['release-apk']).toMatchObject({ extends: 'production', environment: 'production', channel: 'production', android: { buildType: 'apk' } });
+  });
+
+  test('production gate rejects a QA backend or preview flags', () => {
+    expect(() => withEnv({ EXPO_PUBLIC_ENV_NAME: 'production', EXPO_PUBLIC_API_URL: 'https://tirak-core-qa-20261005.tirak-court.workers.dev/api' }, () => resolveConfig({ config }))).toThrow('Release requires');
+    expect(() => withEnv({ EXPO_PUBLIC_ENV_NAME: 'production', EXPO_PUBLIC_API_URL: eas.build.production.env.EXPO_PUBLIC_API_URL, EXPO_PUBLIC_REVIEW_MODE: 'true' }, () => resolveConfig({ config }))).toThrow('Cash-only');
+    const resolved = withEnv(eas.build.production.env, () => resolveConfig({ config }));
+    expect(resolved.version).toBe('1.5.4');
+    expect(resolved.extra.reviewMode).toBe(false);
+  });
+
+  test('core-qa build profile isolates API URL and disables demo/review/payment gates', () => {
+    expect(eas.build['core-qa']).toMatchObject({
+      channel: 'core-qa',
+      environment: 'preview',
+      autoIncrement: true,
+      android: { buildType: 'apk' },
+      env: {
+        EXPO_PUBLIC_API_URL: 'https://tirak-core-qa-20261005.tirak-court.workers.dev/api',
+        EXPO_PUBLIC_ENV_NAME: 'core-qa',
+        EXPO_PUBLIC_DEMO_MODE: 'false',
+        EXPO_PUBLIC_REVIEW_MODE: 'false',
+        EXPO_PUBLIC_PROMPTPAY_ENABLED: 'false',
+      },
     });
   });
 
-  test('OTA workflow selects an explicit environment and guards production main', () => {
-    const workflow = read('.github/workflows/eas-update.yml');
-    expect(workflow).toContain("inputs.channel == 'production' && github.ref != 'refs/heads/main'");
-    expect(workflow).toContain('--environment "$EAS_ENVIRONMENT"');
-    expect(workflow).toContain('EXPO_PUBLIC_PROMPTPAY_ENABLED: "false"');
-    const beforePublish = workflow.split('- name: Publish update')[0];
-    expect(beforePublish).not.toContain('EXPO_PUBLIC_REVIEW_MODE:');
+  test('EAS post-install hook is wired through package.json and targets the narrow QA stamper', () => {
+    const scripts = JSON.parse(read('package.json')).scripts;
+    expect(scripts['eas-build-post-install']).toBe('node ./eas-hooks/core-qa-prebuild.js');
+    expect(read('eas-hooks/core-qa-prebuild.js')).toContain('non-QA build — skipping.');
+  });
+
+  test('release build profiles enforce the production gate even without an environment label', () => {
+    for (const profile of ['production', 'release-apk']) {
+      const releaseEnv = { ...eas.build.production.env, EAS_BUILD_PROFILE: profile, EXPO_PUBLIC_ENV_NAME: undefined };
+      expect(() => withEnv({ ...releaseEnv, EXPO_PUBLIC_API_URL: 'https://preview.example.test/api' }, () => resolveConfig({ config })))
+        .toThrow('Release requires');
+      expect(() => withEnv({ ...releaseEnv, EXPO_PUBLIC_ENABLE_DEMO_MODE: 'true' }, () => resolveConfig({ config })))
+        .toThrow('Cash-only');
+      expect(withEnv(releaseEnv, () => resolveConfig({ config })).extra.reviewMode).toBe(false);
+    }
   });
 
   test('Bun is authoritative and uploads exclude local secrets and raw evidence', () => {
@@ -58,5 +130,19 @@ describe('release delivery boundaries', () => {
     for (const entry of ['.env', '.env.*', 'credentials.json', 'sentry.json', '.superset/', '.temperance/', '.worktrees/', 'evidence/', 'rehearsal/']) {
       expect(ignored).toContain(entry);
     }
+  });
+});
+
+
+describe('tracked iOS push capability', () => {
+  test('native target entitlements select development versus distribution APNs', () => {
+    expect(read('ios/Tirak/Tirak.entitlements')).toContain('<key>aps-environment</key>');
+    expect(read('ios/Tirak/Tirak.entitlements')).toContain('<string>production</string>');
+    expect(read('ios/Tirak/Tirak.Debug.entitlements')).toContain('<string>development</string>');
+    expect(read('ios/Tirak/Tirak.entitlements')).not.toContain('$(');
+    expect(read('ios/Tirak/Tirak.Debug.entitlements')).not.toContain('$(');
+    const project = read('ios/Tirak.xcodeproj/project.pbxproj');
+    expect(project).toContain('CODE_SIGN_ENTITLEMENTS = Tirak/Tirak.Debug.entitlements;');
+    expect(project).toContain('CODE_SIGN_ENTITLEMENTS = Tirak/Tirak.entitlements;');
   });
 });

@@ -53,3 +53,9 @@ credentials.json
 .worktrees/
 .superset/
 .temperance/
+
+# Local Metro verification exports are not release source.
+proof-exports/
+
+# Signed native candidates are local deliverables, not source/upload inputs.
+artifacts/store-release-20261013/

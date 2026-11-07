@@ -1,5 +1,5 @@
 import { logger } from '@/utils/logger';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   Animated,
   Linking,
-  Alert,
 } from 'react-native';
 import { 
   CheckCircle, 
@@ -24,10 +23,13 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ProfileImage } from '@/components/ui/ProfileImage';
 import { useBookingStore } from '@/stores/booking-store';
+import { useToast } from '@/stores/toast-store';
 import { designTokens } from '@/constants/design-tokens';
 import { CompanionData } from '@/types/companion';
 import { useTranslation } from 'react-i18next';
 import { deriveBookingPaymentPhase, usePaymentStore } from '@/stores/payment-store';
+import { bookingDateTimeToInstant, calendarUtcDate, CORE_BOOKING_TIME_ZONE } from '@/utils/booking-timezone';
+import { createOrGetRoom } from '@/utils/chat-api';
 import {
   formatBookingDate,
   formatBookingTime,
@@ -38,12 +40,23 @@ interface BookingConfirmationStepProps {
   onPrevious: () => void;
 }
 
+const bookingHeadingKeys: Record<string, string> = {
+  pending: 'payments.bookingRequestSent',
+  confirmed: 'payments.bookingConfirmed',
+  in_progress: 'userHome.companion.inProgress',
+  cancelled: 'userHome.companion.cancelled',
+  completed: 'userHome.companion.completed',
+};
+
 export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = ({
   onPrevious,
 }) => {
   const { bookingData, resetBooking } = useBookingStore();
   const [animationValue] = useState(new Animated.Value(0));
   const [now, setNow] = useState(() => new Date());
+  const [openingChat, setOpeningChat] = useState(false);
+  const chatOpening = useRef(false);
+  const toast = useToast();
   const { t, i18n } = useTranslation();
   const language = i18n?.resolvedLanguage || i18n?.language || 'en';
   const {
@@ -80,10 +93,6 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
     );
   }
 
-  const handleMessageCompanion = () => {
-    router.push(`/chat/${bookingData.companionId}`);
-  };
-
   const handleViewBookings = () => {
     releasePaymentSessionIfSafe();
     resetBooking();
@@ -103,7 +112,8 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
   const location = bookingData.location;
   const payment = bookingData.payment;
   const effectivePaymentMethod = selectedMethod || payment?.method || 'cash';
-  const isBookingConfirmed = booking?.status === 'confirmed';
+  const isBookingPending = booking?.status === 'pending';
+  const isBookingConfirmed = booking?.status === 'confirmed' || booking?.status === 'in_progress';
   const bookingPhase = booking ? deriveBookingPaymentPhase(booking.paymentStatus) : 'idle';
   const paymentPhase = phase === 'idle' && bookingPhase !== 'idle' ? bookingPhase : phase;
   const paymentErrorKind = errorKind;
@@ -120,9 +130,7 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
     || (paymentPhase === 'error'
       && ['in-progress', 'indeterminate', 'network', 'unknown'].includes(paymentErrorKind || ''))
   );
-  const statusHeading = isBookingConfirmed
-    ? t('payments.bookingConfirmed')
-    : t('payments.bookingRequestSent');
+  const statusHeading = t(bookingHeadingKeys[booking?.status ?? ''] ?? 'bookingConfirmation.statusUnavailable');
   let paymentStateCopy = isPromptPayMethod
     ? t('payments.promptPayPendingState')
     : t('payments.cashState');
@@ -145,7 +153,15 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
     paymentStateCopy = t('payments.expiredState');
   }
   const pendingPresentation = !isBookingConfirmed || (isPromptPayMethod && !paymentConfirmed);
-  const startsAt = dateTime ? new Date(`${dateTime.date}T${dateTime.time}:00`) : null;
+  let startsAt: Date | null = null;
+  let endsAt: Date | null = null;
+  if (dateTime) {
+    try {
+      startsAt = bookingDateTimeToInstant(dateTime.date, dateTime.time);
+      endsAt = bookingDateTimeToInstant(dateTime.date, dateTime.endTime);
+    } catch { /* Missing or invalid schedules cannot be added to the calendar. */ }
+  }
+  const canAddToCalendar = Boolean(startsAt && endsAt && endsAt > startsAt);
   const countdownMs = startsAt ? Math.max(0, startsAt.getTime() - now.getTime()) : 0;
   const countdownDays = Math.floor(countdownMs / (1000 * 60 * 60 * 24));
   const countdownHours = Math.floor((countdownMs / (1000 * 60 * 60)) % 24);
@@ -157,21 +173,11 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
           hours: countdownHours,
           minutes: countdownMinutes,
         })
-      : t('bookingConfirmation.startingNow')
+      : t('bookingConfirmation.startTimeReached')
     : t('bookingConfirmation.datePending');
 
   const handleAddToCalendar = async () => {
-    if (!dateTime) {
-      Alert.alert(
-        t('bookingConfirmation.calendarUnavailable'),
-        t('bookingConfirmation.calendarMissingDate'),
-      );
-      return;
-    }
-
-    const start = new Date(`${dateTime.date}T${dateTime.time}:00`);
-    const end = new Date(`${dateTime.date}T${dateTime.endTime}:00`);
-    const formatCalendarDate = (date: Date) => date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+    if (!isBookingConfirmed || !startsAt || !endsAt || !canAddToCalendar) return;
     const title = encodeURIComponent(t('bookingConfirmation.calendarTitle', {
       service: service?.name || t('bookingConfirmation.localGuideBooking'),
       guide: companion.name,
@@ -180,16 +186,27 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
       paymentState: paymentStateCopy,
     }));
     const locationText = encodeURIComponent([location?.meetingPoint, location?.area].filter(Boolean).join(', '));
-    const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${formatCalendarDate(start)}/${formatCalendarDate(end)}&details=${details}&location=${locationText}`;
+    const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${calendarUtcDate(startsAt)}/${calendarUtcDate(endsAt)}&ctz=${encodeURIComponent(CORE_BOOKING_TIME_ZONE)}&details=${details}&location=${locationText}`;
 
     try {
       await Linking.openURL(calendarUrl);
     } catch (error) {
       logger.warn('Unable to open calendar link', error);
-      Alert.alert(
-        t('bookingConfirmation.calendarUnavailable'),
-        t('bookingConfirmation.calendarOpenFailed'),
-      );
+      toast.error(t('bookingConfirmation.calendarOpenFailed'));
+    }
+  };
+
+  const handleMessageCompanion = async () => {
+    if (!bookingId || !isBookingConfirmed || chatOpening.current) return;
+    chatOpening.current = true;
+    setOpeningChat(true);
+    try {
+      const roomId = await createOrGetRoom(bookingId);
+      if (roomId) router.push(`/chat/${encodeURIComponent(roomId)}`);
+      else toast.error(t('bookingConfirmation.chatUnavailable'));
+    } finally {
+      chatOpening.current = false;
+      setOpeningChat(false);
     }
   };
 
@@ -215,20 +232,23 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
             <View style={styles.successIcon} accessibilityLabel={t('bookingConfirmation.confirmedStatusA11y')}>
               <CheckCircle size={64} color={designTokens.colors.semantic.success} />
             </View>
-          ) : (
+          ) : isBookingPending || isBookingConfirmed ? (
             <View style={styles.pendingStatusIcon} accessibilityLabel={t('bookingConfirmation.pendingStatusA11y')}>
               <Clock size={48} color={designTokens.colors.semantic.warning} />
             </View>
-          )}
+          ) : null}
           <Text style={[
             styles.successTitle,
             pendingPresentation && styles.pendingTitle,
           ]}>
             {statusHeading}
           </Text>
-          <Text style={styles.successSubtitle}>
-            {paymentStateCopy}
-          </Text>
+          {(isBookingConfirmed || isBookingPending || isPromptPayMethod) && (
+            <Text style={styles.successSubtitle}>{paymentStateCopy}</Text>
+          )}
+          {isBookingPending && (
+            <Text style={styles.successSubtitle}>{t('bookingConfirmation.awaitingGuide')}</Text>
+          )}
           {bookingId && (
             <View style={styles.bookingIdContainer}>
               <Text style={styles.bookingIdLabel}>{t('bookingConfirmation.bookingId')}:</Text>
@@ -241,23 +261,28 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
           <Card style={styles.countdownCard} padding={16}>
             <View style={styles.countdownHeader}>
               <Calendar size={20} color={designTokens.colors.semantic.primary} />
-              <Text style={styles.countdownTitle}>{t('bookingConfirmation.startsIn')}</Text>
+              <Text style={styles.countdownTitle}>
+                {t(isBookingConfirmed ? 'bookingConfirmation.startsIn' : isBookingPending ? 'bookingConfirmation.requestedDate' : 'bookingConfirmation.dateInThailand')}
+              </Text>
             </View>
-            <Text style={styles.countdownValue}>{countdownText}</Text>
+            {isBookingConfirmed && <Text style={styles.countdownValue}>{countdownText}</Text>}
             <Text style={styles.countdownDetail}>
               {t('bookingConfirmation.dateAtTime', {
                 date: formatBookingDate(dateTime.date, language),
                 time: formatBookingTime(dateTime.time, language),
               })}
             </Text>
-            <Button
-              title={t('bookingConfirmation.addToCalendar')}
-              variant="outline"
-              onPress={handleAddToCalendar}
-              style={styles.calendarButton}
-              leftIcon={<CalendarPlus size={18} color={designTokens.colors.semantic.primary} />}
-              fullWidth
-            />
+            {isBookingConfirmed && (
+              <Button
+                title={t('bookingConfirmation.addToCalendar')}
+                variant="outline"
+                onPress={handleAddToCalendar}
+                disabled={!canAddToCalendar}
+                style={styles.calendarButton}
+                leftIcon={<CalendarPlus size={18} color={designTokens.colors.semantic.primary} />}
+                fullWidth
+              />
+            )}
           </Card>
         )}
 
@@ -285,17 +310,21 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
                 </View>
               </View>
               
-              <View style={styles.contactButtons}>
-                <TouchableOpacity 
-                  style={styles.contactButton}
-                  onPress={handleMessageCompanion}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('bookingConfirmation.messageGuideA11y')}
-                >
-                  <MessageCircle size={18} color={designTokens.colors.semantic.surface} />
-                  <Text style={styles.contactButtonText}>{t('bookingConfirmation.message')}</Text>
-                </TouchableOpacity>
-              </View>
+              {isBookingConfirmed && (
+                <View style={styles.contactButtons}>
+                  <TouchableOpacity
+                    style={styles.contactButton}
+                    onPress={handleMessageCompanion}
+                    disabled={openingChat}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('bookingConfirmation.messageGuideA11y')}
+                    accessibilityState={{ busy: openingChat, disabled: openingChat }}
+                  >
+                    <MessageCircle size={18} color={designTokens.colors.semantic.surface} />
+                    <Text style={styles.contactButtonText}>{t('bookingConfirmation.message')}</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
           </View>
         </Card>
@@ -365,54 +394,41 @@ export const BookingConfirmationStep: React.FC<BookingConfirmationStepProps> = (
           </View>
         </Card>
 
-        {/* Next Steps */}
-        <Card style={styles.sectionCard} padding={16}>
-          <Text style={styles.sectionTitle}>{t('bookingConfirmation.whatsNext')}</Text>
-          
-          <View style={styles.nextSteps}>
-            <View style={styles.stepItem}>
-              <View style={styles.stepNumber}>
-                <Text style={styles.stepNumberText}>1</Text>
+        {isBookingConfirmed && (
+          <Card style={styles.sectionCard} padding={16}>
+            <Text style={styles.sectionTitle}>{t('bookingConfirmation.whatsNext')}</Text>
+            <View style={styles.nextSteps}>
+              <View style={styles.stepItem}>
+                <View style={styles.stepNumber}>
+                  <Text style={styles.stepNumberText}>1</Text>
+                </View>
+                <View style={styles.stepContent}>
+                  <Text style={styles.stepTitle}>{t('bookingConfirmation.prepareForYourExperience')}</Text>
+                  <Text style={styles.stepDescription}>
+                    {restitutionLocked
+                      ? t('bookingConfirmation.prepareForYourExperienceRestitutionDescription')
+                      : alreadyPaid
+                        ? t('bookingConfirmation.prepareForYourExperiencePaidDescription')
+                        : isPromptPayMethod
+                          ? t('bookingConfirmation.prepareForYourExperiencePromptPayDescription')
+                          : t('bookingConfirmation.prepareForYourExperienceDescription')}
+                  </Text>
+                </View>
               </View>
-              <View style={styles.stepContent}>
-                <Text style={styles.stepTitle}>{t('bookingConfirmation.waitForConfirmation')}</Text>
-                <Text style={styles.stepDescription}>
-                  {t('bookingConfirmation.waitForConfirmationDescription')}
-                </Text>
-              </View>
-            </View>
-            
-            <View style={styles.stepItem}>
-              <View style={styles.stepNumber}>
-                <Text style={styles.stepNumberText}>2</Text>
-              </View>
-              <View style={styles.stepContent}>
-                <Text style={styles.stepTitle}>{t('bookingConfirmation.prepareForYourExperience')}</Text>
-                <Text style={styles.stepDescription}>
-                  {restitutionLocked
-                    ? t('bookingConfirmation.prepareForYourExperienceRestitutionDescription')
-                    : alreadyPaid
-                    ? t('bookingConfirmation.prepareForYourExperiencePaidDescription')
-                    : isPromptPayMethod
-                      ? t('bookingConfirmation.prepareForYourExperiencePromptPayDescription')
-                      : t('bookingConfirmation.prepareForYourExperienceDescription')}
-                </Text>
-              </View>
-            </View>
-            
-            <View style={styles.stepItem}>
-              <View style={styles.stepNumber}>
-                <Text style={styles.stepNumberText}>3</Text>
-              </View>
-              <View style={styles.stepContent}>
-                <Text style={styles.stepTitle}>{t('bookingConfirmation.meetAtTheLocation')}</Text>
-                <Text style={styles.stepDescription}>
-                  {t('bookingConfirmation.meetAtTheLocationDescription')}
-                </Text>
+              <View style={styles.stepItem}>
+                <View style={styles.stepNumber}>
+                  <Text style={styles.stepNumberText}>2</Text>
+                </View>
+                <View style={styles.stepContent}>
+                  <Text style={styles.stepTitle}>{t('bookingConfirmation.meetAtTheLocation')}</Text>
+                  <Text style={styles.stepDescription}>
+                    {t('bookingConfirmation.meetAtTheLocationDescription')}
+                  </Text>
+                </View>
               </View>
             </View>
-          </View>
-        </Card>
+          </Card>
+        )}
 
       </ScrollView>
 

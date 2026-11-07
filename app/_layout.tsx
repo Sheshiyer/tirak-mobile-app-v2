@@ -12,7 +12,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Sentry from '@sentry/react-native';
 import { I18nextProvider } from 'react-i18next';
 import i18n from '@/utils/i18n';
-import { registerServiceWorker } from '@/utils/pwa';
 import PWAHead from '@/components/PWAHead';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { SimpleToast } from '@/components/ui/SimpleToast';
