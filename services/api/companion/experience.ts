@@ -1,8 +1,9 @@
-import { logger } from '@/utils/logger';
+import { isDemoModeEnabled } from '@/utils/demo-mode';
+import { useAuthStore } from '@/stores/auth-store';
+import type { QueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchCompanionById, getAuthToken } from './companion';
-import { isTestCompanionId } from '@/utils/companion-display';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { getAuthToken } from './companion';
 import { secureStorage } from '@/utils/secure-storage';
 import { apiUrl } from '@/constants/api';
 
@@ -55,272 +56,119 @@ export interface ExperienceListResponse {
   message: string;
 }
 
-const testCompanionExperiences: Experience[] = [
-  {
-    id: 'test-market-temple-walk',
-    title: 'Old Town Market & Temple Walk',
-    description: 'A relaxed half-day walk through Bangkok food stalls, flower markets, river lanes, and a quiet temple stop with local context.',
-    durationMinutes: 180,
-    keywords: ['City Tour', 'Culture', 'Food'],
-    price: 1800,
-    currency: 'THB',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'test-evening-food-trail',
-    title: 'Evening Food Trail',
-    description: 'Taste street snacks, learn ordering etiquette, and visit a neighborhood night market at an easy traveler pace.',
-    durationMinutes: 150,
-    keywords: ['Evening', 'Food'],
-    price: 1500,
-    currency: 'THB',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
-
-const readLocalExperiences = async (): Promise<Record<string, Experience[]>> => {
-  try {
-    const stored = await secureStorage.getItemAsync(LOCAL_EXPERIENCES_KEY);
-    return stored ? JSON.parse(stored) : {};
-  } catch (error) {
-    logger.warn('Failed to read local experiences cache:', error);
-    return {};
-  }
-};
-
-const writeLocalExperiences = async (experiences: Record<string, Experience[]>) => {
-  try {
-    await secureStorage.setItemAsync(LOCAL_EXPERIENCES_KEY, JSON.stringify(experiences));
-  } catch (error) {
-    logger.warn('Failed to write local experiences cache:', error);
-  }
-};
-
-const toExperience = (payload: ExperienceCreateRequest, id?: string): Experience => {
-  const now = new Date().toISOString();
-  return {
-    id: id || `local_experience_${Date.now()}`,
-    title: payload.title,
-    description: payload.description,
-    durationMinutes: payload.durationMinutes,
-    keywords: payload.keywords || [],
-    price: payload.price,
-    currency: payload.currency || 'THB',
-    isActive: payload.is_active,
-    createdAt: now,
-    updatedAt: now,
-  };
-};
-
-const normalizeExperience = (item: any): Experience => ({
-  id: String(item.id || item._id || item.experienceId || `experience_${Date.now()}`),
-  title: item.title || item.name || 'Local Experience',
-  description: item.description || '',
-  durationMinutes: normalizeDurationMinutes(item.durationMinutes ?? item.duration_minutes ?? item.duration),
-  keywords: Array.isArray(item.keywords)
-    ? item.keywords
-    : Array.isArray(item.tags)
-      ? item.tags
-      : typeof item.category === 'string'
-        ? [item.category]
-        : [],
-  price: Number(item.price ?? 0),
-  currency: item.currency || 'THB',
-  isActive: Boolean(item.isActive ?? item.is_active ?? true),
-  createdAt: item.createdAt || item.created_at || new Date().toISOString(),
-  updatedAt: item.updatedAt || item.updated_at || new Date().toISOString(),
-});
-
-function normalizeDurationMinutes(value: unknown): number {
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
-  if (typeof value === 'string') {
-    const numeric = Number.parseFloat(value);
-    if (!Number.isFinite(numeric)) return 180;
-    return value.toLowerCase().includes('hour') ? Math.round(numeric * 60) : Math.round(numeric);
-  }
-  return 180;
+export interface ExperienceSearchParams {
+  page?: number;
+  limit?: number;
+  signal?: AbortSignal;
 }
 
-const getServiceBackedExperiences = async (companionId: string): Promise<Experience[]> => {
-  try {
-    const response = await fetchCompanionById(companionId);
-    const services = response.data?.services || [];
-    return services.map((service: any) => normalizeExperience({
-      id: service.id,
-      title: service.title || service.name,
-      description: service.description,
-      duration: service.duration,
-      keywords: service.category ? [service.category] : [],
-      price: service.price,
-      currency: service.currency || 'THB',
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }));
-  } catch (error) {
-    logger.warn('Failed to load companion services as booking experiences:', error);
-    return [];
-  }
+// Drafts from earlier versions remain on this device; never merge them into server data.
+const readLocalExperiences = async (): Promise<Record<string, Experience[]>> => {
+  const stored = await secureStorage.getItemAsync(LOCAL_EXPERIENCES_KEY);
+  const data = stored ? JSON.parse(stored) : {};
+  if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('Invalid local experience drafts');
+  return data;
 };
 
-const buildExperienceList = async (companionId: string, remoteItems: Experience[] = []): Promise<ExperienceListResponse> => {
-  const localStore = await readLocalExperiences();
-  const localItems = localStore[companionId] || [];
-  const normalizedRemoteItems = remoteItems.map(normalizeExperience);
-  const serviceBackedItems = normalizedRemoteItems.length > 0 ? [] : await getServiceBackedExperiences(companionId);
-  const remoteIds = new Set(normalizedRemoteItems.map(item => item.id));
-  const baseItems = isTestCompanionId(companionId) ? testCompanionExperiences : [];
-  const serviceIds = new Set(serviceBackedItems.map(item => item.id));
-  const baseIds = new Set([...remoteIds, ...serviceIds, ...localItems.map(item => item.id)]);
-  const items = [
-    ...localItems,
-    ...normalizedRemoteItems,
-    ...serviceBackedItems.filter(item => !remoteIds.has(item.id)),
-    ...baseItems.filter(item => !baseIds.has(item.id)),
-  ];
-
-  return {
-    success: true,
-    data: {
-      items,
-      pagination: {
-        page: 1,
-        limit: items.length,
-        total: items.length,
-        totalPages: 1,
-      },
-    },
-    message: localItems.length > 0 ? 'Loaded local and backend experiences' : 'Loaded experiences',
-  };
+export const readExperienceDrafts = async (companionId: string): Promise<Experience[]> => {
+  if (useAuthStore.getState().user?.id !== companionId) throw new Error('Only your own drafts are available');
+  return (await readLocalExperiences())[companionId] || [];
 };
 
-const upsertLocalExperience = async (companionId: string, experience: Experience) => {
-  const localStore = await readLocalExperiences();
-  const existing = localStore[companionId] || [];
-  localStore[companionId] = [
-    experience,
-    ...existing.filter(item => item.id !== experience.id),
-  ];
-  await writeLocalExperiences(localStore);
-};
-
-
-
-// POST /companions/:id/experiences
-export const createExperience = async (companionId: string, payload: ExperienceCreateRequest): Promise<ExperienceCreateResponse> => {
- try {
+async function headers() {
   const token = await getAuthToken();
-  // logger.log("payload", payload);
-  const response = await axios.post(apiUrl(`/api/companions/${companionId}/experiences`), payload, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` }),
-    },
-  });
+  return { 'Content-Type': 'application/json', ...(token && { Authorization: `Bearer ${token}` }) };
+}
 
-  // logger.log("response", response.data);
-  return response.data;
- } catch (error) {
-  if (__DEV__ || (axios.isAxiosError(error) && [404, 405, 501].includes(error.response?.status || 0))) {
-    const experience = toExperience(payload);
-    await upsertLocalExperience(companionId, experience);
-    return {
-      success: true,
-      data: {
-        experienceId: experience.id,
-        created: true,
-      },
-      message: 'Experience saved locally for preview',
-    };
-  }
-  console.error('Error creating experience:', error);
-  throw error;
- }
+function requireSuccess<T extends { success: boolean }>(body: T): T {
+  if (body?.success !== true) throw new Error('The experience request failed. Please try again.');
+  return body;
+}
+
+export async function fetchExperiences(
+  companionId: string,
+  params: ExperienceSearchParams = {},
+): Promise<ExperienceListResponse> {
+  if (!companionId) throw new Error('Companion ID is required');
+  const queryParams = new URLSearchParams();
+  if (params.page !== undefined && params.page !== null) queryParams.append('page', String(params.page));
+  if (params.limit !== undefined && params.limit !== null) queryParams.append('limit', String(params.limit));
+  const queryString = queryParams.toString();
+  const url = apiUrl(`/api/companions/${companionId}/experiences${queryString ? `?${queryString}` : ''}`);
+
+  const response = await axios.get(url, {
+    headers: await headers(),
+    signal: params.signal,
+  });
+  const body = requireSuccess<ExperienceListResponse>(response.data);
+  if (!Array.isArray(body.data?.items)) throw new Error('Invalid experience response');
+  return { ...body, data: { ...body.data, items: body.data.items.filter(item => !/^(test-|demo[-_]|review_experience_|local_experience_)/.test(item.id)) } };
+}
+
+export async function createExperience(companionId: string, payload: ExperienceCreateRequest): Promise<ExperienceCreateResponse> {
+  const response = await axios.post(apiUrl(`/api/companions/${companionId}/experiences`), payload, { headers: await headers() });
+  return requireSuccess(response.data);
+}
+
+export async function updateExperience(companionId: string, experienceId: string, payload: ExperienceCreateRequest): Promise<ExperienceCreateResponse> {
+  const response = await axios.put(apiUrl(`/api/companions/${companionId}/experiences/${experienceId}`), payload, { headers: await headers() });
+  return requireSuccess(response.data);
+}
+
+export async function archiveExperience(companionId: string, experienceId: string): Promise<{ success: boolean; data: { experienceId: string; archived: boolean } }> {
+  const response = await axios.delete(apiUrl(`/api/companions/${companionId}/experiences/${experienceId}`), { headers: await headers() });
+  return requireSuccess(response.data);
+}
+
+export async function invalidateExperienceQueries(queryClient: QueryClient, companionId: string) {
+  await Promise.all([
+    ['experiences', companionId], ['supplierStats', companionId], ['companion', companionId],
+    ['companions'], ['companionProfile', companionId], ['companionAvailability', companionId],
+  ].map(queryKey => queryClient.invalidateQueries({ queryKey })));
+}
+
+export const useExperiences = (
+  companionId: string,
+  params?: Omit<ExperienceSearchParams, 'signal'>,
+) => {
+  const user = useAuthStore(state => state.user);
+  const queryKey = params !== undefined
+    ? ['experiences', companionId, user?.id || 'public', isDemoModeEnabled(user), params]
+    : ['experiences', companionId, user?.id || 'public', isDemoModeEnabled(user)];
+  return useQuery({
+    queryKey,
+    queryFn: ({ signal }) => fetchExperiences(companionId, { ...params, signal }),
+    enabled: !!companionId,
+    retry: false,
+  });
 };
 
 export const useCreateExperience = (companionId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: ExperienceCreateRequest) => createExperience(companionId, payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['experiences', companionId] });
-      queryClient.invalidateQueries({ queryKey: ['supplierStats'] });
+    onSuccess: () => invalidateExperienceQueries(queryClient, companionId),
+  });
+};
+
+export const useInfiniteExperiences = (
+  companionId: string,
+  params?: { limit?: number },
+) => {
+  const user = useAuthStore((state) => state.user);
+  const pageSize = Math.min(Math.max(params?.limit || 50, 1), 100);
+  return useInfiniteQuery({
+    queryKey: ['experiences', companionId, user?.id || 'public', isDemoModeEnabled(user), 'infinite', { limit: pageSize }],
+    queryFn: ({ pageParam = 1, signal }) =>
+      fetchExperiences(companionId, { page: pageParam as number, limit: pageSize, signal }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const pagination = lastPage?.data?.pagination;
+      if (!pagination) return undefined;
+      const { page, totalPages } = pagination;
+      return page < totalPages ? page + 1 : undefined;
     },
+    enabled: !!companionId,
+    retry: false,
   });
-};
-
-// GET /companions/:id/experiences
-export const fetchExperiences = async (companionId: string): Promise<ExperienceListResponse> => {
- try {
-  if (!companionId) {
-    throw new Error('Companion ID is required');
-  }
-
-  // Log the request details
-    // logger.log('Fetching experiences for companion:', {
-    //   companionId,
-    //   url: `${BASE_URL}/companions/${companionId}/experiences`
-    // });
-
-  const token = await getAuthToken();
-  const response = await axios.get(apiUrl(`/api/companions/${companionId}/experiences`), {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` }),
-    },
-  });
-
-  // Log the response
-  // logger.log('Experiences API response:', response.data);
-
-  const items = response.data?.data?.items || [];
-  return await buildExperienceList(companionId, items);
- } catch (error) {
-  if (__DEV__ || isTestCompanionId(companionId)) {
-    return await buildExperienceList(companionId);
-  }
-  throw error;
- }
-};
-
-export const useExperiences = (companionId: string) => {
-  return useQuery({
-    queryKey: ['experiences', companionId],
-    queryFn: () => fetchExperiences(companionId),
-    enabled: !!companionId && companionId !== '',
-    retry: false, // Don't retry on validation errors
-  });
-};
-
-export const updateExperience = async (companionId: string, experienceId: string, payload: ExperienceCreateRequest): Promise<ExperienceCreateResponse> => {
-  try {
-    const token = await getAuthToken();
-    const response = await axios.put(apiUrl(`/api/companions/${companionId}/experiences/${experienceId}`), payload, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
-    });
-    
-    return response.data;
-  } catch (error) {
-    if (__DEV__ || (axios.isAxiosError(error) && [404, 405, 501].includes(error.response?.status || 0))) {
-      const experience = toExperience(payload, experienceId);
-      await upsertLocalExperience(companionId, experience);
-      return {
-        success: true,
-        data: {
-          experienceId: experience.id,
-          created: false,
-        },
-        message: 'Experience updated locally for preview',
-      };
-    }
-    console.error('Error updating experience:', error);
-    throw error;
-  }
 };

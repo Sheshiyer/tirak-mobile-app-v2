@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Image, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { router } from 'expo-router';
+import { Image as ExpoImage } from 'expo-image';
+import { Redirect, router } from 'expo-router';
 import { Button } from '@/components/ui/Button';
 import { RadialGradient } from '@/components/ui/RadialGradient';
 import { designTokens } from '@/constants/design-tokens';
@@ -8,6 +9,8 @@ import { Briefcase, Globe, LucideIcon, MapPin, Sparkles, User } from 'lucide-rea
 import { useAuthStoreHydrated } from '@/hooks/useAuthStoreHydrated';
 import { useTranslation } from 'react-i18next';
 import { changeLanguage, getCurrentLanguage } from '@/utils/i18n';
+
+const authHeroImage = require('@/assets/images/auth-local-guide-hero-v1.png');
 
 type RoleChoiceProps = {
   title: string;
@@ -109,9 +112,10 @@ function RoleChoice({ title, description, icon: Icon, accent, delay, onPress }: 
 }
 
 export default function AuthScreen() {
-  const { isAuthenticated } = useAuthStoreHydrated();
+  const { isHydrated, isAuthenticated, user } = useAuthStoreHydrated();
   const { t } = useTranslation();
   const [currentLanguage, setCurrentLanguage] = useState(getCurrentLanguage());
+  const [heroImageFailed, setHeroImageFailed] = useState(false);
 
   const toggleLanguage = async () => {
     const newLang = currentLanguage === 'en' ? 'th' : 'en';
@@ -134,6 +138,11 @@ export default function AuthScreen() {
     });
   };
 
+  if (isHydrated && isAuthenticated && user) {
+    // The shared app home renders the existing guide or traveler dashboard.
+    return <Redirect href="/(app)" />;
+  }
+
   return (
     <RadialGradient variant="primary" style={styles.container}>
       <View style={styles.header}>
@@ -146,7 +155,21 @@ export default function AuthScreen() {
         <View style={styles.logoContainer}>
           <Image source={require('@/assets/images/tirak-logo.png')} style={styles.logo} />
           <View style={styles.heroCard}>
-            <Image source={require('@/assets/images/stroll.png')} style={styles.heroImage} />
+            {heroImageFailed ? (
+              <View accessibilityElementsHidden style={styles.heroFallback} testID="auth-hero-fallback">
+                <View style={styles.heroFallbackGlowTop} />
+                <View style={styles.heroFallbackGlowBottom} />
+              </View>
+            ) : (
+              <ExpoImage
+                accessibilityLabel="A local guide showing a traveler around Thailand"
+                contentFit="cover"
+                onError={() => setHeroImageFailed(true)}
+                source={authHeroImage}
+                style={styles.heroImage}
+                transition={180}
+              />
+            )}
             <View style={styles.heroScrim} />
             <View style={styles.heroBadge}>
               <MapPin size={14} color="#FFFFFF" />
@@ -273,7 +296,31 @@ const styles = StyleSheet.create({
   heroImage: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
+  },
+  heroFallback: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: 'hidden',
+    backgroundColor: '#5B21B6',
+  },
+  heroFallbackGlowTop: {
+    position: 'absolute',
+    width: 190,
+    height: 190,
+    borderRadius: 95,
+    top: -96,
+    right: -18,
+    backgroundColor: '#EC4899',
+    opacity: 0.78,
+  },
+  heroFallbackGlowBottom: {
+    position: 'absolute',
+    width: 210,
+    height: 210,
+    borderRadius: 105,
+    bottom: -132,
+    left: -34,
+    backgroundColor: '#F59E0B',
+    opacity: 0.58,
   },
   heroScrim: {
     ...StyleSheet.absoluteFillObject,

@@ -5,12 +5,14 @@ import { designTokens } from '@/constants/design-tokens';
 interface SimpleInputProps extends TextInputProps {
   label?: string;
   error?: string;
+  helperText?: string;
   disabled?: boolean;
 }
 
 export const SimpleInput: React.FC<SimpleInputProps> = ({
   label,
   error,
+  helperText,
   disabled,
   ...props
 }) => {
@@ -27,9 +29,11 @@ export const SimpleInput: React.FC<SimpleInputProps> = ({
         editable={!disabled}
       />
       
-      {error && (
+      {error ? (
         <Text style={styles.error}>{error}</Text>
-      )}
+      ) : helperText ? (
+        <Text style={styles.helper}>{helperText}</Text>
+      ) : null}
     </View>
   );
 };
@@ -60,4 +64,10 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 12,
   },
-}); 
+  helper: {
+    color: designTokens.colors.semantic.textSecondary,
+    marginTop: 4,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+});

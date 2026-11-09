@@ -151,9 +151,9 @@ export default function SupplierSignup() {
                 <Text style={styles.stepNumberText}>8</Text>
               </View>
               <View style={styles.stepContent}>
-                <Text style={styles.stepTitle}>Subscription Payment</Text>
+                <Text style={styles.stepTitle}>Submit Application</Text>
                 <Text style={styles.stepDescription}>
-                  Choose a subscription plan and complete payment
+                  Review and submit your guide application
                 </Text>
               </View>
             </View>

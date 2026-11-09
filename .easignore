@@ -83,3 +83,9 @@ jspm_packages/
 # Temporary folders
 tmp/
 temp/
+
+# Local Metro verification exports are not release source.
+proof-exports/
+
+# Signed native candidates are local deliverables, not source/upload inputs.
+artifacts/store-release-20261013/

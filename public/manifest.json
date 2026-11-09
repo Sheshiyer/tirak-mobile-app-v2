@@ -1,7 +1,7 @@
 {
-  "name": "Tirak — Local Guides Thailand",
+  "name": "Tirak — Local Guides & Experiences",
   "short_name": "Tirak",
-  "description": "Tirak connects travellers with certified local guides across Thailand for authentic cultural experiences.",
+  "description": "Discover local guides and cultural experiences in Thailand with Tirak.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -18,25 +18,27 @@
       "purpose": "any"
     },
     {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     }
   ],
-  "categories": ["lifestyle", "social", "travel"],
+  "categories": [
+    "travel"
+  ],
   "screenshots": [],
   "shortcuts": [
     {
@@ -46,8 +48,9 @@
       "url": "/search",
       "icons": [
         {
-          "src": "/icon.png",
-          "sizes": "96x96"
+          "src": "/icon-96.png",
+          "sizes": "96x96",
+          "type": "image/png"
         }
       ]
     },
@@ -58,21 +61,12 @@
       "url": "/bookings",
       "icons": [
         {
-          "src": "/icon.png",
-          "sizes": "96x96"
+          "src": "/icon-96.png",
+          "sizes": "96x96",
+          "type": "image/png"
         }
       ]
     }
   ],
-  "share_target": {
-    "action": "/share",
-    "method": "POST",
-    "enctype": "multipart/form-data",
-    "params": {
-      "title": "title",
-      "text": "text",
-      "url": "url"
-    }
-  }
+  "id": "/"
 }
-

@@ -249,6 +249,18 @@ describe('PromptPay traveler checkout', () => {
 
   afterEach(() => cleanup());
 
+  test('pending cash requests show the requested Thai schedule without calendar or chat actions', () => {
+    seedPayment({
+      booking: { id: 'booking-1', status: 'pending', paymentStatus: 'pending' },
+      selectedMethod: 'cash',
+    });
+    const screen = render(<BookingConfirmationStep onPrevious={jest.fn()} />);
+    expect(screen.getByText('Booking request sent')).toBeTruthy();
+    expect(screen.getByText('Requested date and time (Thailand)')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Add to Calendar' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Message your local guide' })).toBeNull();
+  });
+
   test('keeps cash visible and hides PromptPay when the capability is off', () => {
     process.env.EXPO_PUBLIC_PROMPTPAY_ENABLED = 'false';
     seedPayment();
@@ -269,261 +281,56 @@ describe('PromptPay traveler checkout', () => {
     expect(checkout.getByLabelText('Continue')).toBeTruthy();
   });
 
-  test('shows cash plus an ineligible PromptPay method for an unconfirmed booking', () => {
-    seedPayment({ booking: { id: 'booking-1', status: 'pending', paymentStatus: 'pending' } });
-    const screen = renderPaymentStep();
-
-    expect(screen.getByText('Cash')).toBeTruthy();
-    expect(screen.getByText('PromptPay')).toBeTruthy();
-    expect(screen.getByText('PromptPay becomes available when this booking is confirmed.')).toBeTruthy();
-    const method = screen.getByLabelText(/^PromptPay payment method/);
-    expect(method.props.accessibilityState.disabled).toBe(true);
-    expect(StyleSheet.flatten(method.props.style).opacity).toBe(1);
-    expect(StyleSheet.flatten(
-      screen.getByText('Pay with a Thai banking app after your guide confirms the booking.').props.style,
-    ).color).toBe('#6B7280');
-    expect(StyleSheet.flatten(
-      screen.getByText('PromptPay becomes available when this booking is confirmed.').props.style,
-    ).color).toBe('#6B7280');
-  });
-
-  test('a confirmed booking exposes one guarded Create PromptPay QR action', async () => {
-    let resolveCharge!: (value: typeof pendingCharge) => void;
-    mockCreatePromptPayCharge.mockReturnValueOnce(new Promise((resolve) => { resolveCharge = resolve; }));
+  test("local payment flags cannot expose online payment or QR creation", () => {
     seedPayment();
     const screen = renderPaymentStep();
-
-    fireEvent.press(screen.getByLabelText(/^PromptPay payment method/));
-    expect(screen.getByLabelText('Create PromptPay QR')).toBeTruthy();
-    fireEvent.press(screen.getByLabelText('Create PromptPay QR'));
-    fireEvent.press(screen.getByLabelText('Creating QR...'));
-
-    expect(mockCreatePromptPayCharge).toHaveBeenCalledTimes(1);
-    expect(screen.getByText('Cash')).toBeTruthy();
-    expect(screen.getByLabelText(/^Cash payment method/).props.accessibilityState.disabled).toBe(true);
-
-    await act(async () => resolveCharge(pendingCharge));
+    expect(screen.queryByText("PromptPay")).toBeNull();
+    expect(screen.queryByLabelText(/Create PromptPay QR/)).toBeNull();
+    expect(usePaymentStore.getState().selectedMethod).toBe("cash");
+    expect(useBookingStore.getState().bookingData.payment?.method).toBe("cash");
+    expect(mockCreatePromptPayCharge).not.toHaveBeenCalled();
   });
 
-  test('keeps the confirmed pre-request action and footer reachable in the checkout scroll region', () => {
-    seedPayment();
+  test("an uncharged PromptPay draft migrates to cash", () => {
+    seedPayment({ selectedMethod: "promptpay", phase: "idle" });
     const screen = renderPaymentStep();
-
-    fireEvent.press(screen.getByLabelText(/^PromptPay payment method/));
-    const checkout = within(screen.getByLabelText('Payment checkout content'));
-
-    expect(checkout.getByLabelText(/^PromptPay payment method/)).toBeTruthy();
-    expect(checkout.getByLabelText('Create PromptPay QR')).toBeTruthy();
-    expect(checkout.getByLabelText('Continue')).toBeTruthy();
+    expect(usePaymentStore.getState().selectedMethod).toBe("cash");
+    expect(screen.getByLabelText("Continue").props.accessibilityState.disabled).toBe(false);
+    expect(mockCreatePromptPayCharge).not.toHaveBeenCalled();
   });
 
-  test('keeps selected locked PromptPay copy high contrast without dimming the card', () => {
-    seedPayment({
-      selectedMethod: 'promptpay',
-      phase: 'pending',
-      charge: pendingCharge,
-    });
-    const screen = renderPaymentStep();
-
-    expect(StyleSheet.flatten(
-      screen.getByLabelText(/^PromptPay payment method/).props.style,
-    ).opacity).toBe(1);
-    expect(StyleSheet.flatten(screen.getByText('PromptPay').props.style).color).toBe('#111827');
-    expect(StyleSheet.flatten(
-      screen.getByText('Pay with a Thai banking app after your guide confirms the booking.').props.style,
-    ).color).toBe('#6B7280');
-    expect(screen.getAllByText('Wait for payment status before changing methods.').every(
-      (copy) => StyleSheet.flatten(copy.props.style).color === '#6B7280',
-    )).toBe(true);
-    expect(StyleSheet.flatten(screen.getByText('Local test').props.style).color).toBe('#111827');
-  });
-
-  test.each([
-    ['creating', null],
-    ['error', 'in-progress'],
-    ['error', 'indeterminate'],
-    ['error', 'network'],
-    ['error', 'unknown'],
-    ['pending', null],
-  ] as const)('locks cash while the payment state is %s / %s', (phase, errorKind) => {
-    seedPayment({
-      selectedMethod: 'promptpay',
-      phase,
-      errorKind,
-      charge: phase === 'pending' ? pendingCharge : null,
-    });
-    const screen = renderPaymentStep();
-
-    expect(screen.getByText('Cash')).toBeTruthy();
-    expect(screen.getByLabelText(/^Cash payment method/).props.accessibilityState.disabled).toBe(true);
-    if (phase !== 'pending') {
-      expect(screen.getAllByText(
-        phase === 'creating'
-          ? 'Creating QR...'
-          : 'Payment status is uncertain. Do not pay again or switch methods. Check this booking later.',
-      ).length).toBeGreaterThan(0);
-    }
-  });
-
-  test('a definite no-charge error re-enables cash with truthful copy', () => {
-    seedPayment({ selectedMethod: 'promptpay', phase: 'error', errorKind: 'disabled' });
-    const screen = renderPaymentStep();
-
-    expect(screen.getByText('PromptPay is unavailable in this environment. Choose cash.')).toBeTruthy();
-    expect(screen.getByLabelText(/^Cash payment method/).props.accessibilityState.disabled).toBe(false);
-  });
-
-  test('an already-paid booking disables every payment action and never renders cash instructions', () => {
-    seedPayment({
-      booking: { id: 'booking-1', status: 'confirmed', paymentStatus: 'paid' },
-      selectedMethod: 'promptpay',
-      phase: 'paid' as never,
-      errorKind: 'already-paid' as never,
-      charge: { ...pendingCharge, attemptStatus: 'successful', paymentStatus: 'paid' },
-    });
-    const screen = renderPaymentStep();
-
-    expect(screen.getByText('This booking is already paid or refunded. Do not pay again.')).toBeTruthy();
-    expect(screen.getByLabelText(/^Cash payment method/).props.accessibilityState.disabled).toBe(true);
-    expect(screen.getByLabelText(/^PromptPay payment method/).props.accessibilityState.disabled).toBe(true);
-    expect(screen.queryByText('Pay your local guide directly in cash.')).toBeNull();
-    expect(screen.queryByText('Pay with a Thai banking app after your guide confirms the booking.')).toBeNull();
-    expect(screen.getByLabelText('Continue').props.accessibilityState.disabled).toBe(false);
-  });
-
-  test('an authoritative paid booking can continue even when cash was previously selected', () => {
-    seedPayment({
-      booking: { id: 'booking-1', status: 'confirmed', paymentStatus: 'paid' },
-      selectedMethod: 'cash',
-      phase: 'idle',
-    });
-
-    const screen = renderPaymentStep();
-    expect(screen.getByText('Payment confirmed. Do not pay again.')).toBeTruthy();
-    expect(screen.queryByText('Pay your local guide directly in cash.')).toBeNull();
-    expect(screen.getByLabelText('Continue').props.accessibilityState.disabled).toBe(false);
-  });
-
-  test.each([
-    ['paid', 'Payment confirmed. Do not pay again.'],
-    ['failed', 'PromptPay payment failed. Choose cash or try PromptPay again.'],
-    ['expired', 'The PromptPay QR expired. Choose cash or create a new QR.'],
-    ['indeterminate', 'Payment status is uncertain. Do not pay again or switch methods. Check this booking later.'],
-  ] as const)('renders explicit %s PromptPay truth', (terminalPhase, copy) => {
-    seedPayment({
-      selectedMethod: 'promptpay',
-      phase: terminalPhase as never,
-      charge: terminalPhase === 'paid'
-        ? { ...pendingCharge, attemptStatus: 'successful', paymentStatus: 'paid' }
-        : null,
-    });
-
-    const screen = renderPaymentStep();
-    expect(screen.getByText(copy)).toBeTruthy();
-  });
-
-  test.each([
-    ['restitution_pending', 'Payment return is pending. Do not pay again or switch methods.'],
-    ['restituted', 'Payment was returned. Do not pay again; review this booking before choosing another method.'],
-    ['restitution_failed', 'Payment return needs support. Do not pay again or switch methods.'],
-  ] as const)('locks alternate methods during %s and shows restitution truth', (terminalPhase, copy) => {
-    seedPayment({ selectedMethod: 'promptpay', phase: terminalPhase as never });
-
-    const screen = renderPaymentStep();
-    expect(screen.getByText(copy)).toBeTruthy();
-    expect(screen.getByLabelText(/^Cash payment method/).props.accessibilityState.disabled).toBe(true);
-    expect(screen.getByLabelText(/^PromptPay payment method/).props.accessibilityState.disabled).toBe(true);
-    expect(screen.queryByText('Pay your local guide directly in cash.')).toBeNull();
-    expect(screen.getByLabelText('Continue').props.accessibilityState.disabled).toBe(false);
-  });
-
-  test.each([
-    ['processing', 'Payment status is uncertain. Do not pay again or switch methods. Check this booking later.'],
-    ['paid', 'Payment confirmed. Do not pay again.'],
-    ['refunded', 'Payment return is pending. Do not pay again or switch methods.'],
-    ['restitution_pending', 'Payment return is pending. Do not pay again or switch methods.'],
-    ['restituted', 'Payment was returned. Do not pay again; review this booking before choosing another method.'],
-    ['restitution_failed', 'Payment return needs support. Do not pay again or switch methods.'],
-  ] as const)('locks methods and preserves booking-level %s truth', (paymentStatus, copy) => {
-    seedPayment({
-      booking: { id: 'booking-1', status: 'confirmed', paymentStatus },
-      phase: 'idle',
-      selectedMethod: null,
-    });
-
-    const screen = renderPaymentStep();
-
-    expect(screen.getByText(copy)).toBeTruthy();
-    expect(screen.getByRole('radio', { name: /Cash payment method/ }).props.accessibilityState.disabled).toBe(true);
-    expect(screen.getByRole('radio', { name: /PromptPay payment method/ }).props.accessibilityState.disabled).toBe(true);
-  });
-
-  test.each(['failed', 'expired'] as const)('offers a safe same-booking retry for %s', async (phase) => {
-    mockCreatePromptPayCharge.mockResolvedValueOnce(pendingCharge);
-    seedPayment({
-      booking: { id: 'booking-1', status: 'confirmed', paymentStatus: 'failed' },
-      selectedMethod: 'promptpay',
-      phase,
-      charge: { ...pendingCharge, attemptStatus: phase, paymentStatus: 'failed' },
-    });
-
-    const screen = renderPaymentStep();
-    fireEvent.press(screen.getByLabelText('Try PromptPay again'));
-
-    await waitFor(() => expect(usePaymentStore.getState().phase).toBe('pending'));
-    expect(mockCreatePromptPayCharge).toHaveBeenCalledTimes(1);
-  });
-
-  test.each(['pending', 'indeterminate', 'paid', 'restitution_pending', 'restituted', 'restitution_failed'] as const)(
-    'does not expose retry for %s',
-    (phase) => {
-      seedPayment({ selectedMethod: 'promptpay', phase, charge: phase === 'pending' ? pendingCharge : null });
+  test.each(["pending", "indeterminate", "paid", "restitution_pending", "restituted", "restitution_failed"] as const)(
+    "preserves existing %s financial state and blocks alternate cash", phase => {
+      seedPayment({ selectedMethod: "promptpay", phase, charge: phase === "pending" ? pendingCharge : null });
       const screen = renderPaymentStep();
-
-      expect(screen.queryByLabelText('Try PromptPay again')).toBeNull();
+      expect(screen.getByLabelText(/^Cash payment method/).props.accessibilityState.disabled).toBe(true);
+      expect(usePaymentStore.getState().selectedMethod).toBe("promptpay");
+      expect(screen.queryByLabelText("Try PromptPay again")).toBeNull();
+      expect(mockCreatePromptPayCharge).not.toHaveBeenCalled();
+      if (phase === "paid") expect(screen.queryByText("Pay your local guide directly in cash.")).toBeNull();
     },
   );
 
-  test.each(['creating', 'pending', 'indeterminate'] as const)(
-    'blocks backward navigation for %s',
-    (phase) => {
-      seedPayment({ selectedMethod: 'promptpay', phase, charge: phase === 'pending' ? pendingCharge : null });
+  test.each(["creating", "pending", "indeterminate"] as const)(
+    "blocks backward navigation for unresolved %s payments", phase => {
+      seedPayment({ selectedMethod: "promptpay", phase });
       const screen = renderPaymentStep();
-
-      expect(screen.getByLabelText('Back').props.accessibilityState.disabled).toBe(true);
+      expect(screen.getByLabelText("Back").props.accessibilityState.disabled).toBe(true);
     },
   );
 
-  test('includes local-test and active lock reason in PromptPay accessibility metadata', () => {
-    seedPayment({ selectedMethod: 'promptpay', phase: 'pending', charge: pendingCharge });
+  test.each([
+    { phase: 'pending', errorKind: null },
+    { phase: 'creating', errorKind: null },
+    { phase: 'indeterminate', errorKind: null },
+    { phase: 'error', errorKind: 'network' },
+  ] as const)('unresolved $phase/$errorKind never instructs a second cash payment', state => {
+    seedPayment({ selectedMethod: 'promptpay', ...state });
     const screen = renderPaymentStep();
-    const promptPay = screen.getByRole('radio', {
-      name: 'PromptPay payment method. Local test. Wait for payment status before changing methods.',
-    });
-
-    expect(promptPay.props.accessibilityHint).toBe('Wait for payment status before changing methods.');
-  });
-
-  test('fails PromptPay closed when booking response explicitly names a non-THB currency', () => {
-    seedPayment({
-      booking: { id: 'booking-1', status: 'confirmed', paymentStatus: 'pending', currency: 'USD' },
-    });
-    const screen = renderPaymentStep();
-
-    expect(screen.getByRole('radio', { name: /PromptPay payment method/ }).props.accessibilityState.disabled).toBe(true);
-    expect(screen.getByText('PromptPay requires a THB booking total. Choose cash for this booking.')).toBeTruthy();
-  });
-
-  test('moves accessibility focus to payment recovery after a creation error', async () => {
-    const focus = jest.spyOn(ReactNative.AccessibilityInfo, 'setAccessibilityFocus').mockImplementation(() => undefined);
-    const findHandle = jest.spyOn(require('react-native'), 'findNodeHandle').mockReturnValue(42);
-    seedPayment({ selectedMethod: 'promptpay', phase: 'error', errorKind: 'disabled' });
-
-    renderPaymentStep();
-
-    await waitFor(() => expect(focus).toHaveBeenCalledWith(42));
-    findHandle.mockRestore();
-    focus.mockRestore();
+    expect(screen.getByText(/Do not pay again in cash/)).toBeTruthy();
+    expect(screen.queryByText('Pay your guide directly in cash. Electronic payment is unavailable for this booking.')).toBeNull();
+    expect(screen.queryByText('Pay your local guide directly in cash.')).toBeNull();
+    expect(mockCreatePromptPayCharge).not.toHaveBeenCalled();
   });
 
   test('leaving confirmation clears form state but retains a pending payment session', () => {
@@ -694,25 +501,23 @@ describe('PromptPay traveler checkout', () => {
 
   test('renders the Phase 01 checkout and confirmation in Thai without English fallback copy', () => {
     mockLanguage = 'th';
-    seedPayment({ selectedMethod: 'promptpay', phase: 'expired' as never });
+    seedPayment({ selectedMethod: 'cash' });
     const checkout = renderPaymentStep();
 
-    expect(checkout.getByText('คิวอาร์พร้อมเพย์หมดอายุแล้ว เลือกเงินสดหรือสร้างคิวอาร์ใหม่')).toBeTruthy();
-    expect(checkout.getByRole('radio', {
-      name: 'วิธีชำระด้วยพร้อมเพย์. ทดสอบในเครื่อง.',
-    })).toBeTruthy();
+    expect(checkout.queryByRole("radio", { name: /พร้อมเพย์/ })).toBeNull();
+    expect(usePaymentStore.getState().selectedMethod).toBe("cash");
     expect(checkout.queryByText('Payment safety')).toBeNull();
     cleanup();
 
     useBookingStore.setState({
       bookingData: {
         ...bookingFormData,
-        payment: { method: 'promptpay', amount: 1800, serviceFee: 0, totalAmount: 1800, currency: 'THB', terms: false },
+        payment: { method: 'cash', amount: 1800, serviceFee: 0, totalAmount: 1800, currency: 'THB', terms: false },
         currentStep: 7,
       },
     });
     const confirmation = render(<BookingConfirmationStep onPrevious={jest.fn()} />);
-    expect(confirmation.getByText('คิวอาร์พร้อมเพย์หมดอายุแล้ว เลือกเงินสดหรือสร้างคิวอาร์ใหม่')).toBeTruthy();
+    expect(confirmation.getByText('ชำระเงินสดให้ไกด์ของคุณ')).toBeTruthy();
     expect(confirmation.queryByText('Your local guide starts in')).toBeNull();
   });
 });

@@ -1,0 +1,36 @@
+import React from 'react';
+const Renderer = require('react-test-renderer');
+const { act } = Renderer;
+let mockUser: any = {id:'guide-1',userType:'companion',email:'synthetic@example.com',verified:true};
+const mockUpdateUser=jest.fn();
+jest.mock('../stores/auth-store',()=>({useAuthStore:()=>({user:mockUser,emailVerification:null,setEmailVerification:jest.fn(),updateUser:mockUpdateUser})}));
+jest.mock('expo-router',()=>({router:{replace:jest.fn(),back:jest.fn(),canGoBack:()=>false}}));
+jest.mock('../components/ui/Button',()=>({Button:'Button'}));
+jest.mock('../components/ui/RadialGradient',()=>({RadialGradient:'RadialGradient'}));
+jest.mock('react-native-safe-area-context',()=>({SafeAreaView:'SafeAreaView'}));
+jest.mock('lucide-react-native',()=>({ArrowLeft:'ArrowLeft',CheckCircle:'CheckCircle',CheckCircle2:'CheckCircle2',Mail:'Mail',ShieldCheck:'ShieldCheck'}));
+jest.mock('../utils/account-api',()=>({requestEmailVerification:jest.fn(),verifyEmail:jest.fn(),AccountRequestError:Error}));
+import Screen from '../app/auth/verify-email';
+import { router } from 'expo-router';
+import { requestEmailVerification,verifyEmail } from '../utils/account-api';
+let tree:any;
+beforeEach(()=>{jest.useFakeTimers();jest.clearAllMocks();});
+afterEach(async()=>{if(tree)await act(async()=>tree.unmount());jest.useRealTimers();});
+it('shows real completed state and keeps guide completion routed to guide profile without sending verification',async()=>{
+ mockUser={id:'guide-1',userType:'companion',email:'synthetic@example.com',verified:true};
+ await act(async()=>{tree=Renderer.create(<Screen/>);});
+ expect(JSON.stringify(tree.toJSON())).toContain('Email verified');
+ const button=tree.root.findAllByType('Button').find((x:any)=>x.props.title==='Continue to profile');
+ expect(button).toBeDefined();await act(async()=>button.props.onPress());
+ expect(router.replace).toHaveBeenCalledWith('/supplier/profile/edit');
+ expect(requestEmailVerification).not.toHaveBeenCalled();expect(verifyEmail).not.toHaveBeenCalled();
+});
+it('unverified state cannot confirm before a six digit code and traveler completion retains role route',async()=>{
+ mockUser={id:'traveler-1',userType:'customer',email:'synthetic@example.com',verified:false};
+ await act(async()=>{tree=Renderer.create(<Screen/>);});
+ const button=tree.root.findAllByType('Button').find((x:any)=>x.props.title==='Verify email');
+ expect(button.props.disabled).toBe(true);await act(async()=>button.props.onPress());
+ expect(verifyEmail).not.toHaveBeenCalled();
+ const later=tree.root.findAllByType('Button').find((x:any)=>x.props.title==='Continue — verify later');
+ await act(async()=>later.props.onPress());expect(router.replace).toHaveBeenCalledWith('/(app)/profile/edit');
+});

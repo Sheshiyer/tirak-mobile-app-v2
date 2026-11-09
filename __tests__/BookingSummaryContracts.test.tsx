@@ -195,12 +195,12 @@ describe('booking summary contracts', () => {
     const screen = render(<BookingSummaryStep onNext={mockOnNext} onPrevious={jest.fn()} />);
 
     fireEvent.press(screen.getByRole('checkbox'));
-    const confirm = screen.getByLabelText('Confirm');
+    const confirm = screen.getByLabelText('Send request');
     fireEvent.press(confirm);
     fireEvent.press(confirm);
 
     await waitFor(() => expect(mockMutateAsync).toHaveBeenCalledTimes(1));
-    expect(screen.getByLabelText('Confirm').props.accessibilityState).toMatchObject({
+    expect(screen.getByLabelText('Send request').props.accessibilityState).toMatchObject({
       disabled: true,
       busy: true,
     });
@@ -217,7 +217,7 @@ describe('booking summary contracts', () => {
     const screen = render(<BookingSummaryStep onNext={mockOnNext} onPrevious={jest.fn()} />);
 
     fireEvent.press(screen.getByRole('checkbox'));
-    fireEvent.press(screen.getByLabelText('Confirm'));
+    fireEvent.press(screen.getByLabelText('Send request'));
 
     expect(mockMutateAsync).not.toHaveBeenCalled();
     expect(mockSetPaymentBooking).not.toHaveBeenCalled();
@@ -231,7 +231,7 @@ describe('booking summary contracts', () => {
     const screen = render(<BookingSummaryStep onNext={mockOnNext} onPrevious={jest.fn()} />);
 
     fireEvent.press(screen.getByRole('checkbox'));
-    await act(async () => fireEvent.press(screen.getByLabelText('Confirm')));
+    await act(async () => fireEvent.press(screen.getByLabelText('Send request')));
 
     expect(mockSetPaymentBooking).toHaveBeenCalledWith(expect.objectContaining({ currency: 'USD' }));
     expect(useBookingStore.getState().bookingData.bookingQuote).toEqual({

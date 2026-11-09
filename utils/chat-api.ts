@@ -9,6 +9,7 @@
 import { secureStorage } from './secure-storage';
 import { API_BASE_URL } from '@/constants/api';
 import { logger } from './logger';
+import { isDemoIdentity } from './demo-mode';
 import { handleApiError } from './api-errors';
 
 export const BACKEND_URL = API_BASE_URL;
@@ -17,11 +18,12 @@ export async function getAuthToken(): Promise<string | null> {
   return secureStorage.getItemAsync('authToken');
 }
 
-async function apiGet<T>(path: string): Promise<T | null> {
+async function apiGet<T>(path: string, options: { strictRoomLookup?: boolean } = {}): Promise<T | null> {
   try {
     const token = await getAuthToken();
     if (!token) {
       logger.warn('apiGet: No auth token');
+      if (options.strictRoomLookup) throw new Error('Please sign in to open your conversations.');
       return null;
     }
     const url = `${BACKEND_URL}${path}`;
@@ -31,15 +33,20 @@ async function apiGet<T>(path: string): Promise<T | null> {
     });
     if (!res.ok) {
       logger.warn('apiGet failed:', res.status, url);
+      // Only a genuine missing room can be a participant profile link.
+      if (options.strictRoomLookup && res.status === 404) return null;
       handleApiError({ response: { status: res.status, data: await res.clone().json().catch(() => null) } });
+      if (options.strictRoomLookup) throw new Error('We could not load this conversation. Check your connection and try again.');
       return null;
     }
     const json = await res.json();
+    if (options.strictRoomLookup && (!json?.success || !json?.data)) throw new Error('We could not load this conversation. Please try again.');
     return (json as { success: boolean; data: T }).success
       ? (json as { success: boolean; data: T }).data
       : null;
   } catch (err) {
     logger.error('apiGet error:', err);
+    if (options.strictRoomLookup) throw new Error('We could not load this conversation. Check your connection and try again.');
     return null;
   }
 }
@@ -118,6 +125,7 @@ export interface ChatMessage {
 
 export interface RoomDetail {
   id: string;
+  bookingId?: string;
   status: string;
   otherParty: OtherParty;
   messages: ChatMessage[];
@@ -132,7 +140,7 @@ export async function getRooms(): Promise<ChatRoom[]> {
   if (!(await getAuthToken())) return [];
   const data = await apiGet<{ items: ChatRoom[] }>('/api/chat/rooms');
   if (!data) throw new Error('We could not load your conversations. Check your connection and try again.');
-  return (data.items || []).filter(room => !room.id.startsWith('demo_room_'));
+  return (data.items || []).filter(room => !room.id.startsWith('demo_room_') && !isDemoIdentity(room.otherParty));
 }
 
 /**
@@ -140,11 +148,12 @@ export async function getRooms(): Promise<ChatRoom[]> {
  * Returns the room UUID or null on failure.
  */
 export async function createOrGetRoom(bookingId: string): Promise<string | null> {
-  const data = await apiPost<{ roomId: string; existed: boolean }>(
+  const data = await apiPost<{ roomId: string; bookingId?: string; existed: boolean }>(
     '/api/chat/rooms',
     { bookingId },
   );
-  return data?.roomId ?? null;
+  if (data?.bookingId !== undefined && data.bookingId !== bookingId) return null;
+  return typeof data?.roomId === 'string' && data.roomId ? data.roomId : null;
 }
 
 /** Exchange bearer authentication for a short-lived, single-use socket credential. */
@@ -166,6 +175,7 @@ type ParticipantChatResult = { roomId: string } | { roomId: null; reason: 'booki
 
 /** Resolve profile links through the same booking policy enforced by the server. */
 export async function resolveParticipantChat(otherUserId: string): Promise<ParticipantChatResult> {
+  if (isDemoIdentity({ id: otherUserId })) return { roomId: null, reason: 'unavailable' };
   const rooms = await apiGet<{ items: ChatRoom[] }>('/api/chat/rooms');
   if (!rooms) return { roomId: null, reason: 'unavailable' };
   const existing = rooms.items.find(room => room.otherParty.id === otherUserId && !room.id.startsWith('demo_room_'));
@@ -216,10 +226,12 @@ export function normalizeRealtimeMessage(event: any, currentUserId: string): Cha
   };
 }
 
-/** Load room metadata + first page of messages (newest-first, reversed to chrono). */
+/** Load room metadata/messages. Only 404 returns null for participant-link fallback; transport/auth failures reject. */
 export async function getRoomDetail(roomId: string): Promise<RoomDetail | null> {
   if (roomId.startsWith('demo_room_')) return null;
-  return apiGet<RoomDetail>(`/api/chat/rooms/${roomId}`);
+  const room = await apiGet<RoomDetail>(`/api/chat/rooms/${encodeURIComponent(roomId)}`, { strictRoomLookup: true });
+  if (room && (!room.otherParty || !Array.isArray(room.messages))) throw new Error('We could not load this conversation. Please try again.');
+  return room && !isDemoIdentity(room.otherParty) ? room : null;
 }
 
 /** Send a text message to a room. Returns the persisted message or null. */
@@ -229,7 +241,7 @@ export async function sendMessage(
   messageType: 'text' | 'image' = 'text',
 ): Promise<ChatMessage | null> {
   if (roomId.startsWith('demo_room_')) return null;
-  return apiPost<ChatMessage>(`/api/chat/rooms/${roomId}/messages`, {
+  return apiPost<ChatMessage>(`/api/chat/rooms/${encodeURIComponent(roomId)}/messages`, {
     roomId,
     messageType,
     content,

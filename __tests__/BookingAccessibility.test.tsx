@@ -1,6 +1,6 @@
 import React from 'react';
 import { View } from 'react-native';
-import { render } from '@testing-library/react-native';
+import { render, fireEvent, cleanup } from '@testing-library/react-native';
 
 jest.mock('expo-linear-gradient', () => {
   const ReactRuntime = require('react');
@@ -30,6 +30,9 @@ jest.mock('react-native-reanimated', () => {
 
 import { Button } from '@/components/ui/Button';
 import { ProgressBar } from '@/components/ui/ProgressBar';
+
+beforeEach(() => jest.useFakeTimers());
+afterEach(() => { cleanup(); jest.clearAllTimers(); jest.useRealTimers(); });
 
 describe('shared booking control accessibility', () => {
   test('Button exposes its role, label, disabled and busy state while preserving caller state', () => {
@@ -64,4 +67,14 @@ describe('shared booking control accessibility', () => {
     expect(progress.props.accessibilityValue).toEqual({ min: 1, max: 7, now: 3 });
     expect(progress.props.accessibilityLabel).toBe('Booking progress');
   });
+});
+
+test('progress switches to a readable count when the measured container cannot fit all step circles', () => {
+ const screen=render(<ProgressBar currentStep={5} totalSteps={7} accessibilityLabel="Booking progress"/>);
+ const progress=screen.getByRole('progressbar');
+ fireEvent(progress,'layout',{nativeEvent:{layout:{width:206,height:60}}});
+ expect(screen.getByText('5 / 7', {includeHiddenElements:true})).toBeTruthy();
+ expect(progress.props.accessibilityValue).toEqual({min:1,max:7,now:5});
+ fireEvent(progress,'layout',{nativeEvent:{layout:{width:600,height:60}}});
+ expect(screen.queryByText('5 / 7', {includeHiddenElements:true})).toBeNull();
 });

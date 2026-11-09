@@ -26,6 +26,14 @@
         }
       ]
     }
-  ]
+  ],
+  "env": {
+    "EXPO_PUBLIC_API_URL": "https://tirak-backend.tirak-court.workers.dev/api",
+    "EXPO_PUBLIC_ENV_NAME": "production",
+    "EXPO_PUBLIC_DEMO_MODE": "false",
+    "EXPO_PUBLIC_ENABLE_DEMO_MODE": "false",
+    "EXPO_PUBLIC_REVIEW_MODE": "false",
+    "EXPO_PUBLIC_PROMPTPAY_ENABLED": "false",
+    "SENTRY_ALLOW_FAILURE": "true"
+  }
 }
-

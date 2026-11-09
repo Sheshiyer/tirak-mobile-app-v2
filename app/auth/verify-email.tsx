@@ -1,5 +1,7 @@
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ArrowLeft, CheckCircle2, Mail } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View, Image, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { Button } from '@/components/ui/Button';
 import { RadialGradient } from '@/components/ui/RadialGradient';
@@ -59,13 +61,23 @@ export default function VerifyEmailScreen() {
 
   return (
     <RadialGradient variant="appBackground" style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <Text style={styles.title}>{user?.verified ? 'Email verified' : 'Verify your email'}</Text>
+          <View style={styles.navigation}>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Back" style={styles.backButton} onPress={() => router.canGoBack() ? router.back() : router.replace(user ? '/(app)' : '/auth')}><ArrowLeft size={22} color={designTokens.colors.semantic.text} /></TouchableOpacity>
+            <View style={styles.brand}><Image source={require('@/assets/images/icon.png')} style={styles.brandIcon} /><Text style={styles.brandName}>Tirak</Text></View>
+            <View style={{ width: 44 }} />
+          </View>
+          <View style={styles.card}>
+          <View accessibilityLabel={user?.verified ? 'Email verification complete' : 'Account email verification'} style={[styles.stateIcon, user?.verified && styles.verifiedIcon]}>
+            {user?.verified ? <CheckCircle2 size={36} color={designTokens.colors.semantic.primary} /> : <Mail size={32} color={designTokens.colors.semantic.primary} />}
+          </View>
+          <Text accessibilityRole="header" style={styles.title}>{user?.verified ? 'Email verified' : 'Verify your email'}</Text>
           {!user ? (
             <><Text style={styles.body}>Sign in to verify the email address on your account.</Text><Button title="Sign in" onPress={() => router.replace('/auth/login')} /></>
           ) : user.verified ? (
-            <><Text style={styles.body}>Your email address has been confirmed.</Text><Button title="Continue to your profile" onPress={continueToProfile} /></>
+            <><Text style={styles.body}>Your email address has been confirmed. You’re ready to continue.</Text><Text style={styles.email}>{user.email}</Text><Button title="Continue to profile" onPress={continueToProfile} /></>
           ) : (
             <>
               <Text style={styles.body}>{user.email}</Text>
@@ -76,24 +88,38 @@ export default function VerifyEmailScreen() {
                     ? 'Your account is ready, but we could not send the verification email right now. You can retry or continue to your profile and verify later in Settings.'
                     : 'Send a verification code to confirm this email address.'}
               </Text>
+              <Text style={styles.inputLabel}>Verification code</Text>
               <TextInput accessibilityLabel="Six-digit verification code" value={code} onChangeText={(value) => setCode(value.replace(/\D/g, '').slice(0, 6))} keyboardType="number-pad" textContentType="oneTimeCode" autoComplete="one-time-code" maxLength={6} placeholder="000000" style={styles.input} />
               {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
               <Button title="Verify email" loading={busy === 'verify'} disabled={!!busy || !isVerificationCode(code)} onPress={confirmCode} />
               <Button title={remaining > 0 ? `Resend code in ${remaining}s` : 'Send verification code'} variant="outline" loading={busy === 'send'} disabled={!!busy || remaining > 0} onPress={sendCode} />
-              <Button title="Continue to your profile — verify later" variant="text" disabled={!!busy} onPress={continueToProfile} />
+              <Button title="Continue — verify later" variant="text" disabled={!!busy} onPress={continueToProfile} />
             </>
           )}
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      </SafeAreaView>
     </RadialGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 24, paddingTop: 72, gap: 20, maxWidth: 560, alignSelf: 'center', width: '100%' },
-  title: { fontSize: 28, fontWeight: '700', color: designTokens.colors.semantic.text },
+  content: { flexGrow: 1, padding: 16, paddingTop: 24, paddingBottom: 32, gap: 24, maxWidth: 560, alignSelf: 'center', width: '100%', justifyContent: 'center' },
+  navigation: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16 },
+  backButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: designTokens.colors.semantic.surface },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  brandIcon: { width: 44, height: 44, borderRadius: 12 },
+  brandName: { color: designTokens.colors.semantic.primary, fontSize: 24, fontWeight: '700' },
+  card: { backgroundColor: designTokens.colors.semantic.surface, borderRadius: 24, padding: 20, gap: 16, borderWidth: 1, borderColor: designTokens.colors.semantic.border },
+  stateIcon: { width: 72, height: 72, borderRadius: 24, justifyContent: 'center', alignItems: 'center', backgroundColor: designTokens.colors.semantic.primary + '10', marginBottom: 8 },
+  verifiedIcon: { backgroundColor: designTokens.colors.semantic.secondary + '18' },
+  title: { fontSize: 28, lineHeight: 36, fontWeight: '700', color: designTokens.colors.semantic.text },
   body: { fontSize: 16, lineHeight: 24, color: designTokens.colors.semantic.textSecondary },
-  input: { borderWidth: 1, borderColor: designTokens.colors.semantic.border, borderRadius: 12, padding: 16, fontSize: 24, letterSpacing: 8, color: designTokens.colors.semantic.text },
-  error: { color: designTokens.colors.semantic.error, fontSize: 14 },
+  email: { fontSize: 15, lineHeight: 24, color: designTokens.colors.semantic.text, fontWeight: '600', marginBottom: 8 },
+  inputLabel: { fontSize: 14, fontWeight: '600', color: designTokens.colors.semantic.text },
+  input: { minHeight: 56, borderWidth: 1, borderColor: designTokens.colors.semantic.border, borderRadius: 12, padding: 16, fontSize: 24, letterSpacing: 8, color: designTokens.colors.semantic.text },
+  error: { color: designTokens.colors.semantic.error, fontSize: 14, lineHeight: 20 },
+  footer: { fontSize: 13, lineHeight: 20, color: designTokens.colors.semantic.textSecondary, textAlign: 'center', paddingHorizontal: 16 },
 });

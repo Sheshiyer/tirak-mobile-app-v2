@@ -17,7 +17,13 @@
     "selectLanguage": "Select Language",
     "selectPreferredLanguage": "Select your preferred language",
     "english": "English",
-    "thai": "Thai"
+    "thai": "Thai",
+    "save": "Save language",
+    "saving": "Saving…",
+    "saved": "Language saved on this device.",
+    "saveFailed": "Language could not be saved. Please try again.",
+    "unsaved": "Save to apply your selected language.",
+    "back": "Back to settings"
   },
   "profile": {
     "profile": "Profile",
@@ -167,7 +173,7 @@
     "newPassword": "New Password",
     "newPasswordDescription": "Enter your new password",
     "submit": "Submit",
-    "resetLinkSent": "Check your email for a secure reset link.",
+    "resetLinkSent": "If an account matches, we will try to send a secure reset link. Check your inbox and spam folder.",
     "redirecting": "Redirecting...",
     "tokenRequired": "Token is required",
     "passwordMinEight": "Password must be at least 8 characters",
@@ -177,17 +183,18 @@
     "passwordsDoNotMatch": "Passwords do not match",
     "resetToken": "Reset Token",
     "resetTokenPlaceholder": "Enter your reset token",
-    "redirectingToLogin": "Returning to login"
+    "redirectingToLogin": "Returning to login",
+    "resetRequested": "Request received"
   },
   "register": {
     "nameRequired": "Name is required",
-    "nameMin": "Name must be at least 2 characters",
-    "nameMax": "Name must be less than 50 characters",
+    "nameMax": "Name must be 100 characters or fewer",
     "emailRequired": "Email is required",
     "emailInvalid": "Please enter a valid email address",
     "contactNumberRequired": "Contact number is required",
-    "contactNumberMin": "Contact number must be at least 10 digits",
     "contactNumberInvalid": "Please enter a valid contact number",
+    "dateRequired": "Enter your date of birth",
+    "dateInvalidCalendar": "Enter a valid date of birth",
     "dateInvalid": "You must be at least 18 years old",
     "genderRequired": "Gender is required",
     "passwordRequired": "Password is required",
@@ -210,6 +217,7 @@
     "emailPlaceholder": "Enter your email",
     "contactNumber": "Contact Number",
     "contactNumberPlaceholder": "Enter your contact number",
+    "contactNumberHint": "For numbers outside Thailand, include + and the country code. Your verification code arrives by email.",
     "dateOfBirth": "Date of Birth",
     "done": "Done",
     "gender": "Gender",
@@ -368,7 +376,14 @@
     "cancel": "Cancel",
     "clearFilters": "Clear filters",
     "tryAgain": "Try Again",
-    "activeFilters": "Selected filters"
+    "activeFilters": "Selected filters",
+    "minimumPrice": "Minimum (฿)",
+    "maximumPrice": "Maximum (฿)",
+    "minimumPriceLabel": "Minimum experience price in baht",
+    "maximumPriceLabel": "Maximum experience price in baht",
+    "noMinimum": "No minimum",
+    "noMaximum": "No maximum",
+    "availabilityExplanation": "Choose a guide to check dates and time slots when booking."
   },
   "bookings": {
     "searchBookings": "Search bookings",
@@ -448,9 +463,11 @@
     "loading": "Loading...",
     "favorites": "Favorites",
     "searchFavorites": "Search saved guides...",
-    "searchPlaceholder": "Search saved guides..."
+    "searchPlaceholder": "Search saved guides...",
+    "deviceOnly": "Saved on this device for this account. Favorites do not sync across devices."
   },
   "companionDetails": {
+    "fromPrice": "From {{price}}",
     "errorLoadingCompanion": "Error loading guide",
     "failedToLoadCompanion": "Failed to load guide",
     "retry": "Retry",
@@ -477,21 +494,18 @@
     "selectLocation": "Select a Location",
     "bookNow": "Book Now",
     "day": "day",
-    "chatNow": "Chat Now",
+    "viewAvailability": "View availability",
     "selectDateToBook": "Choose a date to request this guide",
     "showAllExperiences": "Show All Experiences",
     "showMore": "Show More",
     "newGuide": "New guide",
-    "contactForPricing": "Request guide rate",
+    "contactForPricing": "Guide rate unavailable",
     "locationFallback": "Thailand",
     "noExperiencesTitle": "No experiences listed yet",
-    "noExperiencesBody": "This guide has not listed experiences yet. Message them to ask what local days they can host.",
-    "noExperiencesCta": "Chat with guide",
+    "noExperiencesBody": "This guide has not listed any bookable experiences.",
     "verifiedGuideTitle": "Tirak Verified",
     "verifiedGuideBody": "This local guide has passed Tirak verification. We check identity, profile details, and experience signals so travelers can book with more confidence.",
     "verifiedGuideGotIt": "Got it",
-    "reportSubmittedTitle": "Report Submitted",
-    "reportSubmittedBody": "Thank you for keeping Tirak safe. Our team will review your report within 24 hours.",
     "speaksLanguages": "Speaks"
   },
   "chooseExperience": {
@@ -603,7 +617,7 @@
     "bookingFailedDescription": "There was an error creating your booking. Please try again.",
     "ok": "OK",
     "reviewYourBooking": "Review Your Booking",
-    "pleaseReviewAllDetailsBeforeConfirming": "Please review all details before confirming",
+    "pleaseReviewAllDetailsBeforeConfirming": "Check the details before sending your request",
     "rating": "Rating",
     "serviceDetails": "Service Details",
     "edit": "Edit",
@@ -618,7 +632,7 @@
     "totalAmount": "Cash to guide",
     "termsAndConditions": "Terms and Conditions",
     "privacyPolicy": "Privacy Policy",
-    "confirm": "Confirm",
+    "sendRequest": "Send request",
     "agreeToTermsAndConditions": "I agree to the",
     "and": "and",
     "termsCheckboxLabel": "Accept the terms and privacy policy"
@@ -670,7 +684,8 @@
     "qrUnavailable": "QR details are not available. Keep this payment locked and check the booking later.",
     "expires": "Expires",
     "chargeReference": "Reference",
-    "pendingQrA11y": "PromptPay QR for the pending booking payment"
+    "pendingQrA11y": "PromptPay QR for the pending booking payment",
+    "existingChargeWarning": "An earlier electronic payment may still be pending. Do not pay again in cash. Confirm the existing payment status with support before making another payment."
   },
   "bookingConfirmation": {
     "noCompanionData": "No guide data available",
@@ -704,7 +719,7 @@
     "bookings": "Bookings",
     "backToHome": "Back to Home",
     "countdown": "{{days}}d {{hours}}h {{minutes}}m",
-    "startingNow": "Starting now",
+    "startTimeReached": "Start time reached",
     "datePending": "Date pending",
     "calendarUnavailable": "Calendar unavailable",
     "calendarMissingDate": "Booking date and time are missing.",
@@ -715,6 +730,11 @@
     "confirmedStatusA11y": "Booking and payment confirmed status",
     "pendingStatusA11y": "Booking or payment pending status",
     "startsIn": "Your local guide starts in",
+    "requestedDate": "Requested date and time (Thailand)",
+    "dateInThailand": "Date and time (Thailand)",
+    "awaitingGuide": "Your guide still needs to confirm. You can track the request in Trips.",
+    "statusUnavailable": "Booking status unavailable",
+    "chatUnavailable": "Could not open chat. Check your connection and try again.",
     "dateAtTime": "{{date}} at {{time}}",
     "addToCalendar": "Add to Calendar",
     "reviewCount": "{{count}} reviews",
@@ -886,7 +906,17 @@
     "maxPrice": "Max Price",
     "durationHours": "Duration Hours",
     "durationMinimum30": "Duration must be at least 30 minutes",
-    "error": "Error"
+    "error": "Error",
+    "removeFromProfile": "Remove from profile",
+    "archiveExplanation": "This experience will no longer accept new bookings. Existing bookings and their history remain available.",
+    "archiveFailed": "Could not remove this experience. Please retry.",
+    "confirmRemove": "Remove experience",
+    "localDraftsPreserved": "{{count}} earlier local drafts are saved on this device. They are not published.",
+    "restoreDraft": "Copy draft to form",
+    "inactive": "Inactive",
+    "acceptNewBookings": "Accept new bookings",
+    "durationRange": "Duration must be 30 to 1439 whole minutes (same day).",
+    "currencyAndKeywords": "Experiences use THB and may have at most 20 keywords."
   },
   "analytics": {
     "loadingAnalytics": "Loading guide activity...",
@@ -911,7 +941,9 @@
     "bookings": "Bookings",
     "week": "Week",
     "month": "Month",
-    "quarter": "Quarter"
+    "quarter": "Quarter",
+    "unavailable": "Unavailable",
+    "cashEarningsUnavailable": "Cash collection is not recorded here. Earnings and payment settlement metrics are unavailable."
   },
   "customHeader": {
     "culturalGuideDashboard": "Tirak Guide Dashboard",
@@ -1110,5 +1142,61 @@
         "Nakhon Si Train Station"
       ]
     }
-  ]
+  ],
+  "availabilitySettings": {
+    "title": "Weekly availability",
+    "description": "Set recurring working hours. Specific date changes override these hours. Enter times as HH:mm.",
+    "timeZone": "All hours use Thailand time (Asia/Bangkok).",
+    "start": "Start time",
+    "end": "End time",
+    "saved": "Weekly availability saved.",
+    "loadFailed": "Could not load availability. Please retry.",
+    "saveFailed": "Could not save. Use valid HH:mm times with an end later than the start, and check your connection."
+  },
+  "settingsFlow": {
+    "emailVerified": "Email verified",
+    "verifyEmail": "Verify your email",
+    "emailConfirmed": "Your account email is confirmed",
+    "emailCode": "Receive a code to confirm your account email",
+    "bookingAlerts": "Booking Alerts",
+    "pushAlerts": "Push Alerts",
+    "pushDescription": "Booking requests, guide reminders, and traveler messages",
+    "emailAlerts": "Email Alerts",
+    "emailDescription": "Booking and message updates sent to your email",
+    "coins": "Tirak Coins",
+    "invite": "Invite & Earn",
+    "inviteDescription": "Share Tirak with travelers or guides and earn future benefits",
+    "privacyLoadError": "Your preferences could not be loaded. Please retry when you are connected.",
+    "privacySaved": "Your preferences are saved.",
+    "privacySaveError": "We could not save your preferences. Please retry. If you switched analytics off, it is off on this device for this session.",
+    "privacyLoading": "Loading privacy preferences",
+    "privacyUnavailable": "Privacy preferences are unavailable for this account.",
+    "privacyRetry": "Retry loading preferences",
+    "marketing": "Tirak news and offers by email",
+    "marketingLabel": "Marketing emails",
+    "analytics": "Optional app usage analytics",
+    "analyticsLabel": "Optional usage analytics",
+    "privacyNote": "These choices are optional. Essential account and booking messages continue regardless of marketing preferences. Analytics helps us understand how the app is used; it does not include message contents.",
+    "privacySave": "Save privacy preferences",
+    "yourAccount": "Your Tirak Account",
+    "editProfile": "Edit Profile",
+    "editDescription": "Keep your photo, contact details, and travel style current",
+    "preferences": "Preferences",
+    "notifications": "Notifications",
+    "notificationsDescription": "Choose booking, message, and reminder alerts",
+    "coinsDescription": "Invite travelers or guides and earn future benefits",
+    "trustSafety": "Trust & Safety",
+    "accountAccess": "Account Access"
+  },
+  "notificationSettings": {
+    "loading": "Loading your notification preferences…",
+    "loadError": "Notification preferences could not be loaded. Please retry.",
+    "retry": "Retry loading preferences",
+    "saveError": "Your change could not be saved. The previous setting has been restored.",
+    "saved": "Notification preference saved.",
+    "saving": "Saving your change…",
+    "sms": "SMS reminders",
+    "smsDescription": "Choose whether to receive booking reminders by text message.",
+    "note": "These are delivery preferences. Saving a preference does not confirm that a push, email, or SMS has been delivered."
+  }
 }

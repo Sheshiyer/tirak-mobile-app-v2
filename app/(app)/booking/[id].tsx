@@ -1,6 +1,6 @@
 import { logger } from '@/utils/logger';
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, ScrollView, SafeAreaView, Alert, TouchableOpacity, Linking } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, ScrollView, SafeAreaView, Alert, TouchableOpacity, Linking, Platform, Modal } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { RadialGradient } from '@/components/ui/RadialGradient';
 import { Card } from '@/components/ui/Card';
@@ -11,9 +11,10 @@ import { ProfileImage } from '@/components/ui/ProfileImage';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/stores/auth-store';
 import { useCurrencyConversion } from '@/utils/currency';
-import { TEST_COMPANION_ID, isTestCompanion } from '@/utils/companion-display';
+import { createOrGetRoom } from '@/utils/chat-api';
 import { ArrowLeft, CalendarPlus, CheckCircle, Clock, MessageCircle, XCircle } from 'lucide-react-native';
 import { toPaymentDisplay } from '@/utils/payment-display';
+import { bookingDateTimeToInstant, calendarUtcDate, CORE_BOOKING_TIME_ZONE } from '@/utils/booking-timezone';
 
 const BookingDetailsScreen = () => {
   const { user, isAuthenticated } = useAuthStore();
@@ -24,6 +25,14 @@ const BookingDetailsScreen = () => {
   const updateStatusMutation = useUpdateBookingStatus();
   const [cancelling, setCancelling] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [openingChat, setOpeningChat] = useState(false);
+  const [confirmation, setConfirmation] = useState<'cancel' | 'reject' | null>(null);
+  const [feedback, setFeedback] = useState('');
+  const actionBusy = useRef(false);
+  const showFeedback = (title: string, message: string) => {
+    if (Platform.OS === 'web') setFeedback(`${title}: ${message}`);
+    else Alert.alert(title, message);
+  };
   const [now, setNow] = useState(() => new Date());
   // Currency hook must be before early returns (React rules)
   const usdTotal = useCurrencyConversion(data?.data?.booking?.totalAmount);
@@ -33,30 +42,28 @@ const BookingDetailsScreen = () => {
     return () => clearInterval(timer);
   }, []);
 
+  const cancellationPolicy = 'Cancel this Tirak booking?\n\nFree cancellation applies 48h+ before the experience. Within 48h, the guide cancellation policy may apply.';
+  const performCancellation = async () => {
+    if (actionBusy.current || !isAuthenticated || isCompanion || !['pending', 'confirmed'].includes(data?.data?.booking?.status || '')) return;
+    actionBusy.current = true;
+    setCancelling(true); setFeedback('');
+    try {
+      await updateStatusMutation.mutateAsync({ id: id as string, statusData: { status: 'cancelled' } });
+      setConfirmation(null);
+      showFeedback('Booking cancelled', 'This Tirak booking has been cancelled.');
+      if (Platform.OS !== 'web') router.back();
+    } catch (err: any) {
+      showFeedback('Could not cancel booking', err?.message || 'Please try again or contact support.');
+    } finally { actionBusy.current = false; setCancelling(false); }
+  };
   const handleCancelBooking = () => {
-    Alert.alert(
-      'Cancel booking',
-      'Cancel this Tirak booking?\n\nFree cancellation applies 48h+ before the experience. Within 48h, the guide cancellation policy may apply.',
-      [
-        { text: 'Keep booking', style: 'cancel' },
-        {
-          text: 'Cancel booking',
-          style: 'destructive',
-          onPress: async () => {
-            setCancelling(true);
-            try {
-              await updateStatusMutation.mutateAsync({ id: id as string, statusData: { status: 'cancelled' } });
-              Alert.alert('Booking cancelled', 'This Tirak booking has been cancelled.');
-              router.back();
-            } catch (err: any) {
-              Alert.alert('Could not cancel booking', err?.message || 'Please try again or contact support.');
-            } finally {
-              setCancelling(false);
-            }
-          },
-        },
-      ]
-    );
+    if (actionBusy.current) return;
+    setFeedback('');
+    if (Platform.OS === 'web') { setConfirmation('cancel'); return; }
+    Alert.alert('Cancel booking', cancellationPolicy, [
+      { text: 'Keep booking', style: 'cancel' },
+      { text: 'Cancel booking', style: 'destructive', onPress: performCancellation },
+    ]);
   };
 
   if (isLoading) {
@@ -89,16 +96,22 @@ const BookingDetailsScreen = () => {
   const displayFallback = isCompanion ? companion : customer;
   const displayName = displayPerson?.name || displayFallback?.name || (isCompanion ? 'Traveler' : 'Local Guide');
   const displayImage = displayPerson?.profileImage || displayFallback?.profileImage || '';
-  const startAt = new Date(`${booking.date.split('T')[0]}T${booking.startTime}:00`);
-  const endAt = new Date(`${booking.date.split('T')[0]}T${booking.endTime}:00`);
-  const countdownMs = Math.max(0, startAt.getTime() - now.getTime());
-  const isActiveBooking = ['pending', 'confirmed', 'in_progress'].includes(booking.status);
+  const timeZone = booking.timeZone || booking.timezone || CORE_BOOKING_TIME_ZONE;
+  let startAt: Date | null = null;
+  let endAt: Date | null = null;
+  try {
+    startAt = bookingDateTimeToInstant(booking.date, booking.startTime, timeZone);
+    endAt = bookingDateTimeToInstant(booking.date, booking.endTime, timeZone);
+  } catch { /* Keep booking history readable when schedule metadata is invalid. */ }
+  const countdownMs = startAt ? Math.max(0, startAt.getTime() - now.getTime()) : 0;
+  const isActiveBooking = booking.status === 'confirmed' || booking.status === 'in_progress';
+  const canAddToCalendar = Boolean(startAt && endAt && endAt > startAt);
   const countdownDays = Math.floor(countdownMs / (1000 * 60 * 60 * 24));
   const countdownHours = Math.floor((countdownMs / (1000 * 60 * 60)) % 24);
   const countdownMinutes = Math.floor((countdownMs / (1000 * 60)) % 60);
-  const countdownText = countdownMs > 0
+  const countdownText = !startAt ? 'Schedule unavailable' : countdownMs > 0
     ? `${countdownDays}d ${countdownHours}h ${countdownMinutes}m`
-    : 'Starting now';
+    : 'Start time reached';
   const isPendingCompanionRequest = isCompanion && booking.status === 'pending';
 
   const formatBookingStatus = () => {
@@ -123,74 +136,76 @@ const BookingDetailsScreen = () => {
     status: booking.paymentStatus,
   });
 
-  const formatCalendarDate = (date: Date) => date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
   const handleAddToCalendar = async () => {
+    if (!isActiveBooking || !startAt || !endAt || !canAddToCalendar) return;
     const title = encodeURIComponent(`Tirak: ${service?.name || experience?.name || 'Local guide booking'}`);
     const details = encodeURIComponent(`Booking with ${displayName}. ${paymentDisplay.collectionNote}`);
     const location = encodeURIComponent([booking.meetingPoint, booking.location].filter(Boolean).join(', '));
-    const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${formatCalendarDate(startAt)}/${formatCalendarDate(endAt)}&details=${details}&location=${location}`;
+    const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${calendarUtcDate(startAt)}/${calendarUtcDate(endAt)}&ctz=${encodeURIComponent(timeZone)}&details=${details}&location=${location}`;
 
     try {
       await Linking.openURL(calendarUrl);
     } catch (error) {
       logger.warn('Unable to open calendar link', error);
-      Alert.alert('Calendar unavailable', 'We could not open the calendar event link on this device.');
+      showFeedback('Calendar unavailable', 'We could not open the calendar event link on this device.');
     }
   };
 
-  const handleMessage = () => {
-    const chatTarget = isCompanion
-      ? booking.customerId
-      : isTestCompanion(booking.companion)
-        ? TEST_COMPANION_ID
-        : booking.companionId;
-    router.push(`/chat/${chatTarget}`);
+  const handleMessage = async () => {
+    if (actionBusy.current || !isAuthenticated || !isActiveBooking) return;
+    actionBusy.current = true;
+    setOpeningChat(true);
+    setFeedback('');
+    try {
+      const roomId = await createOrGetRoom(booking.id);
+      if (!roomId) {
+        showFeedback('Could not open chat', 'Check your connection and try again.');
+        return;
+      }
+      router.push(`/chat/${encodeURIComponent(roomId)}`);
+    } finally {
+      actionBusy.current = false;
+      setOpeningChat(false);
+    }
   };
 
   const handleApproveBooking = async () => {
+    if (actionBusy.current) return;
+    actionBusy.current = true; setFeedback('');
     setUpdatingStatus(true);
     try {
       await updateStatusMutation.mutateAsync({
         id: id as string,
         statusData: { status: 'confirmed' },
       });
-      Alert.alert('Booking approved', 'The traveler will see this booking as confirmed.');
+      showFeedback('Booking approved', 'The traveler will see this booking as confirmed.');
     } catch (error: any) {
-      Alert.alert('Unable to approve booking', error?.message || 'Please try again.');
+      showFeedback('Unable to approve booking', error?.message || 'Please try again.');
     } finally {
-      setUpdatingStatus(false);
+      actionBusy.current = false; setUpdatingStatus(false);
     }
   };
 
+  const performRejection = async () => {
+    if (actionBusy.current || !isAuthenticated || !isPendingCompanionRequest) return;
+    actionBusy.current = true;
+    setUpdatingStatus(true); setFeedback('');
+    try {
+      await updateStatusMutation.mutateAsync({ id: id as string, statusData: { status: 'cancelled', reason: 'Guide declined the booking request.' } });
+      setConfirmation(null);
+      showFeedback('Booking rejected', 'The traveler will see that this request was rejected.');
+    } catch (error: any) {
+      showFeedback('Unable to reject booking', error?.message || 'Please try again.');
+    } finally { actionBusy.current = false; setUpdatingStatus(false); }
+  };
   const handleRejectBooking = () => {
-    Alert.alert(
-      'Reject booking request',
-      'Reject this request? The traveler will be notified.',
-      [
-        { text: 'Keep', style: 'cancel' },
-        {
-          text: 'Reject',
-          style: 'destructive',
-          onPress: async () => {
-            setUpdatingStatus(true);
-            try {
-              await updateStatusMutation.mutateAsync({
-                id: id as string,
-                statusData: {
-                  status: 'cancelled',
-                  reason: 'Guide declined the booking request.',
-                },
-              });
-              Alert.alert('Booking rejected', 'The traveler will see that this request was rejected.');
-            } catch (error: any) {
-              Alert.alert('Unable to reject booking', error?.message || 'Please try again.');
-            } finally {
-              setUpdatingStatus(false);
-            }
-          },
-        },
-      ]
-    );
+    if (actionBusy.current) return;
+    setFeedback('');
+    if (Platform.OS === 'web') { setConfirmation('reject'); return; }
+    Alert.alert('Reject booking request', 'Reject this request? The traveler will be notified.', [
+      { text: 'Keep', style: 'cancel' },
+      { text: 'Reject', style: 'destructive', onPress: performRejection },
+    ]);
   };
 
   return (
@@ -205,6 +220,7 @@ const BookingDetailsScreen = () => {
           <ArrowLeft size={22} color={designTokens.colors.semantic.text} />
         </TouchableOpacity>
 
+        {feedback ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.actionFeedback}>{feedback}</Text> : null}
         <Card style={styles.card}>
           {/* Customer & Companion Info */}
           <Subheading>{!isCompanion ? 'Local Guide' : 'Traveler'}</Subheading>
@@ -262,11 +278,11 @@ const BookingDetailsScreen = () => {
 
           {/* Date, Time, Location, Meeting Point */}
           <View style={styles.section}>
-            <Subheading>Date</Subheading>
+            <Subheading>{booking.status === 'pending' ? 'Requested date' : 'Date'}</Subheading>
             <Body>{booking.date.split('T')[0]}</Body>
           </View>
           <View style={styles.section}>
-            <Subheading>Time</Subheading>
+            <Subheading>{`Time (${timeZone === CORE_BOOKING_TIME_ZONE ? 'Thailand' : timeZone})`}</Subheading>
             <Body>{booking.startTime} - {booking.endTime} ({booking.duration} mins)</Body>
           </View>
 
@@ -280,14 +296,21 @@ const BookingDetailsScreen = () => {
               </View>
               <Heading style={styles.countdownValue}>{countdownText}</Heading>
               <Caption style={styles.countdownDetail}>
-                {booking.date.split('T')[0]} at {booking.startTime}
+                {booking.date.split('T')[0]} at {booking.startTime} ({timeZone})
               </Caption>
               <View style={styles.detailActions}>
-                <TouchableOpacity style={styles.messageButton} onPress={handleMessage}>
+                <TouchableOpacity
+                  style={styles.messageButton}
+                  onPress={handleMessage}
+                  disabled={openingChat}
+                  accessibilityRole="button"
+                  accessibilityLabel="Message"
+                  accessibilityState={{ busy: openingChat, disabled: openingChat }}
+                >
                   <MessageCircle size={18} color={designTokens.colors.semantic.surface} />
-                  <Text style={styles.messageButtonText}>Message</Text>
+                  <Text style={styles.messageButtonText}>{openingChat ? 'Opening chat…' : 'Message'}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.calendarButton} onPress={handleAddToCalendar}>
+                <TouchableOpacity accessibilityRole="button" accessibilityLabel="Add booking to calendar" accessibilityState={{ disabled: !canAddToCalendar }} disabled={!canAddToCalendar} style={styles.calendarButton} onPress={handleAddToCalendar}>
                   <CalendarPlus size={18} color={designTokens.colors.semantic.primary} />
                   <Text style={styles.calendarButtonText}>Add to Calendar</Text>
                 </TouchableOpacity>
@@ -367,11 +390,32 @@ const BookingDetailsScreen = () => {
           )}
         </Card>
       </ScrollView>
+      {Platform.OS === 'web' && <Modal visible={confirmation !== null} transparent animationType="fade" onRequestClose={() => { if (!actionBusy.current) setConfirmation(null); }}>
+        <View style={styles.confirmOverlay}>
+          <View accessibilityViewIsModal accessibilityLabel={confirmation === 'reject' ? 'Reject booking request' : 'Cancel booking'} style={styles.confirmCard}>
+            <Text accessibilityRole="header" style={styles.confirmTitle}>{confirmation === 'reject' ? 'Reject booking request?' : 'Cancel this booking?'}</Text>
+            <Text style={styles.confirmBody}>{confirmation === 'reject' ? 'Reject this request? The traveler will see that the booking request was rejected.' : cancellationPolicy}</Text>
+            {feedback ? <Text accessibilityRole="alert" style={styles.actionFeedback}>{feedback}</Text> : null}
+            {(cancelling || updatingStatus) ? <Text accessibilityLiveRegion="polite" style={styles.confirmBody}>Updating booking…</Text> : null}
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={confirmation === 'reject' ? 'Keep request' : 'Keep booking'} disabled={cancelling || updatingStatus} style={styles.keepButton} onPress={() => setConfirmation(null)}><Text style={styles.keepText}>{confirmation === 'reject' ? 'Keep request' : 'Keep booking'}</Text></TouchableOpacity>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={confirmation === 'reject' ? 'Confirm rejection' : 'Confirm cancellation'} accessibilityState={{ disabled: cancelling || updatingStatus, busy: cancelling || updatingStatus }} disabled={cancelling || updatingStatus} style={styles.confirmButton} onPress={confirmation === 'reject' ? performRejection : performCancellation}><Text style={styles.confirmButtonText}>{cancelling || updatingStatus ? 'Updating…' : confirmation === 'reject' ? 'Reject request' : 'Cancel booking'}</Text></TouchableOpacity>
+          </View>
+        </View>
+      </Modal>}
     </RadialGradient>
   );
 };
 
 const styles = StyleSheet.create({
+  confirmOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, backgroundColor: 'rgba(30,20,40,0.45)' },
+  confirmCard: { width: '100%', maxWidth: 480, backgroundColor: designTokens.colors.semantic.surface, borderRadius: 20, padding: 24, gap: 16 },
+  confirmTitle: { fontSize: 24, lineHeight: 32, fontWeight: '700', color: designTokens.colors.semantic.text },
+  confirmBody: { fontSize: 15, lineHeight: 23, color: designTokens.colors.semantic.textSecondary },
+  actionFeedback: { fontSize: 14, lineHeight: 22, color: designTokens.colors.semantic.text, padding: 16 },
+  keepButton: { minHeight: 48, borderWidth: 1, borderColor: designTokens.colors.semantic.border, borderRadius: 12, padding: 12, alignItems: 'center', justifyContent: 'center' },
+  keepText: { color: designTokens.colors.semantic.text, fontWeight: '600' },
+  confirmButton: { minHeight: 48, backgroundColor: designTokens.colors.semantic.error, borderRadius: 12, padding: 12, alignItems: 'center', justifyContent: 'center' },
+  confirmButtonText: { color: designTokens.colors.semantic.surface, fontWeight: '600', textAlign: 'center' },
   container: {
     flex: 1,
   },

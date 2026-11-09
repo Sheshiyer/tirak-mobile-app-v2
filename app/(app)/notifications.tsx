@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { RadialGradient } from '@/components/ui/RadialGradient';
 import { Card } from '@/components/ui/Card';
 import { ProfileImage } from '@/components/ui/ProfileImage';
@@ -22,11 +22,14 @@ export const options = { headerShown: false };
 
 export default function NotificationsScreen() {
   const { t } = useTranslation();
-  const { data, isLoading, error, refetch } = useNotifications();
+  const { data, isLoading, isRefetching, error, refetch } = useNotifications();
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
   const notifications = data?.data?.notifications || [];
   const unreadCount = data?.data?.unreadCount || 0;
+  useFocusEffect(React.useCallback(() => {
+    void refetch({ cancelRefetch: false });
+  }, [refetch]));
   
   const handleBack = () => {
     router.back();
@@ -51,7 +54,11 @@ export default function NotificationsScreen() {
         }
         break;
       case 'new_message':
-        router.push(`/chat/${notification.data.conversationId}`);
+        if (notification.data?.conversationId) {
+          router.push(`/chat/${notification.data.conversationId}`);
+        } else {
+          router.push('/messages');
+        }
         break;
       case 'payment_completed':
         router.push(`/bookings`);
@@ -169,7 +176,7 @@ export default function NotificationsScreen() {
   return (
     <RadialGradient variant="appBackground" style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+        <TouchableOpacity style={styles.backButton} onPress={handleBack} accessibilityRole="button" accessibilityLabel={t('common.back')}>
           <ArrowLeft size={24} color={designTokens.colors.semantic.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('notifications.notifications')}</Text>
@@ -194,17 +201,16 @@ export default function NotificationsScreen() {
           )}
         </View>
       )}
-      {notifications.length > 0 ? (
-        <FlatList
-          data={notifications}
-          renderItem={renderNotificationItem}
-          keyExtractor={item => item.id}
-          contentContainerStyle={styles.notificationsList}
-          showsVerticalScrollIndicator={false}
-        />
-      ) : (
-        renderEmptyState()
-      )}
+      <FlatList
+        data={notifications}
+        renderItem={renderNotificationItem}
+        keyExtractor={item => item.id}
+        contentContainerStyle={notifications.length ? styles.notificationsList : undefined}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={renderEmptyState}
+        refreshing={isRefetching}
+        onRefresh={() => void refetch({ cancelRefetch: false })}
+      />
     </RadialGradient>
   );
 }

@@ -21,10 +21,7 @@ import { PromptPayPendingCard } from '@/components/booking/payment/PromptPayPend
 import { BookingStepFooter } from '@/components/booking/BookingStepFooter';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { API_BASE_URL } from '@/constants/api';
 import { designTokens } from '@/constants/design-tokens';
-import { isLocalPromptPayEnabled } from '@/constants/payment-capabilities';
-import { isReviewModeEnabled } from '@/constants/review-mode';
 import { useBookingStore, type BookingPayment } from '@/stores/booking-store';
 import {
   deriveBookingPaymentPhase,
@@ -150,12 +147,8 @@ export const PaymentSelectionStep: React.FC<PaymentSelectionStepProps> = ({
   } = usePaymentStore();
   const errorTextRef = useRef<Text>(null);
 
-  const promptPayVisible = isLocalPromptPayEnabled({
-    flag: process.env.EXPO_PUBLIC_PROMPTPAY_ENABLED,
-    apiBaseUrl: API_BASE_URL,
-    isDev: __DEV__,
-    reviewMode: isReviewModeEnabled(),
-  });
+  // This release supports direct cash payments only.
+  const promptPayVisible = false;
   const bookingPhase = booking ? deriveBookingPaymentPhase(booking.paymentStatus) : 'idle';
   const paymentPhase = phase === 'idle' && bookingPhase !== 'idle' ? bookingPhase : phase;
   const paymentErrorKind = errorKind;
@@ -217,7 +210,7 @@ export const PaymentSelectionStep: React.FC<PaymentSelectionStepProps> = ({
 
   const saveMethod = (method: PaymentMethod) => {
     if (methodSwitchLocked) return;
-    if (method === 'promptpay' && !promptPayEligible) return;
+    if (method !== 'cash') return;
 
     selectMethod(method);
     const paymentData: BookingPayment = {
@@ -231,13 +224,20 @@ export const PaymentSelectionStep: React.FC<PaymentSelectionStepProps> = ({
     updatePayment(paymentData);
   };
 
+  useEffect(() => {
+    // Migrate an uncharged draft to cash without changing an existing charge.
+    if (!methodSwitchLocked && (selectedMethod !== 'cash' || bookingData.payment?.method !== 'cash')) {
+      saveMethod('cash');
+    }
+  }, [selectedMethod, bookingData.payment?.method, methodSwitchLocked, totalAmount, paymentCurrency]);
+
   const handleCreateQr = () => {
-    if (selectedMethod !== 'promptpay' || !promptPayEligible || paymentPhase === 'creating' || financiallyClosed) return;
+    if (!promptPayVisible || selectedMethod !== 'promptpay' || !promptPayEligible || paymentPhase === 'creating' || financiallyClosed) return;
     void createCharge().catch(() => undefined);
   };
 
   const handleRetryQr = () => {
-    if (paymentPhase !== 'failed' && paymentPhase !== 'expired') return;
+    if (!promptPayVisible || (paymentPhase !== 'failed' && paymentPhase !== 'expired')) return;
     void retryCharge().catch(() => undefined);
   };
 
@@ -293,7 +293,7 @@ export const PaymentSelectionStep: React.FC<PaymentSelectionStepProps> = ({
           <MethodCard
             id="cash"
             title={t('payments.cashTitle')}
-            body={financiallyClosed ? t('payments.alternatePaymentUnavailablePaid') : t('payments.cashBody')}
+            body={methodSwitchLocked ? t('payments.lockedCashHelper') : t('payments.cashBody')}
             accessibilityLabel={accessibleDescription(t('payments.cashMethodA11y'), cashHelper)}
             accessibilityHint={cashHelper}
             selected={selectedMethod === 'cash'}
@@ -327,7 +327,7 @@ export const PaymentSelectionStep: React.FC<PaymentSelectionStepProps> = ({
           ) : null}
         </View>
 
-        {selectedMethod === 'promptpay' && paymentPhase === 'idle' ? (
+        {promptPayVisible && selectedMethod === 'promptpay' && paymentPhase === 'idle' ? (
           <Card style={styles.actionCard} padding={16}>
             <View style={styles.noticeRow}>
               <LockKeyhole size={20} color={designTokens.colors.semantic.info} />
@@ -344,7 +344,7 @@ export const PaymentSelectionStep: React.FC<PaymentSelectionStepProps> = ({
           </Card>
         ) : null}
 
-        {selectedMethod === 'promptpay' && paymentPhase === 'creating' ? (
+        {promptPayVisible && selectedMethod === 'promptpay' && paymentPhase === 'creating' ? (
           <Card style={styles.actionCard} padding={16}>
             <View style={styles.noticeRow} accessibilityLiveRegion="polite">
               <Smartphone size={20} color={designTokens.colors.semantic.primary} />
@@ -354,7 +354,7 @@ export const PaymentSelectionStep: React.FC<PaymentSelectionStepProps> = ({
           </Card>
         ) : null}
 
-        {selectedMethod === 'promptpay' && paymentPhase === 'error' && !financiallyClosed ? (
+        {promptPayVisible && selectedMethod === 'promptpay' && paymentPhase === 'error' && !financiallyClosed ? (
           <Card style={styles.errorCard} padding={16}>
             <View style={styles.noticeRow} accessibilityLiveRegion="polite">
               <AlertCircle size={20} color={designTokens.colors.semantic.error} />
@@ -372,7 +372,7 @@ export const PaymentSelectionStep: React.FC<PaymentSelectionStepProps> = ({
           </Card>
         ) : null}
 
-        {selectedMethod === 'promptpay' && paymentPhase === 'pending' && charge ? (
+        {promptPayVisible && selectedMethod === 'promptpay' && paymentPhase === 'pending' && charge ? (
           <PromptPayPendingCard charge={charge} />
         ) : null}
 
@@ -387,7 +387,7 @@ export const PaymentSelectionStep: React.FC<PaymentSelectionStepProps> = ({
                 {terminalStateCopy}
               </Text>
             </View>
-            {(paymentPhase === 'failed' || paymentPhase === 'expired') ? (
+            {promptPayVisible && (paymentPhase === 'failed' || paymentPhase === 'expired') ? (
               <Button
                 title={t('payments.retryPromptPay')}
                 onPress={handleRetryQr}
@@ -398,7 +398,16 @@ export const PaymentSelectionStep: React.FC<PaymentSelectionStepProps> = ({
           </Card>
         ) : null}
 
-        {!financiallyClosed ? <Card style={styles.securityCard} padding={16}>
+        {methodSwitchLocked && !financiallyClosed ? (
+          <Card style={styles.errorCard} padding={16}>
+            <View style={styles.noticeRow} accessibilityLiveRegion="polite">
+              <AlertCircle size={20} color={designTokens.colors.semantic.error} />
+              <Text ref={errorTextRef} style={styles.errorText}>{t('payments.existingChargeWarning')}</Text>
+            </View>
+          </Card>
+        ) : null}
+
+        {!methodSwitchLocked ? <Card style={styles.securityCard} padding={16}>
           <View style={styles.noticeRow}>
             <AlertCircle size={20} color={designTokens.colors.semantic.accent} />
             <Text style={styles.sectionTitle}>{t('payments.safetyHeading')}</Text>

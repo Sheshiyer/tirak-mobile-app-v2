@@ -1,68 +1,25 @@
-# Project State
+# Tirak Core client preparation state
 
-## Project Reference
+Updated 7 November 2026. Read `PROJECT.md` and `RELEASE-PREP-20261107.md`; acceptance belongs to the enclosing Tirak container's ISA and Core Spec Kit packet.
 
-See: `.planning/PROJECT.md` (updated 2026-09-12)
+## Current source
 
-**Core value:** Travelers can see a truthful PromptPay checkout state without giving the mobile app payment authority.
-**Current focus:** Phase 2 — payment status and recovery
+- Starting Core source: `fae29c2`, on `a718e8c` and consolidation `1276250`.
+- Fresh remote main: `05c6b03`; its deliberate `ci.yml` and `eas-update.yml` removals are preserved in the prepared branch.
+- The hero-only correction from consolidation `b6ea256` is reconciled without importing held payment ancestry or the stale `296a161` pickup instructions.
+- The coordinator's verification receipt names the exact prepared publication branch, head and source tree.
 
-## Current Position
+## Evidence layers
 
-Phase: 2 of 3 (payment status and recovery)
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-09-12 - Phase 1 completed with 8/8 UAT checks and 11/11 threats closed.
+Recorded Core source/disposable checks passed before this preparation. The coordinator records final checks, artifact hashes and local hero/fallback browser evidence against this publication commit in its verification receipt.
 
-Progress: [███████░░░░░░░░░░░░░] 1/3 phases (33%)
+Android 1.5.4 build 18 is available in Internal testing with a tester list selected. The owner performs the physical signup/profile date save and reload. The old Play Store emulator flow was skipped. Scoped PWA `7f446ee` is live; neither scoped release accepts the broader Core changes.
 
-## Performance Metrics
+## Remaining gates
 
-**Velocity:**
-- Total plans completed: 2
-- Average duration: n/a
-- Total execution time: 0 hours
+- Obtain replacement local-job definition, source pin and successful terminal receipt; intentional workflow removal alone is insufficient.
+- API compatibility and exact runtime/rollback proof precede dependent client publication.
+- Select and verify broader signed Android/PWA artifact, runtime, channel, version and signing continuity under later release instruction.
+- Keep live guide roles, physical availability, inventory and birth-date acceptance separate from local checks.
 
-**By Phase:**
-
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| 1. Local PromptPay pending checkout | 2 | 2 | multi-session recovery |
-
-**Recent Trend:** Phase 1 completed locally; Phase 2 remains unplanned.
-
-## Accumulated Context
-
-### Decisions
-
-- Phase 1 is a local-only vertical checkout slice; Tirak Plus and supplier signup remain untouched.
-- Cash remains visible, and payment-method switching locks whenever a PromptPay charge may exist.
-- Booking status, charge attempt, payment status, settlement, and restitution remain distinct server-owned truths.
-- Live or uncertain payment sessions survive navigation and relaunch and cannot be replaced or retried unsafely.
-- Custom-scheme cold/warm delivery is proven; universal links remain explicitly unclaimed.
-
-### Pending Todos
-
-- Discuss and plan Phase 2 server-authoritative status refresh and indeterminate recovery.
-
-### Blockers/Concerns
-
-- Production booking creation must expose authoritative currency before PromptPay broadens beyond the exact loopback THB fixture.
-- The backend needs a stable `BOOKING_ALREADY_PAID` machine code before staging/production pairing.
-- Universal links require an Associated Domains entitlement and a real authorized URL; custom-scheme evidence does not satisfy that gate.
-- Staging and production keep PromptPay creation disabled; provider, deployment, release, and backend mutation remain separately owner-gated.
-- The original authoring checkout and its user-owned iOS dependency diffs remain preserved outside this clean recovery branch.
-- GSD specialist registration and external Advisor availability remain runtime concerns, not reasons to weaken completion evidence.
-
-## Deferred Items
-
-| Category | Item | Status | Deferred At |
-|----------|------|--------|-------------|
-| Payment lifecycle | Status polling and indeterminate recovery | Phase 2 | Phase 1 planning |
-| External acceptance | Controlled staging charge | Owner-gated Phase 3 | Phase 1 planning |
-
-## Session Continuity
-
-Last session: 2026-09-12
-Stopped at: Phase 1 complete; Phase 2 ready for discussion and planning.
-Resume file: None
+Historical state, receipts and the prior pickup packet remain preserved in the separate recovery worktree. Existing PromptPay phases are historical and do not select the next work package.

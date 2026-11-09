@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
 import { RadialGradient } from '@/components/ui/RadialGradient';
 import { Card } from '@/components/ui/Card';
@@ -13,10 +13,28 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/auth-store';
 import { isDemoModeEnabled } from '@/utils/demo-mode';
 import { isDemoCompanion } from '@/utils/companion-display';
+import { validateDiscoveryPrice } from '@/utils/discovery-search';
 
 export default function FavoritesScreen() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const { width: viewportWidth } = useWindowDimensions();
+  const [parentWidth, setParentWidth] = useState<number | null>(null);
+  const availableWidth = Math.min(viewportWidth, parentWidth || viewportWidth, 1170);
+  const columns = viewMode === 'list' ? 1 : availableWidth >= 900 ? 3 : availableWidth >= 600 ? 2 : 1;
+  const cardWidth = Math.max(1, Math.min(viewMode === 'grid' ? 360 : 720, (availableWidth - 40 - (columns - 1) * 12) / columns));
+  const measureParent = (event: { nativeEvent: { layout: { width: number } } }) => {
+    const measured = event.nativeEvent.layout.width;
+    if (measured > 0) setParentWidth(measured);
+  };
   const [searchQuery, setSearchQuery] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [priceFilter, setPriceFilter] = useState({ min: '', max: '' });
+  const [draftMin, setDraftMin] = useState('');
+  const [draftMax, setDraftMax] = useState('');
+  const priceError = validateDiscoveryPrice(draftMin, draftMax);
+  const hasPriceFilter = !!priceFilter.min.trim() || !!priceFilter.max.trim();
+  const resetPrices = () => { setDraftMin(''); setDraftMax(''); setPriceFilter({ min: '', max: '' }); };
+  const clearSearchAndFilters = () => { setSearchQuery(''); resetPrices(); };
   const favoriteIds = useFavoritesStore((s) => s.favorites);
   const favoriteCompanions = useFavoritesStore((s) => s.favoriteCompanions);
   const { t } = useTranslation();
@@ -49,7 +67,7 @@ export default function FavoritesScreen() {
     category: favorite.category || favorite.categories?.[0] || 'general',
   });
 
-  const favorites = favoriteIds
+  const savedFavorites = favoriteIds
     .map((id, index) => {
       const apiCompanion = favoriteQueries[index]?.data?.data;
       const savedCompanion = favoriteCompanions[id];
@@ -70,9 +88,14 @@ export default function FavoritesScreen() {
       return savedCompanion ? normalizeFavorite(savedCompanion) : null;
     })
     .filter((companion): companion is NonNullable<typeof companion> => Boolean(companion))
-    .filter(companion => demoEnabled || !isDemoCompanion(companion))
-    .filter((companion) => {
+    .filter(companion => demoEnabled || !isDemoCompanion(companion));
+  const favorites = savedFavorites.filter((companion) => {
       const query = searchQuery.trim().toLowerCase();
+      if (hasPriceFilter) {
+        if (!Number.isFinite(companion.price) || companion.price <= 0) return false;
+        if (priceFilter.min.trim() && companion.price < Number(priceFilter.min)) return false;
+        if (priceFilter.max.trim() && companion.price > Number(priceFilter.max)) return false;
+      }
       if (!query) return true;
       return [companion.name, companion.location, companion.category, ...companion.services]
         .filter(Boolean)
@@ -87,24 +110,25 @@ export default function FavoritesScreen() {
     useFavoritesStore.getState().removeFavorite(id);
   };
   
-  const handleMessage = (id: string) => {
-    router.push(`/chat/${id}`);
-  };
-  
+  const hasSearchNoMatch = savedFavorites.length > 0 && (searchQuery.trim() !== '' || hasPriceFilter) && favorites.length === 0;
+  const clearLabel = hasPriceFilter ? 'Clear filters' : t('search.clearSearch');
+
   const renderEmptyState = () => (
     <Card style={styles.emptyStateCard} padding={40}>
       <View style={styles.emptyStateIcon}>
         <Heart size={40} color={designTokens.colors.semantic.accent} />
       </View>
-      <Text style={styles.emptyStateTitle}>{t('favorites.noFavorites')}</Text>
+      <Text style={styles.emptyStateTitle}>{hasSearchNoMatch ? searchQuery.trim() ? `${t('search.noResultsFor')} “${searchQuery.trim()}”` : 'No saved guides match these prices' : t('favorites.noFavorites')}</Text>
       <Text style={styles.emptyStateText}>
-        {t('favorites.noFavoritesDescription')}
+        {hasSearchNoMatch ? t('search.noCompanionsFound') : t('favorites.noFavoritesDescription')}
       </Text>
       <TouchableOpacity 
         style={styles.exploreButton}
-        onPress={() => router.push('/search')}
+        accessibilityRole="button"
+        accessibilityLabel={hasSearchNoMatch ? clearLabel : t('favorites.exploreCompanions')}
+        onPress={() => hasSearchNoMatch ? clearSearchAndFilters() : router.push('/search')}
       >
-        <Text style={styles.exploreButtonText}>{t('favorites.exploreCompanions')}</Text>
+        <Text style={styles.exploreButtonText}>{hasSearchNoMatch ? clearLabel : t('favorites.exploreCompanions')}</Text>
       </TouchableOpacity>
     </Card>
   );
@@ -112,8 +136,9 @@ export default function FavoritesScreen() {
   if (isLoading) {
     return (
       <RadialGradient variant="appBackground" style={styles.container}>
-        <View style={styles.header}>
+        <View style={styles.header} onLayout={measureParent}>
           <Text style={styles.headerTitle}>{t('favorites.favorites')}</Text>
+        <Text style={{ color: designTokens.colors.semantic.textSecondary, marginTop: 8 }}>{t('favorites.deviceOnly')}</Text>
         </View>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color={designTokens.colors.semantic.primary} />
@@ -125,8 +150,9 @@ export default function FavoritesScreen() {
   
   return (
     <RadialGradient variant="appBackground" style={styles.container}>
-      <View style={styles.header}>
+      <View style={styles.header} onLayout={measureParent}>
         <Text style={styles.headerTitle}>{t('favorites.favorites')}</Text>
+        <Text style={{ color: designTokens.colors.semantic.textSecondary, marginTop: 8 }}>{t('favorites.deviceOnly')}</Text>
         
         <Card style={styles.searchCard} padding={0}>
           <View style={styles.searchContainer}>
@@ -140,11 +166,26 @@ export default function FavoritesScreen() {
                 onChangeText={setSearchQuery}
               />
             </View>
-            <TouchableOpacity style={styles.filterButton}>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Filter saved guides" accessibilityState={{ expanded: showFilters, selected: hasPriceFilter }} style={styles.filterButton} onPress={() => { if (!showFilters) { setDraftMin(priceFilter.min); setDraftMax(priceFilter.max); } setShowFilters(!showFilters); }}>
               <Filter size={20} color={designTokens.colors.semantic.primary} />
             </TouchableOpacity>
           </View>
         </Card>
+        {showFilters && (
+          <Card style={styles.filterPanel} padding={16}>
+            <Text accessibilityRole="header" style={styles.resultsCount}>Starting experience price (THB)</Text>
+            <Text style={styles.filterDescription}>Filter saved starting prices. Guides without a price are excluded when a price bound is set.</Text>
+            <View style={styles.priceFields}>
+              <View style={styles.priceField}><Text>Minimum (฿)</Text><TextInput accessibilityLabel="Minimum saved guide price" keyboardType="numeric" value={draftMin} onChangeText={setDraftMin} placeholder="No minimum" style={styles.priceInput} /></View>
+              <View style={styles.priceField}><Text>Maximum (฿)</Text><TextInput accessibilityLabel="Maximum saved guide price" keyboardType="numeric" value={draftMax} onChangeText={setDraftMax} placeholder="No maximum" style={styles.priceInput} /></View>
+            </View>
+            {priceError && <Text accessibilityRole="alert" style={styles.filterError}>{priceError}</Text>}
+            <View style={styles.priceFields}>
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel="Reset favorite price filters" style={styles.filterAction} onPress={resetPrices}><Text style={styles.filterActionText}>Reset</Text></TouchableOpacity>
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel="Apply favorite price filters" accessibilityState={{ disabled: !!priceError }} disabled={!!priceError} style={[styles.filterAction, priceError && { opacity: 0.5 }]} onPress={() => { if (!priceError) { setPriceFilter({ min: draftMin.trim(), max: draftMax.trim() }); setShowFilters(false); } }}><Text style={styles.filterActionText}>Apply filters</Text></TouchableOpacity>
+            </View>
+          </Card>
+        )}
       </View>
       
       {favorites.length > 0 ? (
@@ -157,13 +198,13 @@ export default function FavoritesScreen() {
               <View style={styles.viewToggle}>
                 <TouchableOpacity
                   style={[styles.viewButton, viewMode === 'grid' && styles.viewButtonActive]}
-                  onPress={() => setViewMode('grid')}
+                  accessibilityRole="button" accessibilityLabel="Grid view" accessibilityState={{ selected: viewMode === 'grid' }} onPress={() => setViewMode('grid')}
                 >
                   <Grid3X3 size={18} color={viewMode === 'grid' ? designTokens.colors.semantic.surface : designTokens.colors.semantic.textSecondary} />
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.viewButton, viewMode === 'list' && styles.viewButtonActive]}
-                  onPress={() => setViewMode('list')}
+                  accessibilityRole="button" accessibilityLabel="List view" accessibilityState={{ selected: viewMode === 'list' }} onPress={() => setViewMode('list')}
                 >
                   <List size={18} color={viewMode === 'list' ? designTokens.colors.semantic.surface : designTokens.colors.semantic.textSecondary} />
                 </TouchableOpacity>
@@ -172,21 +213,25 @@ export default function FavoritesScreen() {
           </Card>
           
           <FlatList
+            style={{ width: '100%', minWidth: 0 }}
+            extraData={{ availableWidth, cardWidth }}
             data={favorites}
             renderItem={({ item }) =>
               item ? (
+              <View testID={`favorite-card-${item.id}`} style={{ width: cardWidth, maxWidth: cardWidth, minWidth: 0 }}>
               <CompanionCard
                 companion={item}
                 viewMode={viewMode}
                 onPress={() => handleCompanionPress(item.id)}
                 onFavorite={() => handleFavorite(item.id)}
-                onMessage={() => handleMessage(item.id)}
               />
+              </View>
               ) : null
             }
             keyExtractor={(item) => item?.id}
-            numColumns={viewMode === 'grid' ? 2 : 1}
-            key={viewMode} // Force re-render when view mode changes
+            columnWrapperStyle={columns > 1 ? { gap: 12 } : undefined}
+            numColumns={columns}
+            key={`${viewMode}-${columns}-${Math.round(availableWidth)}`} // Invalidate web list geometry after a resize.
             contentContainerStyle={styles.listContainer}
             showsVerticalScrollIndicator={false}
           />
@@ -199,8 +244,20 @@ export default function FavoritesScreen() {
 }
 
 const styles = StyleSheet.create({
+  filterPanel: { width: '100%', maxWidth: 600, alignSelf: 'center', gap: 12 },
+  filterDescription: { color: designTokens.colors.semantic.textSecondary, lineHeight: 22 },
+  priceFields: { flexDirection: 'row', gap: 12 },
+  priceField: { flex: 1, minWidth: 0, gap: 8 },
+  priceInput: { minHeight: 48, borderWidth: 1, borderColor: designTokens.colors.semantic.border, borderRadius: 12, paddingHorizontal: 10, width: '100%', minWidth: 0, color: designTokens.colors.semantic.text },
+  filterError: { color: designTokens.colors.semantic.error },
+  filterAction: { flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: designTokens.colors.semantic.primary },
+  filterActionText: { color: designTokens.colors.semantic.primaryContrast, fontWeight: '600' },
   container: {
     flex: 1,
+    width: '100%',
+    maxWidth: 1170,
+    minWidth: 0,
+    alignSelf: 'center',
   },
   header: {
     paddingHorizontal: 20,
@@ -225,6 +282,7 @@ const styles = StyleSheet.create({
   },
   searchBar: {
     flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -262,6 +320,10 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   viewButton: {
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 18,

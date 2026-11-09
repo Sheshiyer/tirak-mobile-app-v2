@@ -42,7 +42,7 @@ import { designTokens, componentTokens } from '@/constants/design-tokens';
 import { useCompanionProfile, useCreateOrUpdateCompanionProfile, CompanionProfile, CompanionProfileRequest, CompanionProfileResponse } from '@/services/api/companion/profile';
 import { useAuthStore } from '@/stores/auth-store';
 import { useQueryClient } from '@tanstack/react-query';
-import * as ExpoImagePicker from 'expo-image-picker';
+import { chooseProfileImage } from '@/utils/profile-image-picker';
 import { useTranslation } from 'react-i18next';
 
 interface SupplierProfile {
@@ -133,6 +133,11 @@ export default function ProfileEditScreen() {
   const [profile, setProfile] = useState<CompanionProfile | null>(null);
   const [coverPhotoUri, setCoverPhotoUri] = useState<string | null>(null);
   const [profilePhotoUri, setProfilePhotoUri] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const notify: typeof Alert.alert = (title, message, buttons, options) => {
+    if (Platform.OS === 'web') setFeedback([title, message].filter(Boolean).join(': '));
+    else Alert.alert(title, message, buttons, options);
+  };
   const hasLocalProfilePhotoChange = useRef(false);
   const hasLocalCoverPhotoChange = useRef(false);
 
@@ -254,66 +259,15 @@ export default function ProfileEditScreen() {
   };
 
   const chooseImageSource = (kind: 'cover' | 'profile') => {
-    Alert.alert(
-      kind === 'cover' ? 'Change Cover Photo' : 'Change Profile Photo',
-      'Choose an option',
-      [
-        { text: 'Camera', onPress: () => takePhoto(kind) },
-        { text: 'Gallery', onPress: () => pickFromGallery(kind) },
-        { text: 'Cancel', style: 'cancel' },
-      ]
-    );
+    setFeedback(null);
+    chooseProfileImage(kind, uri => {
+      applyPickedImage(kind, uri);
+      if (Platform.OS === 'web') setFeedback('Photo selected. Save your profile to upload this change.');
+    }, message => notify('Photo unavailable', message));
   };
+  const handleCoverPhotoChange = () => chooseImageSource('cover');
+  const handleProfilePhotoChange = () => chooseImageSource('profile');
 
-  const handleCoverPhotoChange = async () => {
-    chooseImageSource('cover');
-  };
-  
-  const handleProfilePhotoChange = async () => {
-    chooseImageSource('profile');
-  };
-  
-
-  const pickFromGallery = async (kind: 'cover' | 'profile') => {
-    const permission = await ExpoImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert('Gallery access needed', 'Please allow photo library access to update your profile photo.');
-      return;
-    }
-
-    const result = await ExpoImagePicker.launchImageLibraryAsync({
-      mediaTypes: ExpoImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: kind === 'cover' ? [16, 9] : [1, 1],
-      quality: 0.85,
-    });
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      applyPickedImage(kind, result.assets[0].uri);
-    }
-  };
-
-  const takePhoto = async (kind: 'cover' | 'profile') => {
-    const permission = await ExpoImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert('Camera access needed', 'Please allow camera access to update your profile photo.');
-      return;
-    }
-
-    try {
-      const result = await ExpoImagePicker.launchCameraAsync({
-        mediaTypes: ExpoImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: kind === 'cover' ? [16, 9] : [1, 1],
-        quality: 0.85,
-      });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        applyPickedImage(kind, result.assets[0].uri);
-      }
-    } catch (err: any) {
-      Alert.alert('Camera unavailable', err?.message || 'The camera could not be opened on this device.');
-    }
-  };
   // Helper to convert URI to blob for web
   const uriToBlob = async (uri: string): Promise<Blob> => {
     if (uri.startsWith('data:')) {
@@ -407,12 +361,12 @@ export default function ProfileEditScreen() {
     }
     
     if (!profile.firstName?.trim() || !profile.lastName?.trim() || !profile.displayName?.trim()) {
-      Alert.alert(t('profile.companion.error'), t('profile.companion.errorRequiredFields'));
+      notify(t('profile.companion.error'), t('profile.companion.errorRequiredFields'));
       return;
     }
 
     if (!profile.bio?.trim() || profile.bio.trim().length < 30) {
-      Alert.alert(
+      notify(
         'Bio too short',
         'Write at least 30 characters so travelers understand your guide style.',
         [{ text: 'OK' }]
@@ -421,7 +375,7 @@ export default function ProfileEditScreen() {
     }
 
     if (!profilePhotoUri && !profile.profilePhoto) {
-      Alert.alert(
+      notify(
         'Profile Photo Required',
         'Add a clear, welcoming profile photo so travelers know who they are booking.',
         [{ text: 'Add Photo', onPress: handleProfilePhotoChange }, { text: 'Later', style: 'cancel' }]
@@ -550,13 +504,13 @@ export default function ProfileEditScreen() {
           location: mergedProfile.location,
         });
       }
-      Alert.alert(t('profile.companion.profileUpdated'), t('profile.companion.profileUpdatedDescription'), [
+      notify(t('profile.companion.profileUpdated'), t('profile.companion.profileUpdatedDescription'), [
         { text: 'OK', onPress: () => {
           router.replace('/(app)');
         }},
       ]);
     } catch (e) {
-      Alert.alert(t('profile.companion.error'), e instanceof Error ? e.message : t('profile.companion.errorUpdatingProfile'));
+      notify(t('profile.companion.error'), e instanceof Error ? e.message : t('profile.companion.errorUpdatingProfile'));
     }
   };
   const ListEditor = ({
@@ -635,7 +589,7 @@ export default function ProfileEditScreen() {
       {/* Header */}
       <SafeAreaView edges={Platform.OS === 'web' ? [] : ['top']} style={[styles.header, Platform.OS === 'web' && styles.webHeader]}>
         <View style={styles.headerContent}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.canGoBack() ? router.back() : router.replace('/(app)')}>
             <ArrowLeft size={24} color={designTokens.colors.semantic.text} />
           </TouchableOpacity>
 
@@ -644,8 +598,8 @@ export default function ProfileEditScreen() {
             <Caption style={styles.subtitle}>{t('profile.companion.updateProfessionalInformation')}</Caption>
           </View>
 
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-            <Save size={20} color={designTokens.colors.semantic.surface} />
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Save profile" style={styles.saveButton} onPress={handleSave}>
+            <Save size={18} color={designTokens.colors.semantic.primary} /><Text style={{ color: designTokens.colors.semantic.primary, fontWeight: '600' }}>{t('common.save')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -656,6 +610,7 @@ export default function ProfileEditScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
+        {feedback ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ padding: 16, color: designTokens.colors.semantic.text }}>{feedback}</Text> : null}
         {/* Profile Photos */}
         <Card style={styles.section} padding={16}>
           <Subheading style={styles.sectionTitle}>{t('profile.companion.profilePhotos')}</Subheading>
@@ -670,7 +625,7 @@ export default function ProfileEditScreen() {
               }}
               style={styles.coverPhoto}
             />
-            <TouchableOpacity style={styles.editCoverButton} onPress={handleCoverPhotoChange}>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Change cover photo" style={styles.editCoverButton} onPress={handleCoverPhotoChange}>
               <Edit3 size={16} color={designTokens.colors.semantic.surface} />
             </TouchableOpacity>
             <Caption style={styles.photoLabel}>{t('profile.companion.coverPhoto')}</Caption>
@@ -686,7 +641,7 @@ export default function ProfileEditScreen() {
               }}
               style={styles.profilePhoto}
             />
-            <TouchableOpacity style={styles.editProfileButton} onPress={handleProfilePhotoChange}>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Change profile photo" style={styles.editProfileButton} onPress={handleProfilePhotoChange}>
               <Edit3 size={12} color={designTokens.colors.semantic.surface} />
             </TouchableOpacity>
             <Caption style={[styles.photoLabel, !profilePhotoUri && !profile?.profilePhoto && styles.photoLabelRequired]}>
@@ -927,6 +882,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    width: '100%', maxWidth: 720, alignSelf: 'center',
     backgroundColor: 'transparent',
     paddingHorizontal: designTokens.spacing.scale.md,
   },
@@ -957,10 +913,10 @@ const styles = StyleSheet.create({
     color: designTokens.colors.semantic.textSecondary,
   },
   saveButton: {
-    width: 44,
+    minWidth: 88, paddingHorizontal: 12, flexDirection: 'row', gap: 8,
     height: 44,
     borderRadius: 22,
-    backgroundColor: designTokens.colors.semantic.primary,
+    backgroundColor: designTokens.colors.semantic.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -968,6 +924,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
+    width: '100%', maxWidth: 720, alignSelf: 'center',
     padding: designTokens.spacing.scale.md,
     paddingBottom: designTokens.spacing.scale.xl,
   },
@@ -994,8 +951,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     right: 8,
-    width: 32,
-    height: 32,
+    width: 44,
+    height: 44,
     borderRadius: 16,
     backgroundColor: designTokens.colors.semantic.primary,
     justifyContent: 'center',
@@ -1017,8 +974,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 20,
     right: '35%',
-    width: 24,
-    height: 24,
+    width: 44,
+    height: 44,
     borderRadius: 12,
     backgroundColor: designTokens.colors.semantic.primary,
     justifyContent: 'center',

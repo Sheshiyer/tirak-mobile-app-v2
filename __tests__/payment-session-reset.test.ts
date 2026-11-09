@@ -232,71 +232,37 @@ describe('payment session isolation', () => {
     expect(usePaymentStore.getState()).toMatchObject({ booking: null, charge: null, selectedMethod: null });
   });
 
-  test('review account switching clears persisted booking and payment drafts', async () => {
+  test('legacy review switching is refused even when enabled and preserves the current real session', async () => {
     process.env.EXPO_PUBLIC_REVIEW_MODE = 'true';
     seedPaymentForUserA();
     useBookingStore.getState().goToStep(5);
     useBookingStore.getState().updateRequests({ specialRequests: 'User A private draft' });
-
-    await useAuthStore.getState().switchReviewAccount('guide');
-
-    expect(useAuthStore.getState()).toMatchObject({
-      user: { id: 'demo_companion_001', userType: 'companion' },
-      isAuthenticated: true,
-      isLoading: false,
-    });
-    expect(usePaymentStore.getState()).toMatchObject({
-      booking: null,
-      selectedMethod: null,
-      charge: null,
-      phase: 'idle',
-    });
-    expect(useBookingStore.getState().bookingData).toMatchObject({
-      currentStep: 1,
-      payment: null,
-      requests: { specialRequests: '' },
-    });
-    expect(mockSecureDeleteItem).toHaveBeenCalledWith('tirak-payment-session');
-    expect(mockSecureDeleteItem).toHaveBeenCalledWith('authToken');
-    expect(mockSecureDeleteItem).toHaveBeenCalledWith('refreshToken');
-    expect(mockSecureSetItem).toHaveBeenCalledWith(
-      'userCredentials',
-      expect.stringContaining('demo_companion_001'),
-    );
+    const payment = usePaymentStore.getState();
+    const booking = useBookingStore.getState().bookingData;
+    await expect(useAuthStore.getState().switchReviewAccount('guide')).rejects.toThrow('Preview accounts are unavailable');
+    expect(usePaymentStore.getState()).toBe(payment);
+    expect(useBookingStore.getState().bookingData).toBe(booking);
+    expect(mockSecureSetItem).not.toHaveBeenCalledWith('userCredentials', expect.stringContaining('demo_companion_001'));
   });
 
-  test('review account switching fails closed when the build gate is absent', async () => {
+  test('review switching is refused without the legacy flag', async () => {
     delete process.env.EXPO_PUBLIC_REVIEW_MODE;
-
-    await expect(useAuthStore.getState().switchReviewAccount('customer')).rejects.toThrow(
-      'App review accounts are not enabled in this build',
-    );
-
+    await expect(useAuthStore.getState().switchReviewAccount('customer')).rejects.toThrow('Preview accounts are unavailable');
     expect(useAuthStore.getState().user).toBeNull();
     expect(useAuthStore.getState().isAuthenticated).toBe(false);
   });
 
-  test('review credentials survive validation without storing a password or bearer token', async () => {
+  test.each([null, 'tirak-local-fixture-token', 'old-token'])('old review credentials are invalidated with bearer %p even when the flag is true', async token => {
     process.env.EXPO_PUBLIC_REVIEW_MODE = 'true';
-    mockSecureGetItem.mockImplementation(async (key) => (
-      key === 'userCredentials'
-        ? JSON.stringify({
-          id: 'demo_customer_001',
-          name: 'Alex Johnson',
-          email: 'review.customer@tirak.app',
-          userType: 'customer',
-          verified: true,
-          createdAt: '2026-01-01T00:00:00.000Z',
-        })
-        : null
-    ));
-
+    mockSecureGetItem.mockImplementation(async key => key === 'authToken' ? token : JSON.stringify({
+      id: 'demo_customer_001', name: 'Alex Johnson', email: 'review.customer@tirak.app',
+      userType: 'customer', verified: true, createdAt: '2026-01-01T00:00:00.000Z',
+    }));
     await useAuthStore.getState().validateToken();
-
-    expect(useAuthStore.getState()).toMatchObject({
-      user: { id: 'demo_customer_001' },
-      isAuthenticated: true,
-    });
+    expect(useAuthStore.getState()).toMatchObject({ user: null, isAuthenticated: false });
+    expect(mockSecureDeleteItem).toHaveBeenCalledWith('authToken');
+    expect(mockSecureDeleteItem).toHaveBeenCalledWith('refreshToken');
+    expect(mockSecureDeleteItem).toHaveBeenCalledWith('userCredentials');
     expect(mockSecureSetItem).not.toHaveBeenCalledWith('authToken', expect.any(String));
   });
 

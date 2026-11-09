@@ -63,7 +63,7 @@ export const ProfileImage: React.FC<ProfileImageProps> = ({
       )}
       
       {editable && (
-        <TouchableOpacity
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Change profile photo"
           style={[
             styles.editButton,
             {

@@ -23,9 +23,7 @@ export const isTestCompanionId = (id: unknown): boolean => {
 
 export const isTestCompanion = (companion: any): boolean => {
   const email = normalizeText(companion?.email).toLowerCase();
-  const displayName = getCompanionDisplayName(companion).toLowerCase();
-
-  return isTestCompanionId(companion?.id) || email === TEST_COMPANION_EMAIL || displayName === 'test companion';
+  return isTestCompanionId(companion?.id) || email === TEST_COMPANION_EMAIL;
 };
 
 /** Only explicit fixtures are hidden; ordinary vendor accounts are never guessed. */
