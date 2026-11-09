@@ -232,6 +232,7 @@ describe('core-qa prebuild hook — env validation', () => {
       EXPO_PUBLIC_ENV_NAME: 'core-qa',
       EXPO_PUBLIC_API_URL: 'https://tirak-core-qa-20261005.tirak-court.workers.dev/api',
     });
+    const productionVersion = JSON.parse(fs.readFileSync(path.join(repoRoot, 'app.json'), 'utf8')).expo.version;
 
     const fixtureCopies = [
       ['ios/Tirak/Info.plist', 'ios/Tirak/Info.plist'],
@@ -270,23 +271,24 @@ describe('core-qa prebuild hook — env validation', () => {
     const prodEntitlementsAfter = fs.readFileSync(path.join(tmpDir, 'ios', 'Tirak', 'Tirak.entitlements'), 'utf8');
     const debugEntitlementsAfter = fs.readFileSync(path.join(tmpDir, 'ios', 'Tirak', 'Tirak.Debug.entitlements'), 'utf8');
 
-    expect(infoAfter).toContain('<key>CFBundleShortVersionString</key>');
-    expect(infoAfter).toContain('<string>1.5.3</string>');
-    expect(infoAfter).toContain('<key>CFBundleVersion</key>');
-    expect(infoAfter).toContain('<string>1</string>');
-    expect(infoAfter.replace('<string>1.5.3</string>', '<string>1.5.4</string>')).toBe(infoBefore);
+    expect(infoAfter).toMatch(/<key>CFBundleShortVersionString<\/key>\s*<string>1\.5\.3<\/string>/);
+    expect(infoAfter).toMatch(/<key>CFBundleVersion<\/key>\s*<string>1<\/string>/);
+    expect(infoAfter.replace(
+      /(<key>CFBundleShortVersionString<\/key>\s*)<string>1\.5\.3<\/string>/,
+      `$1<string>${productionVersion}</string>`,
+    )).toBe(infoBefore);
 
     expect(expoAfter).toContain('<string>1.5.3-core-qa</string>');
     expect(expoAfter).toContain('<string>https://u.expo.dev/ba0d6f3e-ed4c-4aaf-8cff-aa2fdb253cc5</string>');
-    expect(expoAfter.replace('<string>1.5.3-core-qa</string>', '<string>1.5.4</string>')).toBe(expoBefore);
+    expect(expoAfter.replace('<string>1.5.3-core-qa</string>', `<string>${productionVersion}</string>`)).toBe(expoBefore);
 
     expect(projectAfter).toContain('MARKETING_VERSION = 1.5.3;');
     expect(projectAfter).toContain('CURRENT_PROJECT_VERSION = 1;');
-    expect(projectAfter.replace(/MARKETING_VERSION = 1\.5\.3;/g, 'MARKETING_VERSION = 1.5.4;')).toBe(projectBefore);
+    expect(projectAfter.replace(/MARKETING_VERSION = 1\.5\.3;/g, `MARKETING_VERSION = ${productionVersion};`)).toBe(projectBefore);
 
     expect(gradleAfter).toContain('versionName "1.5.3"');
     expect(gradleAfter).toContain('versionCode 1');
-    expect(gradleAfter.replace('versionName "1.5.3"', 'versionName "1.5.4"')).toBe(gradleBefore);
+    expect(gradleAfter.replace('versionName "1.5.3"', `versionName "${productionVersion}"`)).toBe(gradleBefore);
 
     expect(stringsAfter).toContain('<string name="expo_runtime_version">1.5.3-core-qa</string>');
     expect(manifestAfter).toBe(manifestBefore);

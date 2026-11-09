@@ -55,15 +55,18 @@ describe('release delivery boundaries', () => {
     const ios = read('ios/Tirak/Supporting/Expo.plist');
     expect(ios).toMatch(/<key>EXUpdatesEnabled<\/key>\s*<true\/>/);
     expect(ios).toContain(`<string>${url}</string>`);
-    expect(ios).toMatch(new RegExp(`<key>EXUpdatesRuntimeVersion<\\/key>\\s*<string>${config.version}<\\/string>`));
+    expect(ios.match(/<key>EXUpdatesRuntimeVersion<\/key>\s*<string>([^<]+)<\/string>/)?.[1]).toBe(config.version);
   });
 
-  test('the native repair release has a new aligned app and iOS runtime version', () => {
-    expect(config.version).toBe('1.5.4');
+  test('the package and all native marketing versions match the Expo app version', () => {
+    expect(config.version).toMatch(/^\d+\.\d+\.\d+$/);
     expect(JSON.parse(read('package.json')).version).toBe(config.version);
-    expect(read('ios/Tirak/Info.plist')).toMatch(new RegExp(`<key>CFBundleShortVersionString<\\/key>\\s*<string>${config.version}<\\/string>`));
-    expect(read('ios/Tirak.xcodeproj/project.pbxproj')).toContain(`MARKETING_VERSION = ${config.version};`);
-    expect(read('android/app/build.gradle')).toContain(`versionName "${config.version}"`);
+    expect(read('ios/Tirak/Info.plist').match(/<key>CFBundleShortVersionString<\/key>\s*<string>([^<]+)<\/string>/)?.[1])
+      .toBe(config.version);
+    const marketingVersions = [...read('ios/Tirak.xcodeproj/project.pbxproj').matchAll(/\bMARKETING_VERSION = ([^;]+);/g)]
+      .map((match) => match[1]);
+    expect(new Set(marketingVersions)).toEqual(new Set([config.version]));
+    expect(read('android/app/build.gradle').match(/^\s*versionName "([^"]+)"/m)?.[1]).toBe(config.version);
   });
 
   test.each(['development', 'preview', 'production'])('%s uses its own channel and environment with demo/payment gates off', (profile) => {
@@ -79,6 +82,8 @@ describe('release delivery boundaries', () => {
     expect(eas.build.review).toBeUndefined();
     expect(eas.build.production.distribution).toBe('store');
     expect(eas.build.production.android.buildType).toBe('app-bundle');
+    expect(eas.cli.appVersionSource).toBe('remote');
+    expect(eas.build.production.autoIncrement).toBe(true);
     expect(eas.build['release-apk']).toMatchObject({ extends: 'production', environment: 'production', channel: 'production', android: { buildType: 'apk' } });
   });
 
@@ -86,7 +91,7 @@ describe('release delivery boundaries', () => {
     expect(() => withEnv({ EXPO_PUBLIC_ENV_NAME: 'production', EXPO_PUBLIC_API_URL: 'https://tirak-core-qa-20261005.tirak-court.workers.dev/api' }, () => resolveConfig({ config }))).toThrow('Release requires');
     expect(() => withEnv({ EXPO_PUBLIC_ENV_NAME: 'production', EXPO_PUBLIC_API_URL: eas.build.production.env.EXPO_PUBLIC_API_URL, EXPO_PUBLIC_REVIEW_MODE: 'true' }, () => resolveConfig({ config }))).toThrow('Cash-only');
     const resolved = withEnv(eas.build.production.env, () => resolveConfig({ config }));
-    expect(resolved.version).toBe('1.5.4');
+    expect(resolved.version).toBe(config.version);
     expect(resolved.extra.reviewMode).toBe(false);
   });
 
