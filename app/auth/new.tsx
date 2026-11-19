@@ -12,7 +12,7 @@ import { ArrowLeft } from 'lucide-react-native';
 import { useAuthStore } from '@/stores/auth-store';
 import { SimpleInput } from '@/components/ui/SimpleInput';
 import { useTranslation } from 'react-i18next';
-import { resetPassword, PasswordResetError } from '@/app/api/auth/password-reset';
+import { resetPassword, PasswordResetError } from '@/services/api/auth/password-reset';
 
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
@@ -20,7 +20,8 @@ export default function NewPasswordScreen() {
   const { t } = useTranslation();
   
   // Get token from URL parameters
-  const { token } = useLocalSearchParams();
+  const { token: rawToken } = useLocalSearchParams();
+  const token = typeof rawToken === 'string' && rawToken.trim() ? rawToken : null;
   
   // Zod schema for new password form validation
   const newPasswordSchema = z.object({
@@ -134,7 +135,7 @@ export default function NewPasswordScreen() {
         setIsLoading(true);
         setError('');
         
-        const response = await resetPassword(token as string, formData.password);
+        const response = await resetPassword(token, formData.password);
         
         if (response.success) {
           setSuccess(true);

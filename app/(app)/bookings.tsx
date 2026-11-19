@@ -10,7 +10,12 @@ import {
   Dimensions,
   TextInput,
   Alert,
+  Platform,
+  Modal,
 } from 'react-native';
+import { useToast } from '@/stores/toast-store';
+import { formatBookingDate } from '@/components/booking/booking-format';
+import { bookingCalendarDate, bookingDateTimeToInstant, CORE_BOOKING_TIME_ZONE } from '@/utils/booking-timezone';
 import { useAuthStore } from '@/stores/auth-store';
 import { Card } from '@/components/ui/Card';
 import { ProfileImage } from '@/components/ui/ProfileImage';
@@ -22,10 +27,10 @@ import { designTokens, componentTokens } from '@/constants/design-tokens';
 import { useTranslation } from 'react-i18next';
 // Import booking API
 import { 
-  useBookingsQuery, 
+  useBookingHistoryQuery,
   useUpdateBookingStatus,
   BookingListItem,
-} from '@/app/api/booking/booking';
+} from '@/services/api/booking/booking';
 
 import {
   Calendar,
@@ -41,6 +46,12 @@ import {
   Timer
 } from 'lucide-react-native';
 import { router } from 'expo-router';
+import { isReviewModeEnabled, REVIEW_ACCOUNTS, type ReviewAccountKey } from '@/constants/review-mode';
+import {
+  REVIEW_BOOKING_ID,
+  reviewBookingToListItem,
+  useReviewBookingFixtureStore,
+} from '@/stores/review-booking-fixture-store';
 
 const { width } = Dimensions.get('window');
 
@@ -61,15 +72,34 @@ interface BookingCardProps {
 interface CountdownTimerProps {
   targetDate: string;
   targetTime: string;
+  timeZone?: string;
+}
+
+function bookingPeriod(booking: BookingListItem, now: Date): 'upcoming' | 'past' | null {
+  if (booking.status === 'completed' || booking.status === 'cancelled') return 'past';
+  const timeZone = booking.timeZone || booking.timezone || CORE_BOOKING_TIME_ZONE;
+  try {
+    const startsAt = bookingDateTimeToInstant(booking.date, booking.startTime, timeZone);
+    return bookingCalendarDate(startsAt, timeZone) >= bookingCalendarDate(now, timeZone) ? 'upcoming' : 'past';
+  } catch {
+    // Keep bookings with unknown schedules available in All.
+    return null;
+  }
 }
 
 // Countdown Timer Component
-const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate, targetTime }) => {
+export const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate, targetTime, timeZone = CORE_BOOKING_TIME_ZONE }) => {
   const [timeLeft, setTimeLeft] = useState('');
 
   useEffect(() => {
     const calculateTimeLeft = () => {
-      const target = new Date(`${targetDate}T${targetTime}:00`);
+      let target: Date;
+      try {
+        target = bookingDateTimeToInstant(targetDate, targetTime, timeZone);
+      } catch {
+        setTimeLeft('Schedule unavailable');
+        return;
+      }
       const now = new Date();
       const difference = target.getTime() - now.getTime();
 
@@ -86,7 +116,7 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate, targetTime 
           setTimeLeft(`${minutes}m`);
         }
       } else {
-        setTimeLeft('Now');
+        setTimeLeft('Start time reached');
       }
     };
 
@@ -94,7 +124,7 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate, targetTime 
     const timer = setInterval(calculateTimeLeft, 60000); // Update every minute
 
     return () => clearInterval(timer);
-  }, [targetDate, targetTime]);
+  }, [targetDate, targetTime, timeZone]);
 
   return (
     <View style={styles.countdownContainer}>
@@ -149,6 +179,15 @@ export default function BookingsScreen() {
   
   const { user, isAuthenticated } = useAuthStore();
   const isCompanion = user?.userType === 'companion' || user?.userType === 'supplier';
+  const reviewAccountKey: ReviewAccountKey | null = isReviewModeEnabled()
+    ? user?.id === REVIEW_ACCOUNTS.customer.user.id
+      ? 'customer'
+      : user?.id === REVIEW_ACCOUNTS.guide.user.id
+        ? 'guide'
+        : null
+    : null;
+  const reviewBooking = useReviewBookingFixtureStore((state) => state.booking);
+  const acceptReviewBooking = useReviewBookingFixtureStore((state) => state.acceptAsGuide);
   const [selectedTab, setSelectedTab] = useState<'upcoming' | 'past' | 'all'>('upcoming');
   const [refreshing, setRefreshing] = useState(false);
   const [sortBy, setSortBy] = useState<'date' | 'price' | 'status'>('date');
@@ -156,11 +195,21 @@ export default function BookingsScreen() {
   const [showSortOptions, setShowSortOptions] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'all' | BookingListItem['status']>('all');
   const [search, setSearch] = useState('');
+  const [rejectionTarget, setRejectionTarget] = useState<BookingListItem | null>(null);
+  const toast = useToast();
+  const pendingStatusUpdates = useRef(new Set<string>());
+  const [updatingBookingIds, setUpdatingBookingIds] = useState(new Set<string>());
+  const showStatusFeedback = (title: string, message: string, failed = false) => {
+    if (Platform.OS === 'web') {
+      if (failed) toast.error(`${title}: ${message}`);
+      else toast.success(`${title}: ${message}`);
+    } else Alert.alert(title, message);
+  };
   const updateBookingStatus = useUpdateBookingStatus();
 
   // Fetch bookings from API
-  const { data: bookingsData, isLoading, error, refetch } = useBookingsQuery({}, {
-    enabled: isAuthenticated
+  const { data: bookingsData, isLoading, error, refetch } = useBookingHistoryQuery({
+    enabled: isAuthenticated && reviewAccountKey === null
   });
 
   // Animation values
@@ -168,29 +217,18 @@ export default function BookingsScreen() {
   const slideAnim = useRef(new Animated.Value(50)).current;
 
   // Get bookings data - only use API data
-  const allBookings = isAuthenticated && bookingsData?.success 
-    ? bookingsData?.data?.items || []
-    : [];
+  const allBookings = reviewAccountKey
+    ? reviewBooking
+      ? [reviewBookingToListItem(reviewBooking)]
+      : []
+    : isAuthenticated && bookingsData?.success
+      ? bookingsData?.data?.items || []
+      : [];
 
-  // Debug: Log the actual bookings array to inspect companion data
-  // logger.log('Bookings list items:', allBookings);
-
-  // Enhanced filtering and sorting logic with better date handling
-  const filteredBookings = (allBookings || [])
-    .filter((booking: BookingListItem) => {
-      const bookingDate = new Date(booking.date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      bookingDate.setHours(0, 0, 0, 0);
-      if (selectedTab === 'upcoming') {
-        const isUpcoming = bookingDate >= today && !['completed', 'cancelled'].includes(booking.status);
-        return isUpcoming;
-      } else if (selectedTab === 'past') {
-        const isPast = bookingDate < today || ['completed', 'cancelled'].includes(booking.status);
-        return isPast;
-      }
-      return true;
-    })
+  const now = new Date();
+  const bookingPeriods = new Map(allBookings.map(booking => [booking.id, bookingPeriod(booking, now)]));
+  const filteredBookings = allBookings
+    .filter(booking => selectedTab === 'all' || bookingPeriods.get(booking.id) === selectedTab)
     .filter((booking: BookingListItem) => {
       if (!search.trim()) return true;
       const q = search.toLowerCase();
@@ -219,14 +257,7 @@ export default function BookingsScreen() {
       }
     });
 
-  // Calculate stats for display
-  const upcomingCount = allBookings.filter((b: BookingListItem) => {
-    const bookingDate = new Date(b.date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    bookingDate.setHours(0, 0, 0, 0);
-    return bookingDate >= today && !['completed', 'cancelled'].includes(b.status);
-  }).length;
+  const upcomingCount = allBookings.filter(booking => bookingPeriods.get(booking.id) === 'upcoming').length;
 
   const completedCount = allBookings.filter((b: BookingListItem) => b.status === 'completed').length;
 
@@ -250,13 +281,15 @@ export default function BookingsScreen() {
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      await refetch();
+      if (reviewAccountKey === null) await refetch();
     } finally {
       setRefreshing(false);
     }
   };
 
   const getPaymentDisplayText = (booking: BookingListItem) => {
+    if (booking.status === 'cancelled') return 'Cancelled request';
+    if (booking.id === REVIEW_BOOKING_ID) return 'Cash — no provider charge';
     if (isCompanion) {
       if (booking.status === 'pending') return 'Pending approval';
       if (booking.paymentStatus === 'paid') return 'Paid';
@@ -269,7 +302,18 @@ export default function BookingsScreen() {
   };
 
   const handleCompanionStatusUpdate = async (booking: BookingListItem, status: 'confirmed' | 'cancelled') => {
+    if (pendingStatusUpdates.current.has(booking.id)) return;
+    pendingStatusUpdates.current.add(booking.id);
+    setUpdatingBookingIds(new Set(pendingStatusUpdates.current));
     try {
+      if (booking.id === REVIEW_BOOKING_ID) {
+        if (reviewAccountKey !== 'guide' || status !== 'confirmed') {
+          throw new Error('The review fixture supports guide approval only.');
+        }
+        acceptReviewBooking();
+        showStatusFeedback('Booking approved', 'The traveler review account now sees this booking as confirmed.');
+        return;
+      }
       await updateBookingStatus.mutateAsync({
         id: booking.id,
         statusData: {
@@ -277,19 +321,25 @@ export default function BookingsScreen() {
           reason: status === 'cancelled' ? 'Guide declined the booking request.' : undefined,
         },
       });
-      await refetch();
-      Alert.alert(
+      showStatusFeedback(
         status === 'confirmed' ? 'Booking approved' : 'Booking rejected',
         status === 'confirmed'
           ? 'The traveler will see this booking as confirmed.'
           : 'The traveler will see that this booking request was rejected.'
       );
     } catch (error: any) {
-      Alert.alert('Unable to update booking', error?.message || 'Please try again.');
+      showStatusFeedback('Unable to update booking', error?.message || 'Please try again.', true);
+    } finally {
+      pendingStatusUpdates.current.delete(booking.id);
+      setUpdatingBookingIds(new Set(pendingStatusUpdates.current));
     }
   };
 
   const handleRejectBooking = (booking: BookingListItem) => {
+    if (Platform.OS === 'web') {
+      setRejectionTarget(booking);
+      return;
+    }
     Alert.alert(
       'Reject booking request',
       'Reject this request? The traveler will be notified.',
@@ -305,7 +355,7 @@ export default function BookingsScreen() {
   };
 
   // Show loading state
-  if (isLoading && isAuthenticated) {
+  if (isLoading && isAuthenticated && reviewAccountKey === null) {
     return (
       <RadialGradient variant="appBackground" style={styles.container}>
         <View style={styles.header}>
@@ -324,7 +374,8 @@ export default function BookingsScreen() {
   const BookingCard: React.FC<BookingCardProps> = ({ booking }) => {
     const status = statusConfig[booking.status as keyof typeof statusConfig] || statusConfig.pending;
     const cardAnimation = useRef(new Animated.Value(0)).current;
-    const isUpcoming = new Date(booking.date) >= new Date() && !['completed', 'cancelled'].includes(booking.status);
+    const showCountdown = bookingPeriods.get(booking.id) === 'upcoming'
+      && (booking.status === 'confirmed' || booking.status === 'in_progress');
    
     const getDisplayPerson = () => {
       const person = isCompanion ? booking.customer : booking.companion;
@@ -370,7 +421,7 @@ export default function BookingsScreen() {
     }, []);
 
     const formatDate = (date: string) => {
-      return new Date(date).toLocaleDateString('en-US', {
+      return formatBookingDate(date, 'en', {
         weekday: 'short',
         month: 'short',
         day: 'numeric',
@@ -449,8 +500,8 @@ export default function BookingsScreen() {
           <View style={styles.serviceSection}>
             <Subheading style={styles.serviceName}>{serviceData.name}</Subheading>
 
-            {isUpcoming && (
-              <CountdownTimer targetDate={booking.date} targetTime={bookingDetails.time} />
+            {showCountdown && (
+              <CountdownTimer targetDate={booking.date} targetTime={bookingDetails.time} timeZone={booking.timeZone || booking.timezone || CORE_BOOKING_TIME_ZONE} />
             )}
           </View>
 
@@ -494,28 +545,32 @@ export default function BookingsScreen() {
               {/* <TouchableOpacity style={styles.actionButton}>
                 <MessageCircle size={18} color={designTokens.colors.semantic.primary} />
               </TouchableOpacity> */}
-              <TouchableOpacity style={styles.actionButton} onPress={() => router.push(`/(app)/booking/${booking.id}` as any)}>
-                <Eye size={18} color={designTokens.colors.semantic.primary} />
-              </TouchableOpacity>
+              {booking.id !== REVIEW_BOOKING_ID && (
+                <TouchableOpacity accessibilityRole="button" accessibilityLabel="View booking details" style={styles.actionButton} onPress={() => router.push(`/(app)/booking/${booking.id}` as any)}>
+                  <Eye size={18} color={designTokens.colors.semantic.primary} />
+                </TouchableOpacity>
+              )}
             </View>
           </View>
 
           {isCompanion && booking.status === 'pending' && (
             <View style={styles.approvalActions}>
-              <TouchableOpacity
-                style={[styles.approvalButton, styles.rejectApprovalButton]}
-                onPress={() => handleRejectBooking(booking)}
-                disabled={updateBookingStatus.isPending}
-                accessibilityRole="button"
-                accessibilityLabel="Reject booking request"
-              >
-                <XCircle size={17} color={designTokens.colors.semantic.error} />
-                <Text style={styles.rejectApprovalText}>Reject</Text>
-              </TouchableOpacity>
+              {booking.id !== REVIEW_BOOKING_ID && (
+                <TouchableOpacity
+                  style={[styles.approvalButton, styles.rejectApprovalButton]}
+                  onPress={() => handleRejectBooking(booking)}
+                  disabled={updateBookingStatus.isPending || updatingBookingIds.has(booking.id)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Reject booking request"
+                >
+                  <XCircle size={17} color={designTokens.colors.semantic.error} />
+                  <Text style={styles.rejectApprovalText}>Reject</Text>
+                </TouchableOpacity>
+              )}
               <TouchableOpacity
                 style={[styles.approvalButton, styles.approveApprovalButton]}
                 onPress={() => handleCompanionStatusUpdate(booking, 'confirmed')}
-                disabled={updateBookingStatus.isPending}
+                disabled={updateBookingStatus.isPending || updatingBookingIds.has(booking.id)}
                 accessibilityRole="button"
                 accessibilityLabel="Approve booking request"
               >
@@ -526,10 +581,11 @@ export default function BookingsScreen() {
           )}
 
           {/* Review Section for Completed Bookings */}
-          {booking.status === 'completed' && (
+          {user?.userType === 'customer' && booking.customer?.id === user.id && booking.status === 'completed' && (
             <View style={styles.reviewSection}>
               <Button
                 title={t('bookings.writeReview')}
+                onPress={() => router.push(`/(app)/booking/${booking.id}/review` as any)}
                 variant="outline"
                 size="small"
                 style={styles.reviewButton}
@@ -800,12 +856,33 @@ export default function BookingsScreen() {
           <EmptyState />
         )}
       </ScrollView>
+      {Platform.OS === 'web' && (
+        <Modal visible={rejectionTarget !== null} transparent animationType="fade" onRequestClose={() => { if (!updateBookingStatus.isPending) setRejectionTarget(null); }}>
+          <View style={styles.rejectionOverlay}>
+            <View accessibilityViewIsModal accessibilityLabel="Reject booking request" style={styles.rejectionCard}>
+              <Text accessibilityRole="header" style={styles.rejectionTitle}>Reject this request?</Text>
+              <Text style={styles.rejectionBody}>{rejectionTarget?.service?.name}</Text>
+              <Text style={styles.rejectionBody}>The traveler will see that this booking request was rejected.</Text>
+              <Button title="Keep request" variant="outline" disabled={updateBookingStatus.isPending} onPress={() => setRejectionTarget(null)} />
+              <Button title={updateBookingStatus.isPending ? 'Updating…' : 'Confirm rejection'} disabled={updateBookingStatus.isPending} onPress={async () => {
+                if (!rejectionTarget) return;
+                await handleCompanionStatusUpdate(rejectionTarget, 'cancelled');
+                setRejectionTarget(null);
+              }} />
+            </View>
+          </View>
+        </Modal>
+      )}
     </RadialGradient>
   );
 }
 
 // Enhanced styles using comprehensive design token system
 const styles = StyleSheet.create({
+  rejectionOverlay: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: 'rgba(30,20,40,0.45)' },
+  rejectionCard: { width: '100%', maxWidth: 480, padding: 24, borderRadius: 20, gap: 16, backgroundColor: designTokens.colors.semantic.surface },
+  rejectionTitle: { fontSize: 24, lineHeight: 32, fontWeight: '700', color: designTokens.colors.semantic.text },
+  rejectionBody: { fontSize: 15, lineHeight: 23, color: designTokens.colors.semantic.textSecondary },
   container: {
     flex: 1,
   },

@@ -96,14 +96,6 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Background sync for offline actions
-self.addEventListener('sync', (event) => {
-  console.log('[Service Worker] Background sync:', event.tag);
-  if (event.tag === 'sync-bookings') {
-    event.waitUntil(syncBookings());
-  }
-});
-
 // Push notifications
 self.addEventListener('push', (event) => {
   console.log('[Service Worker] Push notification received');
@@ -130,14 +122,4 @@ self.addEventListener('notificationclick', (event) => {
     clients.openWindow('/')
   );
 });
-
-// Helper function for syncing bookings
-async function syncBookings() {
-  try {
-    // Implement your sync logic here
-    console.log('[Service Worker] Syncing bookings...');
-  } catch (error) {
-    console.error('[Service Worker] Sync failed:', error);
-  }
-}
 

@@ -1,0 +1,30 @@
+import React from 'react';
+const Renderer = require('react-test-renderer');
+const { act } = Renderer;
+let mockStats: any = { data:undefined,isLoading:false,error:null };
+jest.mock('../services/api/companion/stats', () => ({ useSupplierStats: () => mockStats }));
+jest.mock('../stores/auth-store', () => ({useAuthStore: () => ({ user:{id:'guide-1',name:'Test guide',userType:'companion'},logout:jest.fn(),switchReviewAccount:jest.fn(),isLoading:false })}));
+jest.mock('expo-router', () => ({router:{push:jest.fn(),replace:jest.fn()}}));
+jest.mock('expo-constants', () => ({expoConfig:{version:'1.5.4'}}));
+jest.mock('../components/ui/Card', () => ({Card:'Card'}));
+jest.mock('../components/ui/ProfileImage', () => ({ProfileImage:'ProfileImage'}));
+jest.mock('../components/ui/RadialGradient', () => ({RadialGradient:'RadialGradient'}));
+jest.mock('expo-linear-gradient', () => ({LinearGradient:'LinearGradient'}));
+jest.mock('lucide-react-native', () => ({Settings:'Settings',LogOut:'LogOut',ChevronRight:'ChevronRight',User:'User',Bell:'Bell',Shield:'Shield',HelpCircle:'HelpCircle',Heart:'Heart',Star:'Star',Award:'Award'}));
+jest.mock('../constants/review-mode', () => ({isReviewModeEnabled:()=>false,REVIEW_ACCOUNT_LIST:[]}));
+import ProfileScreen from '../app/(app)/profile';
+let tree: any;
+afterEach(async()=>{ if(tree) await act(async()=>tree.unmount()); });
+it('shows actual account zero values and never old fabricated guide metrics',async()=>{
+ mockStats={data:{success:true,data:{data:{averageRating:null,totalReviews:0,totalBookings:0,totalEarnings:null,responseRate:null}}},isLoading:false,error:null};
+ await act(async()=>{tree=Renderer.create(<ProfileScreen/>);});
+ const output=JSON.stringify(tree.toJSON());
+ expect(output).toContain('Unavailable');expect(output).toContain('Total Bookings');
+ for(const fake of ['4.9','124 Reviews','45,600','98%'])expect(output).not.toContain(fake);
+ expect(output).toContain('"0"');
+});
+it('does not reuse stale numbers after API failure',async()=>{
+ mockStats={data:{success:true,data:{data:{averageRating:4.8,totalReviews:9,totalBookings:7,totalEarnings:800,responseRate:92}}},isLoading:false,error:new Error('offline')};
+ await act(async()=>{tree=Renderer.create(<ProfileScreen/>);});
+ const output=JSON.stringify(tree.toJSON());expect(output).toContain('Guide statistics could not be loaded');expect(output).toContain('Unavailable');expect(output).not.toContain('4.8');expect(output).not.toContain('฿800');
+});

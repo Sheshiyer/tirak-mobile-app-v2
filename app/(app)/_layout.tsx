@@ -20,10 +20,11 @@ import { ProfileImage } from "@/components/ui/ProfileImage";
 import { RadialGradient } from "@/components/ui/RadialGradient";
 import { AnimatedTabBar } from "@/components/ui/AnimatedTabBar";
 import { LinearGradient } from "expo-linear-gradient";
-import { useNotifications } from "@/app/api/notifications/notifications";
+import { useNotifications } from "@/services/api/notifications/notifications";
 import { useTranslation } from 'react-i18next';
 import { SoundManager } from '@/utils/sound-manager';
 import { registerForBookingPushNotifications } from '@/utils/booking-notifications';
+import { isReviewAccountUser } from '@/constants/review-mode';
 
 const { width } = Dimensions.get("window");
 const DRAWER_WIDTH = width * 0.8;
@@ -143,7 +144,7 @@ export default function AppLayout() {
   }, [isHydrated, user]);
 
   useEffect(() => {
-    if (isHydrated && user) {
+    if (isHydrated && user && !isReviewAccountUser(user)) {
       registerForBookingPushNotifications(user).catch((error) => {
         logger.warn('[AppLayout] Failed to register for push notifications:', error);
       });
@@ -158,15 +159,15 @@ export default function AppLayout() {
       return [
         { name: "index", label: t('customHeader.dashboard'), icon: { name: "Home" } },
         { name: "bookings", label: t('customHeader.bookings'), icon: { name: "Calendar" } },
-        { name: "messages", label: t('customHeader.clients'), icon: { name: "MessageCircle" } },
+        { name: "messages", label: t('customHeader.messages'), icon: { name: "MessageCircle" } },
       ];
     } else {
       return [
         { name: "index", label: t('customHeader.discover'), icon: { name: "Home" } },
         { name: "search", label: t('customHeader.explore'), icon: { name: "Search" } },
         { name: "bookings", label: t('customHeader.myTrips'), icon: { name: "Calendar" } },
-        { name: "messages", label: t('customHeader.guides'), icon: { name: "MessageCircle" } },
-        { name: "favorites", label: t('customHeader.wishlist'), icon: { name: "Heart" } },
+        { name: "messages", label: t('customHeader.messages'), icon: { name: "MessageCircle" } },
+        { name: "favorites", label: t('customHeader.favorites'), icon: { name: "Heart" } },
       ];
     }
   };
@@ -254,7 +255,7 @@ export default function AppLayout() {
     setActiveTabIndex(index);
     const route = currentTabRoutes[index];
     if (route.name === "index") {
-      router.push("/");
+      router.push("/(app)");
     } else {
       router.push(`/${route.name}` as any);
     }
@@ -262,7 +263,7 @@ export default function AppLayout() {
 
   const handleProfileEdit = () => {
     toggleDrawer();
-    router.push("/profile/edit");
+    router.push(isCompanion ? '/supplier/profile/edit' : '/profile/edit');
   };
 
   const navigateTo = (route: string) => {
@@ -389,7 +390,7 @@ export default function AppLayout() {
 
               <TouchableOpacity
                 style={styles.menuItem}
-                onPress={() => navigateTo("/settings")}
+                onPress={() => navigateTo(isCompanion ? '/(supplier)/settings' : '/(app)/settings')}
               >
                 <Icons.Settings
                   size={22}
@@ -401,7 +402,13 @@ export default function AppLayout() {
 
               <View style={styles.divider} />
 
-              
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => navigateTo('/(app)/profile')}
+              >
+                <Icons.User size={22} color={designTokens.colors.semantic.surface} />
+                <Text style={styles.menuItemText}>{t('customHeader.profile')}</Text>
+              </TouchableOpacity>
 
               <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
                 <Icons.LogOut
@@ -514,6 +521,7 @@ export default function AppLayout() {
 
       {/* Custom Animated Tab Bar */}
       <AnimatedTabBar
+        key={isCompanion ? 'guide' : 'traveler'}
         activeIndex={activeTabIndex}
         onTabPress={handleTabPress}
         tabs={currentTabRoutes}

@@ -11,6 +11,7 @@ import {
   View,
   ColorValue,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -33,6 +34,7 @@ interface ButtonProps extends TouchableOpacityProps {
   icon?: React.ReactNode;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
+  maxFontSizeMultiplier?: number;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -47,10 +49,15 @@ export const Button: React.FC<ButtonProps> = ({
   icon,
   leftIcon,
   rightIcon,
+  maxFontSizeMultiplier,
   onPressIn: externalPressIn,
   onPressOut: externalPressOut,
+  accessibilityRole = 'button',
+  accessibilityLabel = title,
+  accessibilityState,
   ...props
 }) => {
+  const { fontScale } = useWindowDimensions();
   const pressScale = useSharedValue(1);
   const pressStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pressScale.value }],
@@ -90,6 +97,12 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   const currentSize = sizeStyles[size];
+  const effectiveFontScale = Math.min(fontScale, maxFontSizeMultiplier ?? fontScale);
+  const adaptiveMinHeight = Math.max(
+    currentSize.minHeight,
+    currentSize.fontSize * effectiveFontScale * 2
+      + designTokens.spacing.scale.md * 2
+  );
   const isPrimary = variant === 'primary';
   const isCoral = variant === 'coral';
   const isSecondary = variant === 'secondary';
@@ -97,12 +110,16 @@ export const Button: React.FC<ButtonProps> = ({
   const isText = variant === 'text';
   const isWhite = variant === 'white';
   const isGhost = variant === 'ghost';
+  const isUnavailable = disabled || loading;
+  const mergedAccessibilityState = {
+    ...accessibilityState,
+    disabled: isUnavailable,
+    busy: loading,
+  };
 
   const getButtonStyle = () => {
     const baseStyle = {
-      height: currentSize.minHeight,
-      minHeight: currentSize.minHeight,
-      maxHeight: currentSize.minHeight,
+      minHeight: adaptiveMinHeight,
       paddingHorizontal: currentSize.paddingHorizontal,
       borderRadius: currentSize.borderRadius,
       justifyContent: 'center' as const,
@@ -180,7 +197,7 @@ export const Button: React.FC<ButtonProps> = ({
   const renderContent = () => (
     <View style={styles.contentContainer}>
       {(leftIcon || icon) && !loading && (
-        <View style={{ marginRight: designTokens.spacing.scale.xs }}>
+        <View style={{ flexShrink: 0, marginRight: designTokens.spacing.scale.xs }}>
           {leftIcon || icon}
         </View>
       )}
@@ -196,15 +213,16 @@ export const Button: React.FC<ButtonProps> = ({
             },
             textStyle,
           ]}
-          numberOfLines={1}
+          numberOfLines={2}
           adjustsFontSizeToFit={false}
           ellipsizeMode="tail"
+          maxFontSizeMultiplier={maxFontSizeMultiplier}
         >
           {title}
         </Text>
       )}
       {rightIcon && !loading && (
-        <View style={{ marginLeft: designTokens.spacing.scale.xs }}>
+        <View style={{ flexShrink: 0, marginLeft: designTokens.spacing.scale.xs }}>
           {rightIcon}
         </View>
       )}
@@ -220,11 +238,15 @@ export const Button: React.FC<ButtonProps> = ({
           style={[
             styles.button,
             getButtonStyle(),
+            { paddingHorizontal: 0 },
             fullWidth && styles.fullWidth,
-            disabled && styles.disabled,
+            isUnavailable && styles.disabled,
             Platform.OS === 'web' && styles.webButton,
           ]}
-          disabled={disabled || loading}
+          disabled={isUnavailable}
+          accessibilityRole={accessibilityRole}
+          accessibilityLabel={accessibilityLabel}
+          accessibilityState={mergedAccessibilityState}
           activeOpacity={1}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
@@ -236,7 +258,7 @@ export const Button: React.FC<ButtonProps> = ({
             end={{ x: 1, y: 0 }}
             style={[
               styles.gradient,
-              { borderRadius: currentSize.borderRadius },
+              { borderRadius: currentSize.borderRadius, paddingHorizontal: currentSize.paddingHorizontal },
               fullWidth && styles.fullWidth,
               Platform.OS === 'web' && styles.webGradient,
             ]}
@@ -255,10 +277,13 @@ export const Button: React.FC<ButtonProps> = ({
           styles.button,
           getButtonStyle(),
           fullWidth && styles.fullWidth,
-          disabled && styles.disabled,
+          isUnavailable && styles.disabled,
           Platform.OS === 'web' && styles.webButton,
         ]}
-        disabled={disabled || loading}
+        disabled={isUnavailable}
+        accessibilityRole={accessibilityRole}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityState={mergedAccessibilityState}
         activeOpacity={1}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
@@ -282,9 +307,11 @@ const styles = StyleSheet.create({
     userSelect: 'none' as any,
   },
   contentContainer: {
+    width: '100%', minWidth: 0, flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: designTokens.spacing.scale.md,
   },
   gradient: {
     flex: 1,
@@ -326,6 +353,9 @@ const styles = StyleSheet.create({
     ...designTokens.typography.styles.body,
     fontWeight: designTokens.typography.weights.semibold,
     textAlign: 'center',
+    flexShrink: 1,
+    minWidth: 0,
+    maxWidth: '100%',
   },
   fullWidth: {
     width: '100%',

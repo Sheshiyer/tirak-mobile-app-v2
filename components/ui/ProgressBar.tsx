@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { designTokens } from '@/constants/design-tokens';
@@ -9,6 +9,7 @@ interface ProgressBarProps {
   labels?: string[];
   showLabels?: boolean;
   variant?: 'default' | 'gradient';
+  accessibilityLabel?: string;
 }
 
 export const ProgressBar: React.FC<ProgressBarProps> = ({
@@ -17,7 +18,10 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   labels = [],
   showLabels = false,
   variant = 'gradient',
+  accessibilityLabel,
 }) => {
+  const [availableWidth, setAvailableWidth] = useState(0);
+  const compact = !showLabels && availableWidth < totalSteps * 40 + 64;
   const animationValues = useRef(
     Array.from({ length: totalSteps }, () => new Animated.Value(0))
   ).current;
@@ -107,8 +111,27 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   }, [currentStep]);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.progressContainer}>
+    <View
+      style={styles.container}
+      onLayout={event => setAvailableWidth(event.nativeEvent.layout.width)}
+      accessible
+      accessibilityRole="progressbar"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityValue={{ min: 1, max: totalSteps, now: currentStep }}
+    >
+      {compact ? (
+        <View accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.compactContainer}>
+          <Text style={styles.compactCount}>{currentStep} / {totalSteps}</Text>
+          <View style={styles.compactTrack}>
+            <View style={[styles.compactFill, { width: `${Math.min(100, Math.max(0, currentStep / totalSteps * 100))}%` }]} />
+          </View>
+        </View>
+      ) : <View
+        style={styles.progressContainer}
+        accessible={false}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      >
         {Array.from({ length: totalSteps }).map((_, index) => {
           const isActive = index + 1 <= currentStep;
           const isCurrent = index + 1 === currentStep;
@@ -140,7 +163,9 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                   >
-                    <Text style={styles.stepNumber}>{index + 1}</Text>
+                    <Text style={styles.stepNumber} maxFontSizeMultiplier={1.2}>
+                      {index + 1}
+                    </Text>
                   </LinearGradient>
                 ) : (
                   <View
@@ -149,7 +174,11 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
                       isActive ? styles.activeCircle : styles.inactiveCircle,
                     ]}
                   >
-                    {isActive && <Text style={styles.stepNumber}>{index + 1}</Text>}
+                    {isActive && (
+                      <Text style={styles.stepNumber} maxFontSizeMultiplier={1.2}>
+                        {index + 1}
+                      </Text>
+                    )}
                   </View>
                 )}
               </Animated.View>
@@ -182,10 +211,15 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
             </View>
           );
         })}
-      </View>
+      </View>}
 
       {showLabels && labels.length > 0 && (
-        <View style={styles.labelsContainer}>
+        <View
+          style={styles.labelsContainer}
+          accessible={false}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        >
           {labels.map((label, index) => (
             <Text
               key={index}
@@ -194,6 +228,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
                 index + 1 === currentStep && styles.activeLabel,
               ]}
               numberOfLines={1}
+              maxFontSizeMultiplier={1.4}
             >
               {label}
             </Text>
@@ -205,6 +240,10 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
 };
 
 const styles = StyleSheet.create({
+  compactContainer: { width: '100%', gap: 8 },
+  compactCount: { color: designTokens.colors.semantic.primary, fontWeight: '700', fontSize: 14, lineHeight: 20, textAlign: 'center' },
+  compactTrack: { height: 5, width: '100%', borderRadius: 3, overflow: 'hidden', backgroundColor: designTokens.colors.semantic.border },
+  compactFill: { height: '100%', borderRadius: 3, backgroundColor: designTokens.colors.semantic.primary },
   container: {
     width: '100%',
     paddingHorizontal: designTokens.spacing.scale.lg,

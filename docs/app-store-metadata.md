@@ -120,13 +120,13 @@ Tirak is a cultural travel experience marketplace that connects tourists with ce
 
 The platform does NOT facilitate any adult services, escort services, companionship services, dating, or social networking.
 
-The word "companion" appeared in our original app branding and the GitHub repository name, referring to "travel companion" in the tourism sense (a guide who accompanies you). We have since removed all such language from the app interface — all user-visible text now uses "Local Guide" or "Guide" throughout.
+The word "companion" appeared in our original app branding and some legacy technical identifiers, referring to "travel companion" in the tourism sense (a guide who accompanies you). The App Review path labels this role "Local Guide" or "Guide".
 
 Guides on the platform are licensed local tourism professionals or knowledgeable residents who offer cultural experiences. All service listings are activity-based (temple walks, food tours, photography walks, cooking classes, market visits, etc.).
 
-Test account credentials should be provided privately inside App Store Connect review notes, not committed to the public repository.
+This review build includes an App Review Access section on the sign-in screen. Choose the pre-populated Traveler or Guide review account; no password is required. The same role selector is available from Profile.
 
-The review account should have a pre-populated profile so Apple can browse guide listings, view experience details, and test the booking flow without needing real payment.
+To inspect checkout without a real payment, use the Traveler review account, open Explore, choose the displayed Guide review profile, and select Cash. PromptPay is disabled in App Review Mode, so no provider charge or QR payment is created. Then open Bookings, switch to Guide in Profile, approve that same deterministic request, and switch back to Traveler to see its confirmed state. This review-only adapter is local to the signed review build and is not presented as a live backend transaction.
 ```
 
 ---

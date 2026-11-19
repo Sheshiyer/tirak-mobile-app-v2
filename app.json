@@ -3,7 +3,7 @@
     "name": "Tirak",
     "slug": "tirak-companion-marketplace",
     "description": "Tirak connects travellers with trusted local guides across Thailand for authentic cultural experiences, booking, chat, and guide-led discovery.",
-    "version": "1.5.1",
+    "version": "1.5.5",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "tirak",
@@ -31,9 +31,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#1a0533"
       },
-      "package": "com.tirak.pineapple",
-      "enableProguardInReleaseBuilds": true,
-      "enableHermes": true
+      "package": "com.tirak.pineapple"
     },
     "web": {
       "favicon": "./assets/images/favicon.png",
@@ -66,6 +64,7 @@
           "organization": "tirak"
         }
       ],
+      "expo-secure-store",
       "expo-web-browser",
       "expo-notifications",
       "./plugins/ios/withFmtFix"

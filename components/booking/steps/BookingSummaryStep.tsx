@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { logger } from '@/utils/logger';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -23,8 +24,12 @@ import { BookingStepFooter } from '../BookingStepFooter';
 import { ProfileImage } from '@/components/ui/ProfileImage';
 import { useBookingStore } from '@/stores/booking-store';
 import { designTokens, componentTokens } from '@/constants/design-tokens';
+import { useCreateBooking, BookingIdempotencyConflictError } from '@/services/api/booking/booking';
 import { useTranslation } from 'react-i18next';
-import { convertCurrency, formatOriginalCurrencyContext, formatTravelerCurrency } from '@/utils/currency';
+import { formatOriginalCurrencyContext } from '@/utils/currency';
+import { usePostHog } from 'posthog-react-native';
+import { isPaymentSessionRetained, usePaymentStore } from '@/stores/payment-store';
+import { formatBookingDate, formatBookingTotal } from '@/components/booking/booking-format';
 
 interface BookingSummaryStepProps {
   onNext: () => void;
@@ -101,9 +106,27 @@ export const BookingSummaryStep: React.FC<BookingSummaryStepProps> = ({
   onNext,
   onPrevious,
 }) => {
-  const { bookingData, calculateTotal, goToStep } = useBookingStore();
+  const {
+    bookingData,
+    calculateTotal,
+    goToStep,
+    prepareBookingRequest,
+    retryOriginalBookingRequest,
+    setBookingComplete,
+    setBookingQuote,
+    startNewBookingAttempt,
+  } = useBookingStore();
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const { t } = useTranslation();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submissionLatch = useRef(false);
+  const createBookingMutation = useCreateBooking();
+  const posthog = usePostHog();
+  const { t, i18n } = useTranslation();
+  const language = i18n?.resolvedLanguage || i18n?.language || 'en';
+  const setPaymentBooking = usePaymentStore((state) => state.setBooking);
+  const activeFinancialSession = usePaymentStore((state) => (
+    state.booking !== null && isPaymentSessionRetained(state)
+  ));
 
   const companion = bookingData.companionData
     ? {
@@ -115,46 +138,203 @@ export const BookingSummaryStep: React.FC<BookingSummaryStepProps> = ({
   if (!companion || !bookingData.service || !bookingData.dateTime || !bookingData.location) {
       return (
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Missing booking information. Please go back and complete all steps.</Text>
+          <Text style={styles.errorText}>{t('bookingSummary.missingBookingInformation')}</Text>
         </View>
       );
     }
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    logger.log('🔄 BookingSummaryStep handleNext started', {
+      timestamp: new Date().toISOString(),
+      termsAccepted,
+      isPending: createBookingMutation.isPending
+    });
+
     if (!termsAccepted) {
-      Alert.alert('Terms Required', 'Please accept the terms and conditions to continue.');
+      logger.log('⚠️ Terms not accepted');
+      Alert.alert(t('bookingSummary.termsRequired'), t('bookingSummary.termsRequiredDescription'));
       return;
     }
-    onNext();
+
+    if (activeFinancialSession) {
+      Alert.alert(t('bookingSummary.error'), t('payments.uncertainOutcome'));
+      return;
+    }
+
+    // Prevent multiple submissions
+    if (submissionLatch.current || createBookingMutation.isPending) {
+      logger.log('⏳ Submission already in progress, preventing duplicate');
+      return;
+    }
+
+    submissionLatch.current = true;
+    setIsSubmitting(true);
+
+    try {
+      // Capture the first outbound payload and UUID so retries reuse the exact request.
+      logger.log('📝 Getting prepared booking request from store');
+      const bookingRequest = await prepareBookingRequest();
+      
+      if (!bookingRequest) {
+        console.error('❌ Failed to prepare booking request');
+        Alert.alert(t('bookingSummary.error'), t('bookingSummary.failedToPrepareBookingRequest'));
+        return;
+      }
+
+      logger.log('🚀 Submitting booking request', {
+        timestamp: new Date().toISOString(),
+        bookingRequest: {
+          companionId: bookingRequest.companionId,
+          serviceId: bookingRequest.serviceId,
+          date: bookingRequest.date,
+          startTime: bookingRequest.startTime,
+          duration: bookingRequest.duration
+        }
+      });
+
+      // Submit the booking using React Query mutation
+      const result = await createBookingMutation.mutateAsync(bookingRequest);
+      
+      logger.log('Booking API Response:', {
+        success: result.success,
+        bookingId: result?.data?.booking?.id,
+        timestamp: new Date().toISOString()
+      });
+      
+      if (result.success && result.data.booking.id) {
+        logger.log('✅ Booking created successfully', {
+          timestamp: new Date().toISOString(),
+          bookingId: result.data.booking.id
+        });
+        posthog.capture('booking_submitted', {
+          booking_id: result.data.booking.id,
+          companion_id: bookingData.companionId,
+          service_name: bookingData.service?.name ?? 'Selected experience',
+          total_amount: result.data.booking.totalAmount,
+          payment_status: result.data.booking.paymentStatus,
+          duration_minutes: result.data.booking.duration,
+        });
+        const responseCurrency = result.data.booking.currency;
+        const paymentSessionAccepted = setPaymentBooking({
+          id: result.data.booking.id,
+          status: result.data.booking.status,
+          paymentStatus: result.data.booking.paymentStatus,
+          ...(responseCurrency !== undefined ? { currency: responseCurrency } : {}),
+        });
+        if (!paymentSessionAccepted) {
+          throw new Error('An existing payment session must be resolved before starting another booking.');
+        }
+        setBookingQuote({
+          totalAmount: result.data.booking.totalAmount,
+          // The local review flow remains THB-only when the backend omits currency.
+          // Explicit server currency is preserved and controls PromptPay eligibility.
+          currency: responseCurrency ?? 'THB',
+        });
+        setBookingComplete(true);
+        onNext();
+      } else {
+        console.error('❌ Booking creation failed - Invalid response format:', {
+          timestamp: new Date().toISOString(),
+          result
+        });
+        throw new Error('Invalid booking response format');
+      }
+    } catch (error) {
+      if (error instanceof BookingIdempotencyConflictError) {
+        const retryOriginal = async () => {
+          const retryRequest = retryOriginalBookingRequest();
+          if (!retryRequest) {
+            Alert.alert(t('bookingSummary.error'), t('bookingSummary.failedToPrepareBookingRequest'));
+            return;
+          }
+
+          submissionLatch.current = true;
+          setIsSubmitting(true);
+          try {
+            const retryResult = await createBookingMutation.mutateAsync(retryRequest);
+            if (!retryResult.success || !retryResult.data.booking.id) {
+              throw new Error('Invalid booking response format');
+            }
+            const responseCurrency = retryResult.data.booking.currency;
+            const paymentSessionAccepted = setPaymentBooking({
+              id: retryResult.data.booking.id,
+              status: retryResult.data.booking.status,
+              paymentStatus: retryResult.data.booking.paymentStatus,
+              ...(responseCurrency !== undefined ? { currency: responseCurrency } : {}),
+            });
+            if (!paymentSessionAccepted) {
+              throw new Error('An existing payment session must be resolved before starting another booking.');
+            }
+            setBookingQuote({
+              totalAmount: retryResult.data.booking.totalAmount,
+              currency: responseCurrency ?? 'THB',
+            });
+            setBookingComplete(true);
+            onNext();
+          } catch (retryError) {
+            console.error('❌ Retry with original request failed:', retryError);
+            Alert.alert(t('bookingSummary.bookingFailed'), t('payments.uncertainOutcome'));
+          } finally {
+            submissionLatch.current = false;
+            setIsSubmitting(false);
+          }
+        };
+
+        Alert.alert(
+          t('bookingSummary.bookingFailed'),
+          'This booking request may already have succeeded. Retry the original request to check safely, or start a new booking attempt with your current edits.',
+          [
+            {
+              text: 'Retry Original',
+              onPress: () => {
+                void retryOriginal();
+              },
+            },
+            {
+              text: 'New Attempt',
+              onPress: () => {
+                startNewBookingAttempt();
+                setBookingComplete(false);
+              },
+            },
+            {
+              text: t('bookingSummary.ok'),
+              style: 'cancel',
+            },
+          ]
+        );
+        return;
+      }
+
+      console.error('❌ Booking creation failed:', {
+        timestamp: new Date().toISOString(),
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      Alert.alert(
+        t('bookingSummary.bookingFailed'),
+        t('bookingSummary.bookingFailedDescription'),
+        [
+          {
+            text: t('bookingSummary.ok'),
+            onPress: () => {
+              logger.log('🔄 Resetting booking state after error');
+              setBookingComplete(false);
+              goToStep(1);
+            }
+          }
+        ]
+      );
+    } finally {
+      submissionLatch.current = false;
+      setIsSubmitting(false);
+    }
   };
 
   const handleEditStep = (step: number) => {
     goToStep(step);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
-
-  const groupSize = bookingData.service?.customizations?.groupSize || 1;
-  const basePrice = Math.round(convertCurrency(bookingData.service?.price || 0, bookingData.service?.currency, 'THB')) * groupSize;
-  const addOnPrice = bookingData.service?.customizations?.addOns?.reduce((total, addOnId) => {
-    // Mock add-on prices (should match ServiceSelectionStep)
-    const addOnPrices: Record<string, number> = {
-      transport: 500,
-      lunch: 300,
-      photos: 800,
-      translator: 200,
-    };
-    return total + (addOnPrices[addOnId] || 0);
-  }, 0) || 0;
-  
-  const totalAmount = basePrice + addOnPrice;
+  const totalAmount = calculateTotal();
 
   return (
     <View style={styles.container}>
@@ -182,7 +362,7 @@ export const BookingSummaryStep: React.FC<BookingSummaryStepProps> = ({
                 </View>
                 <View style={styles.detailRow}>
                   <User size={14} color={designTokens.colors.semantic.textSecondary} />
-                  <Text style={styles.detailText}>Rating: {companion?.rating}/5</Text>
+                  <Text style={styles.detailText}>{t('bookingSummary.rating')}: {companion?.rating}/5</Text>
                 </View>
               </View>
             </View>
@@ -252,12 +432,7 @@ export const BookingSummaryStep: React.FC<BookingSummaryStepProps> = ({
             <View style={styles.detailRow}>
               <Calendar size={16} color={designTokens.colors.semantic.primary} />
                 <Text style={styles.detailText}>
-                  {new Date(bookingData.dateTime.date).toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric'
-                  })}
+                  {formatBookingDate(bookingData.dateTime.date, language)}
                 </Text>
             </View>
             <View style={styles.detailRow}>
@@ -292,7 +467,7 @@ export const BookingSummaryStep: React.FC<BookingSummaryStepProps> = ({
               <Text style={styles.meetingPoint}>{bookingData.location.meetingPoint}</Text>
               {bookingData.location.estimatedDistance && (
               <Text style={styles.distanceInfo}>
-                  ~{bookingData.location.estimatedDistance} km • {bookingData.location.travelTime} min travel
+                  ~{bookingData.location.estimatedDistance} km • {bookingData.location.travelTime} {t('bookingSummary.minTravelTime')}
               </Text>
             )}
           </View>
@@ -363,29 +538,22 @@ export const BookingSummaryStep: React.FC<BookingSummaryStepProps> = ({
           
           <View style={styles.pricingDetails}>
             <View style={styles.priceRow}>
-              <Text style={styles.priceLabel}>Guide rate</Text>
+              <Text style={styles.priceLabel}>{t('bookingSummary.serviceFee')}</Text>
               <View style={styles.priceValueGroup}>
-                <Text style={styles.priceValue}>{formatTravelerCurrency(basePrice, 'THB')}</Text>
+                <Text style={styles.priceValue}>{formatBookingTotal(totalAmount, language)}</Text>
                 {formatOriginalCurrencyContext(bookingData.service?.price || 0, bookingData.service?.currency) ? (
                   <Text style={styles.sourcePriceText}>{formatOriginalCurrencyContext(bookingData.service?.price || 0, bookingData.service?.currency)}</Text>
                 ) : null}
               </View>
             </View>
             
-            {addOnPrice > 0 && (
-              <View style={styles.priceRow}>
-                <Text style={styles.priceLabel}>{t('bookingSummary.addOns')}</Text>
-                <Text style={styles.priceValue}>฿{addOnPrice.toLocaleString()}</Text>
-              </View>
-            )}
-            
-            <Text style={styles.paymentNote}>Paid in cash directly to your guide</Text>
+            <Text style={styles.paymentNote}>{t('payments.bookingReviewNote')}</Text>
             
             <View style={styles.divider} />
             
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>{t('bookingSummary.totalAmount')}</Text>
-              <Text style={styles.totalValue}>{formatTravelerCurrency(totalAmount, 'THB')}</Text>
+              <Text style={styles.totalValue}>{formatBookingTotal(totalAmount, language)}</Text>
             </View>
           </View>
         </Card>
@@ -395,6 +563,9 @@ export const BookingSummaryStep: React.FC<BookingSummaryStepProps> = ({
           <TouchableOpacity
             style={styles.termsContainer}
             onPress={() => setTermsAccepted(!termsAccepted)}
+            accessibilityRole="checkbox"
+            accessibilityLabel={t('bookingSummary.termsCheckboxLabel')}
+            accessibilityState={{ checked: termsAccepted }}
           >
             <View style={[
               styles.checkbox,
@@ -417,8 +588,9 @@ export const BookingSummaryStep: React.FC<BookingSummaryStepProps> = ({
       <BookingStepFooter
         onPrevious={onPrevious}
         onNext={handleNext}
-        nextTitle="Choose payment"
-        nextDisabled={!termsAccepted}
+        nextTitle={t('bookingSummary.sendRequest')}
+        nextDisabled={!termsAccepted || isSubmitting || createBookingMutation.isPending}
+        loading={isSubmitting || createBookingMutation.isPending}
         showPrevious={true}
         showNext={true}
       />

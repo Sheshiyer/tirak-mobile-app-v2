@@ -1,3 +1,4 @@
+import { unregisterBookingPushNotifications } from '@/utils/push-registration';
 import { logger } from '@/utils/logger';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
@@ -5,9 +6,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DeviceEventEmitter, Platform } from 'react-native';
 import { User, UserRole } from '@/types/auth';
 import { secureStorage } from '@/utils/secure-storage';
+import { usePaymentStore } from '@/stores/payment-store';
+import { useBookingStore } from '@/stores/booking-store';
+import { useFavoritesStore } from '@/stores/favorites-store';
+import { useSupplierStore } from '@/stores/supplier-store';
+import type { ReviewAccountKey } from '@/constants/review-mode';
 import { applyAnalyticsConsent } from '@/utils/posthog';
 import { AccountConsents, EmailVerificationDelivery, RegistrationConsent, verificationRetryAt } from '@/utils/account-consent';
-import { isDemoModeEnabled, isDemoIdentity } from '@/utils/demo-mode';
+import { isDemoIdentity } from '@/utils/demo-mode';
 
 interface AuthState {
   user: User | null;
@@ -21,26 +27,27 @@ interface AuthState {
 
 interface AuthActions {
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string, userType: UserRole, contactNumber?: string, dateOfBirth?: Date, gender?: string, consent?: RegistrationConsent) => Promise<void>;
+  register: (name: string, email: string, password: string, userType: UserRole, contactNumber?: string, dateOfBirth?: string, gender?: string, consent?: RegistrationConsent) => Promise<void>;
   demoLogin: (userType: UserRole) => Promise<void>;
+  switchReviewAccount: (account: ReviewAccountKey) => Promise<void>;
   logout: () => Promise<void>;
   setOnboarded: (value: boolean) => void;
   clearError: () => void;
   updateUser: (userData: Partial<User>) => void;
   validateToken: () => Promise<void>;
+  invalidateAuth: () => Promise<void>;
   loadConsents: () => Promise<void>;
   saveConsents: (preferences: Pick<AccountConsents, 'marketingOptIn' | 'analyticsOptIn'>) => Promise<void>;
   setEmailVerification: (delivery: EmailVerificationDelivery) => void;
 }
 
-// Helper to format a Date into local YYYY-MM-DD without timezone shifting
-const formatDateLocal = (date?: Date): string | undefined => {
-  if (!date) return undefined;
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
+async function clearAccountScopedState(): Promise<void> {
+  await usePaymentStore.getState().clearPaymentSession();
+  useBookingStore.getState().resetBooking();
+  await useBookingStore.persist.clearStorage();
+  if (typeof useSupplierStore.getState().clearSupplierState === "function") { useSupplierStore.getState().clearSupplierState(); } else if (typeof useSupplierStore.getState().resetSignupData === "function") { useSupplierStore.getState().resetSignupData(); }
+  await useSupplierStore.persist?.clearStorage?.();
+}
 
 export const useAuthStore = create<AuthState & AuthActions>()(
   persist(
@@ -89,12 +96,42 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         set({ onboarded: value });
       },
 
+      invalidateAuth: async () => {
+        await unregisterBookingPushNotifications();
+        set({
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: null,
+          onboarded: false,
+          consents: null,
+          emailVerification: null,
+        });
+
+        const cleanup = (operation: () => Promise<void>) => Promise.resolve().then(operation);
+        await Promise.allSettled([
+          cleanup(() => applyAnalyticsConsent()),
+          cleanup(() => usePaymentStore.getState().clearPaymentSession()),
+          cleanup(async () => {
+            useBookingStore.getState().resetBooking();
+            await useBookingStore.persist?.clearStorage?.();
+          }),
+          cleanup(async () => {
+            if (typeof useSupplierStore.getState().clearSupplierState === "function") { useSupplierStore.getState().clearSupplierState(); } else if (typeof useSupplierStore.getState().resetSignupData === "function") { useSupplierStore.getState().resetSignupData(); }
+            await useSupplierStore.persist?.clearStorage?.();
+          }),
+          cleanup(() => secureStorage.deleteItemAsync('authToken')),
+          cleanup(() => secureStorage.deleteItemAsync('refreshToken')),
+          cleanup(() => secureStorage.deleteItemAsync('userCredentials')),
+        ]);
+      },
+
       login: async (email: string, password: string) => {
         await applyAnalyticsConsent();
         set({ isLoading: true, error: null, consents: null, emailVerification: null });
         try {
           // Import the real API function
-          const { login: loginAPI } = await import('@/app/api/auth/login');
+          const { login: loginAPI } = await import('@/services/api/auth/login');
           
           const response = await loginAPI({
             identifier: email,
@@ -102,6 +139,8 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           });
 
           if (response.success && response.data && response.data.user) {
+            if (isDemoIdentity(response.data.user)) throw new Error('This preview account is unavailable. Please use your own account.');
+            await unregisterBookingPushNotifications();
             // Store tokens in secure storage
             await secureStorage.setItemAsync("authToken", response.data.accessToken);
             await secureStorage.setItemAsync("refreshToken", response.data.refreshToken);
@@ -116,6 +155,11 @@ export const useAuthStore = create<AuthState & AuthActions>()(
               phone: response.data.user.phone,
               createdAt: new Date().toISOString(),
             };
+
+            if (get().user?.id !== user.id) {
+              await clearAccountScopedState();
+              usePaymentStore.getState().resetPayment();
+            }
 
             // Store user credentials for token validation
             await secureStorage.setItemAsync("userCredentials", JSON.stringify(user));
@@ -134,12 +178,12 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         }
       },
 
-      register: async (name: string, email: string, password: string, userType: UserRole, contactNumber?: string, dateOfBirth?: Date, gender?: string, consent?: RegistrationConsent) => {
+      register: async (name: string, email: string, password: string, userType: UserRole, contactNumber?: string, dateOfBirth?: string, gender?: string, consent?: RegistrationConsent) => {
         await applyAnalyticsConsent();
         set({ isLoading: true, error: null, consents: null, emailVerification: null });
         try {
           // Import the real API function
-          const { register: registerAPI } = await import('@/app/api/auth/register');
+          const { register: registerAPI } = await import('@/services/api/auth/register');
           
           // Prepare the registration data
           const registrationData = {
@@ -148,8 +192,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             password,
             userType: userType as "customer" | "companion" | "supplier", // Ensure proper typing
             phone: contactNumber,
-            // Format as local YYYY-MM-DD to avoid timezone-induced off-by-one
-            dateOfBirth: formatDateLocal(dateOfBirth),
+            dateOfBirth,
             gender: gender as "male" | "female" | "other" | "prefer_not_to_say" | undefined,
             ...consent,
           };
@@ -157,6 +200,8 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           const response = await registerAPI(registrationData);
 
           if (response.success && response.token && response.user?.id) {
+            if (isDemoIdentity(response.user)) throw new Error('This preview account is unavailable. Please use your own account.');
+            await unregisterBookingPushNotifications();
             // Store tokens if available
             if (response.token) {
               await secureStorage.setItemAsync("authToken", response.token);
@@ -173,10 +218,14 @@ export const useAuthStore = create<AuthState & AuthActions>()(
               userType: (response.user?.userType as UserRole) || userType,
               verified: response.user?.verified || false,
               phone: response.user?.phone || contactNumber,
-              // Persist date of birth consistently without UTC conversion
-              dateOfBirth: formatDateLocal(dateOfBirth),
+              dateOfBirth,
               createdAt: new Date().toISOString(),
             };
+
+            if (get().user?.id !== user.id) {
+              await clearAccountScopedState();
+              usePaymentStore.getState().resetPayment();
+            }
 
             // Store user credentials for token validation
             await secureStorage.setItemAsync("userCredentials", JSON.stringify(user));
@@ -206,43 +255,17 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           // IMPORTANT: Clear all storage FIRST before anything else
           // This prevents re-authentication on page reload
           
-          // Clear authentication token from secure storage
-          await secureStorage.deleteItemAsync("authToken");
-          logger.log('[Logout] Cleared authToken');
-          
-          // Clear refresh token if it exists
-          await secureStorage.deleteItemAsync("refreshToken");
-          logger.log('[Logout] Cleared refreshToken');
-          
-          // Clear any other sensitive data from secure storage
-          await secureStorage.deleteItemAsync("userCredentials");
-          logger.log('[Logout] Cleared userCredentials');
-          
-          // Clear user state and authentication
-          set({
-            user: null,
-            isAuthenticated: false,
-            isLoading: false,
-            error: null,
-            onboarded: false, // Reset onboarded status
-            consents: null,
-            emailVerification: null,
-          });
+          await get().invalidateAuth();
+          logger.log('[Logout] Cleared authentication and payment session');
           
           // Clear other stores that contain user-specific data
           // Import and reset booking store
           const { useBookingStore } = await import('./booking-store');
           useBookingStore.getState().resetBooking();
           
-          // Import and reset supplier store if user was a supplier
-          const { useSupplierStore } = await import('./supplier-store');
-          const supplierStore = useSupplierStore.getState();
-          if (supplierStore.isSupplier) {
-            supplierStore.setIsSupplier(false);
-            supplierStore.setProfile(null);
-            supplierStore.setStats(null);
-            supplierStore.resetSignupData();
-          }
+          // Reset supplier store unconditionally (independent of isSupplier)
+          if (typeof useSupplierStore.getState().clearSupplierState === "function") { useSupplierStore.getState().clearSupplierState(); } else if (typeof useSupplierStore.getState().resetSignupData === "function") { useSupplierStore.getState().resetSignupData(); }
+          await useSupplierStore.persist?.clearStorage?.();
           
           // Clear AsyncStorage of all persisted data
           // CRITICAL: Clear AsyncStorage BEFORE any navigation to prevent re-authentication
@@ -251,7 +274,10 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             await AsyncStorage.multiRemove([
               'tirak-auth-storage',
               'tirak-booking-storage',
+              'supplier-storage',
               'tirak-supplier-storage',
+              'tirak-local-availability',
+              'tirak-local-experiences',
             ]);
             logger.log('[Logout] AsyncStorage cleared via multiRemove');
           } catch (storageError) {
@@ -272,7 +298,11 @@ export const useAuthStore = create<AuthState & AuthActions>()(
               window.localStorage.removeItem('userCredentials');
               window.localStorage.removeItem('tirak-auth-storage');
               window.localStorage.removeItem('tirak-booking-storage');
+              window.localStorage.removeItem('supplier-storage');
               window.localStorage.removeItem('tirak-supplier-storage');
+              window.localStorage.removeItem('tirak-local-availability');
+              window.localStorage.removeItem('tirak-local-experiences');
+              window.localStorage.removeItem('tirak-payment-session');
               logger.log('[Logout] localStorage cleared directly');
             } catch (localStorageError) {
               logger.warn('[Logout] localStorage clear failed:', localStorageError);
@@ -293,16 +323,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           
         } catch (error) {
           console.error('Error during logout:', error);
-          // Even if there's an error, still clear the auth state
-          set({
-            user: null,
-            isAuthenticated: false,
-            isLoading: false,
-            error: null,
-            onboarded: false,
-            consents: null,
-            emailVerification: null,
-          });
+          await get().invalidateAuth();
         }
       },
 
@@ -310,57 +331,19 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         set({ error: null });
       },
 
-      demoLogin: async (userType: UserRole) => {
-        const demoIdentity = { id: userType === 'companion' ? 'demo_companion_001' : 'demo_customer_001' };
-        if (!isDemoModeEnabled(demoIdentity)) throw new Error('Demo mode is not enabled in this build. Please sign in to your account.');
-        await applyAnalyticsConsent();
-        set({ isLoading: true, error: null });
-        try {
-          // Simulate network delay for realistic demo experience
-          await new Promise(resolve => setTimeout(resolve, 800));
+      demoLogin: async (_userType: UserRole) => {
+        throw new Error('Preview accounts are unavailable. Please sign in to your account.');
+      },
 
-          // Create demo user based on userType
-          const demoUser: User = userType === 'companion' ? {
-            id: 'demo_companion_001',
-            name: 'Siriporn Nakamura',
-            email: 'demo.companion@tirak.com',
-            userType: 'companion',
-            verified: true,
-            profileImage: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?q=80&w=1000&auto=format&fit=crop',
-            bio: 'Experienced tour guide and cultural enthusiast. I love sharing the beauty of Thailand with visitors from around the world.',
-            location: 'Bangkok, Thailand',
-            phone: '+66 81 234 5678',
-            dateOfBirth: '1995-03-15',
-            createdAt: new Date().toISOString(),
-          } : {
-            id: 'demo_customer_001',
-            name: 'Alex Johnson',
-            email: 'demo.customer@tirak.com',
-            userType: 'customer',
-            verified: true,
-            profileImage: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=1000&auto=format&fit=crop',
-            bio: 'Travel enthusiast exploring Thailand. Looking for authentic local experiences and cultural connections.',
-            location: 'Bangkok, Thailand',
-            phone: '+66 81 987 6543',
-            dateOfBirth: '1988-07-22',
-            createdAt: new Date().toISOString(),
-          };
-
-          await secureStorage.deleteItemAsync('authToken');
-          await secureStorage.deleteItemAsync('refreshToken');
-          await secureStorage.setItemAsync('userCredentials', JSON.stringify(demoUser));
-          set({ user: demoUser, isAuthenticated: true, onboarded: true, isLoading: false, consents: null, emailVerification: null });
-        } catch (error) {
-          const errorMessage = 'Demo login failed';
-          set({ error: errorMessage, isLoading: false });
-          throw new Error(errorMessage); // Throw error so UI can catch it
-        }
+      switchReviewAccount: async (_accountKey: ReviewAccountKey) => {
+        throw new Error('Preview accounts are unavailable. Please sign in to your account.');
       },
 
       updateUser: (userData: Partial<User>) => {
         const currentUser = get().user;
         if (currentUser) {
           const nextUser = { ...currentUser, ...userData };
+          if (currentUser.id !== nextUser.id) usePaymentStore.getState().resetPayment();
           set({ user: nextUser });
           secureStorage.setItemAsync("userCredentials", JSON.stringify(nextUser)).catch((error) => {
             logger.warn('Failed to persist updated user credentials', error);
@@ -377,12 +360,20 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           // logger.log('Token validation - token exists:', !!token);
           // logger.log('Token validation - credentials exist:', !!userCredentials);
           
-          if (token && userCredentials) {
+          if (userCredentials) {
             try {
               const userData = JSON.parse(userCredentials);
-              if (userData.id?.startsWith('demo_') && !isDemoModeEnabled(userData)) {
-                await get().logout();
+              if (!userData || typeof userData !== 'object' || typeof userData.id !== 'string' || !userData.id) {
+                throw new Error('Stored user credentials are invalid');
+              }
+              if (isDemoIdentity(userData) || !token || token === 'tirak-local-fixture-token') {
+                await get().invalidateAuth();
                 return;
+              }
+              if (get().user?.id !== userData.id) {
+                usePaymentStore.getState().resetPayment();
+                await applyAnalyticsConsent();
+                set({ consents: null, emailVerification: null });
               }
               // If we have both token and user data, consider user authenticated
               set({ 
@@ -394,21 +385,15 @@ export const useAuthStore = create<AuthState & AuthActions>()(
               // logger.log('Token validation successful - user authenticated:', userData.email);
             } catch (parseError) {
               console.error('Error parsing stored user credentials:', parseError);
-              // Clear invalid data
-              await secureStorage.deleteItemAsync("authToken").catch(() => {});
-              await secureStorage.deleteItemAsync("userCredentials").catch(() => {});
-              set({ isAuthenticated: false });
+              await get().invalidateAuth();
             }
           } else {
-            if (isDemoModeEnabled(get().user)) return;
-            // No token or credentials found
-            await applyAnalyticsConsent();
-            set({ user: null, isAuthenticated: false, consents: null });
+            await get().invalidateAuth();
             logger.log('No valid token found - user not authenticated');
           }
         } catch (error) {
           console.error('Error validating token:', error);
-          set({ isAuthenticated: false });
+          await get().invalidateAuth();
         }
       },
     }),
@@ -427,13 +412,24 @@ export const useAuthStore = create<AuthState & AuthActions>()(
 
 // Listen for unauthorized events from browser API calls.
 if (Platform.OS !== 'web') {
-  DeviceEventEmitter.addListener('auth:unauthorized', () => {
+  DeviceEventEmitter.addListener('auth:unauthorized', async () => {
     logger.warn('Auth:unauthorized event received - logging out');
-    useAuthStore.getState().logout();
+    await useAuthStore.getState().invalidateAuth();
   });
 } else if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
-  window.addEventListener('auth:unauthorized', () => {
+  window.addEventListener('auth:unauthorized', async () => {
     logger.warn('Auth:unauthorized event received - logging out');
-    useAuthStore.getState().logout();
+    await useAuthStore.getState().invalidateAuth();
   });
 }
+
+// Clear the visible favorites synchronously when identity changes. Loading uses
+// an owner generation fence so an old account's late storage read cannot leak.
+useAuthStore.subscribe((state, previous) => {
+  if (state.user?.id !== previous.user?.id) {
+    void useFavoritesStore.getState().bindOwner(state.user?.id || null);
+  }
+});
+
+// A cached store may already have its identity when this module is attached.
+void useFavoritesStore.getState().bindOwner(useAuthStore.getState().user?.id || null);

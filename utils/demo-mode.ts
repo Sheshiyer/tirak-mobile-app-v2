@@ -1,5 +1,3 @@
-import { secureStorage } from './secure-storage';
-
 export interface DemoIdentity {
   id?: string | null;
   email?: string | null;
@@ -20,21 +18,11 @@ const DEMO_EMAILS = new Set([
 
 export function isDemoIdentity(user?: DemoIdentity | null): boolean {
   return Boolean(user && (
-    DEMO_IDS.has(user.id || '') || DEMO_EMAILS.has((user.email || '').trim().toLowerCase())
+    Boolean(user.id?.startsWith('demo_')) || DEMO_IDS.has(user.id || '') || DEMO_EMAILS.has((user.email || '').trim().toLowerCase())
   ));
 }
 
-/** Preview data requires both a deliberately enabled build and a review identity. */
-export function isDemoModeEnabled(user?: DemoIdentity | null): boolean {
-  return process.env.EXPO_PUBLIC_ENABLE_DEMO_MODE === 'true' && isDemoIdentity(user);
-}
-
-export async function getDemoModeEnabled(): Promise<boolean> {
-  if (process.env.EXPO_PUBLIC_ENABLE_DEMO_MODE !== 'true') return false;
-  try {
-    const stored = await secureStorage.getItemAsync('userCredentials');
-    return stored ? isDemoModeEnabled(JSON.parse(stored)) : false;
-  } catch {
-    return false;
-  }
-}
+/** Release builds never enable local preview data, regardless of environment. */
+export function isDemoModeEnabled(_user?: DemoIdentity | null): boolean { return false; }
+export async function getDemoModeEnabled(): Promise<boolean> { return false; }
+export async function getReviewModeEnabled(): Promise<boolean> { return false; }

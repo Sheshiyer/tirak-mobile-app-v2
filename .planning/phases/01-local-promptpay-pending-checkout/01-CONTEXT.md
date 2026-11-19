@@ -37,7 +37,7 @@ Deliver one local traveler slice in `tirak-mobile-app-v2`: after the booking API
 - **D-11:** Disable cash selection and all method switching once PromptPay is creating, in progress, pending, indeterminate, network-unknown, or otherwise unknown; re-enable cash only after a definite no-charge outcome.
 - **D-12:** Repair the current wizard switch so Step 6 renders `PaymentSelectionStep` and Step 7 renders `BookingConfirmationStep`; prove the summary-to-payment-to-confirmation path in an integration test.
 - **D-13:** Accept only the backend success envelope `{ success: true, data: charge }`; unwrap and allowlist `data`, and render nullable QR/charge fields without a broken image or invented identity.
-- **D-14:** Clear the payment session on booking reset, logout, authenticated-user change, and confirmation exit so payment truth cannot leak across travelers or bookings.
+- **D-14 (revised during convergence, approved 2026-09-12):** Logout and authenticated-user change clear payment state. Booking reset and confirmation exit clear only safe sessions; unresolved creating, pending, or indeterminate sessions remain bound to the original user and booking, survive relaunch, and cannot be replaced or exposed to another traveler. This supersedes unconditional clearing because discarding unresolved financial truth can create duplicate-payment risk.
 
 ### Implementer Discretion
 

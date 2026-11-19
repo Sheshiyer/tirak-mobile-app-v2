@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Animated, Dimensions } from 'react-native';
+import { View, StyleSheet, Animated, Dimensions, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Button } from '@/components/ui/Button';
 import { designTokens } from '@/constants/design-tokens';
@@ -55,10 +55,12 @@ export const BookingStepFooter: React.FC<BookingStepFooterProps> = ({
   loading = false,
 }) => {
   const { t } = useTranslation();
+  const { fontScale } = useWindowDimensions();
   
   // Determine button layout based on context
   const isDoubleButton = showPrevious && showNext;
   const isSingleButton = !showPrevious && showNext;
+  const useStackedLayout = isDoubleButton && fontScale >= 2;
   
   // Use translated default for previousTitle if not provided
   const displayPreviousTitle = previousTitle || t('common.back');
@@ -80,6 +82,7 @@ export const BookingStepFooter: React.FC<BookingStepFooterProps> = ({
         <View style={[
           styles.buttonContainer,
           isSingleButton && styles.singleButtonContainer,
+          useStackedLayout && styles.stackedButtonContainer,
         ]}>
           {showPrevious && onPrevious && (
             <Button
@@ -87,9 +90,10 @@ export const BookingStepFooter: React.FC<BookingStepFooterProps> = ({
               onPress={onPrevious}
               variant={previousVariant}
               disabled={previousDisabled}
-              style={styles.previousButton}
+              style={[styles.previousButton, useStackedLayout && styles.stackedButton]}
               leftIcon={previousIcon}
               textStyle={styles.buttonText}
+              maxFontSizeMultiplier={1.3}
             />
           )}
 
@@ -100,9 +104,10 @@ export const BookingStepFooter: React.FC<BookingStepFooterProps> = ({
               variant={nextVariant}
               disabled={nextDisabled || loading}
               loading={loading}
-              style={styles.nextButton}
+              style={[styles.nextButton, useStackedLayout && styles.stackedButton]}
               rightIcon={nextIcon}
               textStyle={styles.buttonText}
+              maxFontSizeMultiplier={1.3}
             />
           )}
         </View>
@@ -142,6 +147,13 @@ const styles = StyleSheet.create({
   singleButtonContainer: {
     justifyContent: 'center',
   },
+  stackedButtonContainer: {
+    flexDirection: 'column-reverse',
+    alignItems: 'stretch',
+  },
+  stackedButton: {
+    width: '100%',
+  },
   previousButton: {
     // borderColor: designTokens.colors.semantic.primary,
     // borderWidth: 2,
@@ -156,6 +168,6 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: RESPONSIVE_SIZING.fontSize,
     fontWeight: designTokens.typography.weights.semibold,
-    lineHeight: RESPONSIVE_SIZING.fontSize * 1.2,
+    lineHeight: Math.ceil(RESPONSIVE_SIZING.fontSize * 1.65),
   },
 });

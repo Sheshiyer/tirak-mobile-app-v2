@@ -12,11 +12,15 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Sentry from '@sentry/react-native';
 import { I18nextProvider } from 'react-i18next';
 import i18n from '@/utils/i18n';
-import { registerServiceWorker } from '@/utils/pwa';
 import PWAHead from '@/components/PWAHead';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { SimpleToast } from '@/components/ui/SimpleToast';
 import { SoundManager } from '@/utils/sound-manager';
+import {
+  consumePendingSceneLink,
+  consumeWarmSceneLink,
+  shouldEnterSplashRoute,
+} from '@/utils/scene-link-consumption';
 import { useAuthStore } from '@/stores/auth-store';
 import { parsePasswordResetLink, shouldShowStartupSplash } from '@/utils/startup-navigation';
 
@@ -65,6 +69,9 @@ export { default as SplashScreen } from './splash';
 SplashScreen.preventAutoHideAsync();
 
 export default Sentry.wrap(function RootLayout() {
+  const initialSceneLink = useRef(
+    Platform.OS === 'ios' ? Linking.getLinkingURL() : null,
+  );
   const pathname = usePathname();
   const currentPathname = useRef(pathname);
   currentPathname.current = pathname;
@@ -94,10 +101,10 @@ export default Sentry.wrap(function RootLayout() {
     let rafId: number | undefined;
     let timer: ReturnType<typeof setTimeout> | undefined;
     void Linking.getInitialURL().catch(() => null).then((initialUrl) => {
-      if (cancelled || !shouldShowStartupSplash(currentPathname.current, initialUrl)) return;
+      if (cancelled || !shouldEnterSplashRoute(initialSceneLink.current) || !shouldShowStartupSplash(currentPathname.current, initialUrl)) return;
       rafId = requestAnimationFrame(() => {
         timer = setTimeout(() => {
-          if (!cancelled && shouldShowStartupSplash(currentPathname.current, initialUrl)) router.replace('/splash');
+          if (!cancelled && shouldEnterSplashRoute(initialSceneLink.current) && shouldShowStartupSplash(currentPathname.current, initialUrl)) router.replace('/splash');
         }, 100);
       });
     });
@@ -156,15 +163,26 @@ export default Sentry.wrap(function RootLayout() {
 
     // Listen for incoming links when the app is already open
     const subscription = Linking.addEventListener('url', ({ url }) => {
-      handleDeepLink(url);
+      void consumeWarmSceneLink(url, handleDeepLink).catch(() => {
+        logger.warn('Unable to consume warm scene link');
+      });
     });
 
-    // Check if the app was opened by a deep link
-    void Linking.getInitialURL().then((url) => {
-      if (url) {
-        handleDeepLink(url);
-      }
-    }).catch(() => logger.warn('Unable to read initial app link'));
+    // UIScene links stay in the native queue until this handler succeeds and
+    // acknowledges the exact queue item. Fall back for Android and old-style
+    // iOS application launch options, which do not populate that scene queue.
+    void consumePendingSceneLink(handleDeepLink)
+      .then(async (consumed) => {
+        if (!consumed) {
+          const url = await Linking.getInitialURL();
+          if (url) {
+            await handleDeepLink(url);
+          }
+        }
+      })
+      .catch(() => {
+        logger.warn('Unable to consume cold scene link');
+      });
 
     return () => {
       disposed = true;
