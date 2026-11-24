@@ -13,8 +13,7 @@ import { designTokens } from '@/constants/design-tokens';
 import { Button } from '@/components/ui/Button';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { useSupplierStore } from '@/stores/supplier-store';
-import { mockRegions } from '@/mocks/supplier-data';
-import { mockCategories } from '@/mocks/supplier-data';
+import { resolveTaxonomyLabels } from '@/services/api/public/taxonomy';
 import {
   SupplierApplicationIdempotencyConflictError,
   type SupplierApplicationError,
@@ -37,15 +36,8 @@ export default function ReviewSubmitScreen() {
   const { basicInfo, categories, services, regions, availability, languages } =
     signupData;
 
-  const regionLabels = regions.map((id) => {
-    const region = mockRegions.find((r) => r.id === id);
-    return region?.name || id;
-  });
-
-  const categoryLabels = categories.map((id) => {
-    const cat = mockCategories.find((c) => c.id === id);
-    return cat?.name || id;
-  });
+  const regionLabels = resolveTaxonomyLabels(regions, 'regions', [], signupData.optionLabels);
+  const categoryLabels = resolveTaxonomyLabels(categories, 'categories', [], signupData.optionLabels);
 
   const daysWithSlots = Object.entries(availability.weeklySchedule)
     .filter(([_, slots]) => slots.length > 0)

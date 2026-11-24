@@ -9,7 +9,9 @@
     "more": "อื่น ๆ",
     "done": "เสร็จสิ้น",
     "tryAgain": "ลองอีกครั้ง",
-    "ok": "ตกลง"
+    "ok": "ตกลง",
+    "later": "ไว้ทีหลัง",
+    "addPhoto": "เพิ่มรูปภาพ"
   },
   "language": {
     "selectLanguage": "เลือกภาษา",
@@ -59,7 +61,7 @@
     },
     "companion": {
       "errorRequiredFields": "กรุณากรอกข้อมูลทั้งหมด",
-      "error": "Error",
+      "error": "ข้อผิดพลาด",
       "displayName": "ชื่อที่ต้องการแสดงผล",
       "enterDisplayName": "กรอกชื่อที่ต้องการแสดงผล",
       "emailAddress": "อีเมล",
@@ -110,7 +112,8 @@
       "enterFirstName": "กรอกชื่อของคุณ",
       "enterLastName": "กรอกชื่อสกุลของคุณ",
       "profileUpdated": "โปรไฟล์ถูกปรับปรุงแล้ว!",
-      "profileUpdatedDescription": "โปรไฟล์ของคุณถูกปรับปรุงสำเร็จ!"
+      "profileUpdatedDescription": "โปรไฟล์ของคุณถูกปรับปรุงสำเร็จ!",
+      "errorUpdatingProfile": "เราไม่สามารถอัปเดตโปรไฟล์ไกด์ของคุณได้"
     }
   },
   "supplier": {
@@ -180,6 +183,7 @@
     "passwordsDoNotMatch": "รหัสผ่านไม่ตรงกัน",
     "resetToken": "รีเซ็ตโทเค็น",
     "resetTokenPlaceholder": "ป้อนโทเค็นรีเซ็ตของคุณ",
+    "redirectingToLogin": "กำลังกลับไปหน้าเข้าสู่ระบบ",
     "resetRequested": "ได้รับคำขอแล้ว"
   },
   "register": {
@@ -291,7 +295,8 @@
       "welcomeToYourDashboard": "ยินดีต้อนรับสู่แดชบอร์ดของคุณ!",
       "weAreUpdating": "เรากำลังอัปเดตส่วนนี้เพื่อมอบประสบการณ์ที่ดียิ่งขึ้น",
       "inProgress": "กำลังดำเนินการ"
-    }
+    },
+    "tryAgain": "ลองอีกครั้ง"
   },
   "search": {
     "all": "ทั้งหมด",
@@ -369,6 +374,9 @@
     "clearSearch": "ล้างการค้นหา",
     "confirm": "ยืนยัน",
     "cancel": "ยกเลิก",
+    "clearFilters": "ล้างตัวกรอง",
+    "tryAgain": "ลองอีกครั้ง",
+    "activeFilters": "ตัวกรองที่เลือก",
     "minimumPrice": "ต่ำสุด (฿)",
     "maximumPrice": "สูงสุด (฿)",
     "minimumPriceLabel": "ราคาประสบการณ์ขั้นต่ำเป็นบาท",
@@ -444,7 +452,9 @@
     "noConversationsFound": "ไม่พบการสนทนา",
     "noConversationsMatch": "ไม่มีการสนทนาที่ตรงกัน",
     "startChattingWithCompanions": "เริ่มแชทกับเพื่อนร่วมทาง",
-    "seeConversationsHere": "และดูการสนทนาของคุณที่นี่"
+    "seeConversationsHere": "และดูการสนทนาของคุณที่นี่",
+    "chatSettings": "การตั้งค่าแชท",
+    "toggleTranslation": "เปิด/ปิดการแปล"
   },
   "favorites": {
     "noFavorites": "ยังไม่มีรายการโปรด",
@@ -486,10 +496,17 @@
     "day": "วัน",
     "viewAvailability": "ดูวันว่าง",
     "contactForPricing": "ยังไม่ทราบค่าบริการไกด์",
+    "locationFallback": "ประเทศไทย",
+    "noExperiencesTitle": "ยังไม่มีประสบการณ์ที่เปิดให้จอง",
     "noExperiencesBody": "ไกด์คนนี้ยังไม่มีประสบการณ์ที่เปิดให้จอง",
+    "verifiedGuideTitle": "ยืนยันโดย Tirak",
+    "verifiedGuideBody": "ไกด์ท้องถิ่นคนนี้ผ่านการยืนยันจาก Tirak แล้ว เราตรวจสอบตัวตน ข้อมูลโปรไฟล์ และประวัติประสบการณ์ เพื่อให้นักท่องเที่ยวจองได้อย่างมั่นใจมากขึ้น",
+    "verifiedGuideGotIt": "เข้าใจแล้ว",
+    "speaksLanguages": "พูดได้",
     "selectDateToBook": "เลือกวันที่ต้องการจอง",
     "showAllExperiences": "แสดงประสบการณ์ทั้งหมด",
-    "showMore": "แสดงมากกว่า"
+    "showMore": "แสดงมากกว่า",
+    "newGuide": "ไกด์ใหม่"
   },
   "chooseExperience": {
     "perPerson": "ต่อคน",
@@ -763,6 +780,8 @@
     "ok": "ตกลง",
     "failedToSaveAvailability": "ไม่สามารถบันทึกความพร้อมได้",
     "pleaseSelectStartAndEndTime": "กรุณาเลือกเวลาเริ่มต้นและสิ้นสุด",
+    "pleaseSelectBothStartAndEndTime": "กรุณาเลือกทั้งเวลาเริ่มต้นและเวลาสิ้นสุดของช่วงเวลาว่างนี้",
+    "companionIdMissing": "ไม่พบโปรไฟล์ไกด์ของคุณ กรุณาเข้าสู่ระบบอีกครั้ง",
     "setAvailability": "ตั้งค่าความพร้อม",
     "chooseTime": "เลือกเวลาที่คุณจะว่างในช่วงวันที่ที่กำหนด",
     "selectTime": "เลือกเวลา",
@@ -875,6 +894,7 @@
     "keywords": "คำค้นหา",
     "currency": "สกุลเงิน",
     "pleaseLogInToManageServices": "กรุณาเข้าสู่ระบบเพื่อจัดการบริการ",
+    "goToLogin": "ไปที่หน้าเข้าสู่ระบบ",
     "userNotFound": "ไม่พบผู้ใช้งาน",
     "updateExperience": "แก้ไขประสบการณ์",
     "fillAllFields": "กรุณากรอกข้อมูลทั้งหมด",

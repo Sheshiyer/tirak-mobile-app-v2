@@ -184,8 +184,10 @@ export interface SupplierApplicationPayload {
 export function buildApplicationPayload(
   data: SupplierSignupData,
   regionLabels: string[],
+  categoryLabels: string[] = data.categories,
 ): SupplierApplicationPayload {
-  const { basicInfo, categories, services, availability, languages, interests } = data;
+  const { basicInfo, services, availability, languages, interests } = data;
+  const categories = categoryLabels.map((name) => name.trim()).filter(Boolean);
   const displayName =
     basicInfo.displayName?.trim() ||
     [basicInfo.firstName?.trim(), basicInfo.lastName?.trim()].filter(Boolean).join(' ') ||
