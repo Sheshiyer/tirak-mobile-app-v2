@@ -19,7 +19,7 @@ import {
   SupplierApplicationError,
   SupplierApplicationIdempotencyConflictError,
 } from '@/services/api/supplier/applications';
-import { mockRegions } from '@/mocks/supplier-data';
+import { resolveTaxonomyLabels } from '@/services/api/public/taxonomy';
 
 interface SupplierState {
   isSupplier: boolean;
@@ -283,13 +283,11 @@ export const useSupplierStore = create<SupplierState>()(
 
         try {
           const { signupData } = get();
-          // Resolve region labels from IDs
-          const regionLabels = signupData.regions.map((regionId) => {
-            const region = mockRegions.find((r) => r.id === regionId);
-            return region?.name || regionId;
-          });
+          // Resolve region and category labels from IDs so the application never carries raw ids
+          const regionLabels = resolveTaxonomyLabels(signupData.regions, 'regions', [], signupData.optionLabels);
+          const categoryLabels = resolveTaxonomyLabels(signupData.categories, 'categories', [], signupData.optionLabels);
 
-          const payload = buildApplicationPayload(signupData, regionLabels);
+          const payload = buildApplicationPayload(signupData, regionLabels, categoryLabels);
           set((s) => ({
             signupData: {
               ...s.signupData,

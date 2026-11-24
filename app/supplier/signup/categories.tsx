@@ -9,13 +9,14 @@ import { MultiSelect } from '@/components/ui/MultiSelect';
 import { RadialGradient } from '@/components/ui/RadialGradient';
 import { Heading, Subheading, Body, Caption } from '@/components/ui/Typography';
 import { useSupplierStore } from '@/stores/supplier-store';
-import { mockCategories } from '@/mocks/supplier-data';
+import { resolveTaxonomyLabels, useSignupTaxonomy } from '@/services/api/public/taxonomy';
 
 export default function CategoriesScreen() {
   const router = useRouter();
   const { signupData, updateSignupData } = useSupplierStore();
 
   const [error, setError] = useState<string | null>(null);
+  const { options: categoryOptions, isLoading: categoriesLoading } = useSignupTaxonomy('categories');
 
   // Animation values for organic motion
   const shakeAnimation = useRef(new Animated.Value(0)).current;
@@ -69,7 +70,11 @@ export default function CategoriesScreen() {
       newCategories = [...signupData.categories, categoryId];
     }
 
-    updateSignupData({ categories: newCategories });
+    const label = categoryOptions.find(c => c.id === categoryId)?.name;
+    updateSignupData({
+      categories: newCategories,
+      ...(label ? { optionLabels: { ...signupData.optionLabels, [categoryId]: label } } : {}),
+    });
     setError(null);
   };
   
@@ -145,8 +150,11 @@ export default function CategoriesScreen() {
                 })}] }
               ]}
             >
+              {categoriesLoading && (
+                <Caption style={styles.noSelectionText}>Loading specialties…</Caption>
+              )}
               <MultiSelect
-                options={mockCategories}
+                options={categoryOptions}
                 selectedIds={signupData.categories}
                 onSelect={handleSelectCategory}
                 title="Cultural Guide Specialties"
@@ -174,13 +182,14 @@ export default function CategoriesScreen() {
               {signupData.categories.length > 0 ? (
                 <View style={styles.selectedCategoriesContainer}>
                   {signupData.categories.map(categoryId => {
-                    const category = mockCategories.find(c => c.id === categoryId);
+                    const category = categoryOptions.find(c => c.id === categoryId);
+                    const [label] = resolveTaxonomyLabels([categoryId], 'categories', categoryOptions, signupData.optionLabels);
                     return (
                       <View key={categoryId} style={styles.selectedCategory}>
                         {category?.icon && (
                           <Text style={styles.selectedCategoryIcon}>{category.icon}</Text>
                         )}
-                        <Caption style={styles.selectedCategoryName}>{category?.name}</Caption>
+                        <Caption style={styles.selectedCategoryName}>{label}</Caption>
                       </View>
                     );
                   })}

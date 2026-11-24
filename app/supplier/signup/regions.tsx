@@ -7,13 +7,14 @@ import { Button } from '@/components/ui/Button';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { MultiSelect } from '@/components/ui/MultiSelect';
 import { useSupplierStore } from '@/stores/supplier-store';
-import { mockRegions } from '@/mocks/supplier-data';
+import { resolveTaxonomyLabels, useSignupTaxonomy } from '@/services/api/public/taxonomy';
 
 export default function RegionsScreen() {
   const router = useRouter();
   const { signupData, updateSignupData } = useSupplierStore();
   
   const [error, setError] = useState<string | null>(null);
+  const { options: regionOptions, isLoading: regionsLoading } = useSignupTaxonomy('regions');
   
   const handleSelectRegion = (regionId: string) => {
     const isSelected = signupData.regions.includes(regionId);
@@ -27,7 +28,11 @@ export default function RegionsScreen() {
       newRegions = [...signupData.regions, regionId];
     }
     
-    updateSignupData({ regions: newRegions });
+    const label = regionOptions.find(r => r.id === regionId)?.name;
+    updateSignupData({
+      regions: newRegions,
+      ...(label ? { optionLabels: { ...signupData.optionLabels, [regionId]: label } } : {}),
+    });
     setError(null);
   };
   
@@ -80,8 +85,11 @@ export default function RegionsScreen() {
             <Text style={styles.mapCaption}>Thailand Map</Text>
           </View>
           
+          {regionsLoading && (
+            <Text style={styles.noSelectionText}>Loading regions…</Text>
+          )}
           <MultiSelect
-            options={mockRegions}
+            options={regionOptions}
             selectedIds={signupData.regions}
             onSelect={handleSelectRegion}
             title="Available Regions"
@@ -96,10 +104,10 @@ export default function RegionsScreen() {
             {signupData.regions.length > 0 ? (
               <View style={styles.selectedRegionsContainer}>
                 {signupData.regions.map(regionId => {
-                  const region = mockRegions.find(r => r.id === regionId);
+                  const [label] = resolveTaxonomyLabels([regionId], 'regions', regionOptions, signupData.optionLabels);
                   return (
                     <View key={regionId} style={styles.selectedRegion}>
-                      <Text style={styles.selectedRegionName}>{region?.name}</Text>
+                      <Text style={styles.selectedRegionName}>{label}</Text>
                     </View>
                   );
                 })}

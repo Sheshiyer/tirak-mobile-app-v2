@@ -133,4 +133,6 @@ export interface SupplierSignupData {
   applicationReceipt: SupplierApplicationReceipt | null;
   idempotencyKey: string | null;
   attemptedApplicationPayload?: unknown;
+  /** Display labels for selected region/category ids, remembered so submission never sends raw ids. */
+  optionLabels?: Record<string, string>;
 }
