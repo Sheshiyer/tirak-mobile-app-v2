@@ -99,7 +99,9 @@ export const deleteCompanionAccount = async (companionId: string): Promise<Delet
 
   try {
     const headers = await buildHeaders();
-    const url = apiUrl(`/api/companions/${companionId}`);
+    // The Worker has no DELETE /api/companions/:id; guide (companion) accounts
+    // are closed through the supplier route, which accepts both roles.
+    const url = apiUrl(`/api/suppliers/${companionId}`);
     const res = await axios.delete(url, { headers });
     const api = res.data;
     return {
