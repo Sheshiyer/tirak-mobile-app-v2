@@ -95,7 +95,7 @@ export const SearchEmptyState: React.FC<{ query?: string; onClearSearch?: () => 
       description={
         query
           ? 'Try adjusting your search terms or filters'
-          : 'Search for companions, services, or locations'
+          : 'Search for local guides, experiences, or locations'
       }
       actionLabel={query ? 'Clear search' : undefined}
       onAction={onClearSearch}
@@ -108,8 +108,8 @@ export const FavoritesEmptyState: React.FC<{ onBrowse?: () => void }> = ({ onBro
     <EmptyState
       variant="favorites"
       title="No favorites yet"
-      description="Save companions you like to easily find them later"
-      actionLabel="Browse companions"
+      description="Save local guides you like to easily find them later"
+      actionLabel="Browse local guides"
       onAction={onBrowse}
     />
   );
@@ -120,8 +120,8 @@ export const MessagesEmptyState: React.FC<{ onStartChat?: () => void }> = ({ onS
     <EmptyState
       variant="messages"
       title="No messages yet"
-      description="Start a conversation with a companion to see your messages here"
-      actionLabel="Find companions"
+      description="Chat opens with your local guide once a booking is confirmed"
+      actionLabel="Find local guides"
       onAction={onStartChat}
     />
   );
@@ -132,8 +132,8 @@ export const BookingsEmptyState: React.FC<{ onBook?: () => void }> = ({ onBook }
     <EmptyState
       variant="bookings"
       title="No bookings yet"
-      description="Book a companion to see your appointments here"
-      actionLabel="Find companions"
+      description="Book an experience with a local guide to see it here"
+      actionLabel="Find local guides"
       onAction={onBook}
     />
   );
@@ -166,7 +166,7 @@ export const LocationEmptyState: React.FC<{ onEnableLocation?: () => void }> = (
     <EmptyState
       icon={MapPin}
       title="Location access needed"
-      description="Enable location services to find companions near you"
+      description="Enable location services to find local guides near you"
       actionLabel="Enable location"
       onAction={onEnableLocation}
     />

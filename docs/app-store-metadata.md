@@ -35,7 +35,7 @@ WHAT YOU CAN DO WITH TIRAK
 • Browse profiles of trusted local guides, each with experience details and guest reviews
 • Book guided food tours, street market walks, temple circuits, cooking classes, and cultural activities
 • Message your guide directly to customise your experience before you arrive
-• Pay securely for experiences — no cash uncertainty on arrival
+• Pay your guide in cash at the meeting point — the rate is shown before you book
 • Receive travel tips and local knowledge from people who actually live there
 
 WHY TIRAK IS DIFFERENT
@@ -44,6 +44,7 @@ Most travel apps send you to the same Tripadvisor spots. Tirak curates local gui
 
 Our guides are:
 ✓ Local residents and tourism professionals with relevant experience
+✓ ID-checked by the Tirak team before they can host
 ✓ Fluent in English and other major languages
 ✓ Passionate about sharing Thai culture authentically
 
@@ -58,8 +59,8 @@ HOW IT WORKS
 
 1. Browse guides by city, activity type, or language
 2. View profiles, experience listings, availability, and verified reviews
-3. Book directly and pay securely in-app
-4. Meet your guide at the agreed location and explore
+3. Send a booking request; your guide confirms it in the app
+4. Meet your guide at the agreed meeting point, pay in cash, and explore
 
 AVAILABLE ACROSS THAILAND
 
@@ -116,13 +117,13 @@ All age-rating questions should be answered:
 > Paste this verbatim into the "Notes" field when submitting for review.
 
 ```
-Tirak is a cultural travel experience marketplace that connects tourists with certified local guides in Thailand. It is similar in concept to Airbnb Experiences or Klook — users can browse guide profiles, book guided activities such as temple visits, food tours, cooking classes, and market walks, and communicate with their guide before and during the trip.
+Tirak is a cultural travel experience marketplace that connects tourists with local guides in Thailand. It is similar in concept to Airbnb Experiences or Klook — users can browse guide profiles, book guided activities such as temple visits, food tours, cooking classes, and market walks, and communicate with their guide before and during the trip.
 
 The platform does NOT facilitate any adult services, escort services, companionship services, dating, or social networking.
 
 The word "companion" appeared in our original app branding and some legacy technical identifiers, referring to "travel companion" in the tourism sense (a guide who accompanies you). The App Review path labels this role "Local Guide" or "Guide".
 
-Guides on the platform are licensed local tourism professionals or knowledgeable residents who offer cultural experiences. All service listings are activity-based (temple walks, food tours, photography walks, cooking classes, market visits, etc.).
+Guides on the platform are local tourism professionals or knowledgeable residents who offer cultural experiences. The Tirak team checks each guide's ID before they can host. During the current launch phase, travellers pay their guide in cash at the meeting point. All service listings are activity-based (temple walks, food tours, photography walks, cooking classes, market visits, etc.).
 
 This review build includes an App Review Access section on the sign-in screen. Choose the pre-populated Traveler or Guide review account; no password is required. The same role selector is available from Profile.
 
@@ -178,10 +179,10 @@ Apple rejected partly because screenshot previews showed profile browsing UI tha
 
 Use these caption overlays:
 1. "Discover Thailand beyond the tourist trail"
-2. "Book certified local guides for food tours, temple walks & more"  
+2. "Book local guides for food tours, temple walks & more"  
 3. "Choose your date — guides fit around your schedule"
 4. "Chat directly with your guide before you arrive"
-5. "Explore authentically — confirmed in seconds"
+5. "Explore authentically with a local guide"
 
 ---
 

@@ -44,3 +44,10 @@ it('allows the actual peer header name to shrink and ellipsize instead of enlarg
   const back = screen.getByRole('button', { name: 'Go back' });
   expect(StyleSheet.flatten(back.props.style)).toMatchObject({ width: 44, height: 44, flexShrink: 0 });
 });
+
+import { CHAT_FEATURES } from '@/constants/chat-features';
+it('keeps soft-launch chat text-only: rich media, call and translation controls stay off', () => {
+  expect(CHAT_FEATURES).toEqual({ imageAttachments: false, voiceMessages: false, calls: false, translation: false, conversationSettings: false });
+  const screen = render(<EnhancedMessageInput message="Hi" onMessageChange={jest.fn()} onSend={jest.fn()} />);
+  expect(screen.getAllByRole('button').map(button => button.props.accessibilityLabel)).toEqual(['Send message']);
+});

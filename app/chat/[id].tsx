@@ -44,6 +44,7 @@ import { EnhancedMessageInput } from '@/components/chat/EnhancedMessageInput';
 import { ChatAccessState } from '@/components/chat/ChatAccessState';
 import { ChatPeerHeader } from '@/components/chat/ChatPeerHeader';
 import { useTranslation } from 'react-i18next';
+import { CHAT_FEATURES } from '@/constants/chat-features';
 import { fetchBookingById } from '@/services/api/booking/booking';
 import { loadChatBookingAccess, type ChatBookingAccess } from '@/utils/chat-booking-access';
 
@@ -373,6 +374,7 @@ export default function ChatScreen() {
           />
         );
       case 'voice':
+        if (!CHAT_FEATURES.voiceMessages) return <MessageBubble message={item} isUser={isUser} />;
         return (
           <VoiceMessage
             duration={item.voiceDuration || 0}
@@ -441,8 +443,8 @@ export default function ChatScreen() {
           <TypingIndicator companion={companionForHeader} visible={isTyping} />
         </View>
 
-        {/* Translation Toggle */}
-        {showTranslation && (
+        {/* Translation Toggle (hidden until translation has backend support) */}
+        {CHAT_FEATURES.translation && showTranslation && (
           <TranslationToggle
             isEnabled={translationEnabled}
             onToggle={handleTranslationToggle}
@@ -468,8 +470,8 @@ export default function ChatScreen() {
           <EnhancedMessageInput message={message} onMessageChange={setMessage} onSend={handleSend} disabled={!roomId || !bookingAccess?.canSend || isSending} />
         )}
 
-        {/* Chat Settings Modal */}
-        <ChatSettings
+        {/* Chat Settings Modal (hidden until its actions are wired) */}
+        {CHAT_FEATURES.conversationSettings && <ChatSettings
           visible={showChatSettings}
           onClose={() => setShowChatSettings(false)}
           companion={companionForHeader}
@@ -480,7 +482,7 @@ export default function ChatScreen() {
           onArchive={() => {}}
           onDelete={() => {}}
           onStarConversation={() => {}}
-        />
+        />}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
